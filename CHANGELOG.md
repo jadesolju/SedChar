@@ -4,6 +4,33 @@
 
 ---
 
+## [v0.4.0] — 2026-09-17
+
+### 🧠 9-Pillar High-Density Prompts (โครงสร้างคำสั่งระดับลึก 9 เสาหลัก)
+- **Rubii & Purrpaw Full-Density Expansion**: ยกระดับ System & Persona Prompt ให้ครอบคลุมครบ 9 เสาหลัก:
+  1. ✓ ข้อมูลพื้นฐาน (Basic Info, Status, Wealth, Car, Perfume)
+  2. ✓ รูปลักษณ์ภายนอกและลักษณะเด่น (Visual Features & Appearance)
+  3. ✓ สรีระส่วนลับและพฤติกรรม NSFW (Intimate details, Kinks, Aftercare)
+  4. ✓ โครงสร้างจิตวิทยา & นิสัย (Psychology, Mindset, Emotional Triggers)
+  5. ✓ สิ่งที่ชอบ / สิ่งที่เกลียด (Likes & Dislikes)
+  6. ✓ มิติความสัมพันธ์กับ {{user}} (User Dynamics & Attitude)
+  7. ✓ กฎระบบและข้อห้ามเด็ดขาด (Strict System Directives & Logic Constraints)
+  8. ✓ ตัวละครเสริมในเรื่อง (Supporting Characters & Sub-character Rules)
+  9. ✓ สถานที่และบรรยากาศ (Tone & Ambient Locations)
+- **Strict Anti-User-Impersonation Logic**: กฎเหล็กป้องกัน AI สวมบทบาทหรือแย่งพูดแทน {{user}} ในทุกแพลตฟอร์ม
+
+### 🔐 Supabase Auth & Member Access Gate (ระบบสมาชิกและสิทธิ์การใช้งาน)
+- **Multi-Provider Authentication**: เข้าสู่ระบบผ่าน **Google OAuth, Discord OAuth** หรือใช้อีเมล/รหัสผ่าน พร้อมระบบลืมรหัสผ่าน (Password Reset)
+- **Auto-Parser Login Gate**: สงวนสิทธิ์การใช้งาน Auto-Parser (ระบบวิเคราะห์แปลงข้อมูลอัจฉริยะ) สำหรับสมาชิกที่เข้าสู่ระบบ
+- **5 Calls/Day Persistent AI Quota**: โควตา AI แปลงข้อมูลฟรี 5 ครั้งต่อวัน บันทึกข้ามอุปกรณ์และรีเฟรชหน้าเว็บไม่หาย
+
+### 📁 Cloud Library & Album Gallery (คลังตัวละครและอัลบั้มชุดรูปภาพ)
+- **Cloud Character Storage**: บันทึกและซิงค์ตัวละครทั้งหมดลงฐานข้อมูล Supabase เรียกใช้งานและโหลดกลับเข้าสู่ Editor ได้ทันที
+- **Cloudflare Images & Gallery Support**: รองรับการเชื่อมต่อลิงก์รูปภาพจาก Cloudflare Images Delivery และ Cloudflare R2 พร้อมระบบอัลบั้มแสดงชุดภาพสีหน้า/อารมณ์/เครื่องแต่งกาย
+- **Quick-Save & Search**: ค้นหาตัวละครในคลังได้อย่างรวดเร็วและบันทึกข้อมูลตัวละครปัจจุบันได้ในคลิกเดียว
+
+---
+
 ## [v0.3.0] — 2026-09-17
 
 ### 🎨 Visual & UI Polish (การปรับแต่งหน้าตาและธีม)

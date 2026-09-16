@@ -1,13 +1,18 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { InputForm } from '@/components/form/InputForm';
 import { SingleBoxInput } from '@/components/form/SingleBoxInput';
 import { PlatformPreview } from '@/components/preview/PlatformPreview';
 import { useCharacterData } from '@/hooks/useCharacterData';
 import { CHARACTER_FLAGS } from '@/shared/types';
+import type { ThaiMasterCharacter } from '@/shared/types';
 
-export default function HomePage() {
+function MainWorkspace() {
   const {
     character,
     inputMode,
@@ -31,16 +36,24 @@ export default function HomePage() {
     syncToMarkdown,
   } = useCharacterData();
 
+  const { user, openAuthModal, openLibraryModal } = useAuth();
+
   // Mobile active screen: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
-
-  const currentFlagInfo = CHARACTER_FLAGS[character.flagType] || CHARACTER_FLAGS.none;
 
   const handleModeSwitch = (mode: 'structured' | 'single') => {
     if (mode === 'single') {
       syncToMarkdown();
     }
     setInputMode(mode);
+  };
+
+  const handleLoadFromLibrary = (loadedChar: ThaiMasterCharacter) => {
+    // Import character into current state
+    Object.keys(loadedChar).forEach((key) => {
+      updateField(key as keyof ThaiMasterCharacter, (loadedChar as any)[key]);
+    });
+    syncToMarkdown();
   };
 
   return (
@@ -81,12 +94,25 @@ export default function HomePage() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <span>📝</span> ช่องเดียวรวด (Markdown)
+              <span>⚡</span> ช่องเดียวรวด (Auto-Parser)
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right Action Icons & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Quick Save to Cloud button */}
+          <button
+            type="button"
+            onClick={openLibraryModal}
+            title="บันทึกตัวละครลง Cloud Library"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:border-primary/50 text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
+          >
+            <span>💾</span>
+            <span>บันทึกลงคลัง</span>
+          </button>
+
+          <UserMenu />
           <ThemeToggle />
         </div>
       </header>
@@ -99,60 +125,59 @@ export default function HomePage() {
             onClick={() => setMobileTab('editor')}
             className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${
               mobileTab === 'editor'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground'
+                ? 'bg-card text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>✍️</span> กรอกข้อมูล
+            <span>✏️</span> โหมดแก้ไข (Editor)
           </button>
           <button
             type="button"
             onClick={() => setMobileTab('preview')}
             className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${
               mobileTab === 'preview'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground'
+                ? 'bg-primary text-white shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>👁️</span> ดูผลลัพธ์
+            <span>👀</span> ดูผลลัพธ์ (Preview)
           </button>
         </div>
 
         {mobileTab === 'editor' && (
-          <div className="grid grid-cols-2 gap-1 w-full pt-0.5">
+          <div className="grid grid-cols-2 gap-1 bg-muted p-0.5 rounded-md border border-border">
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`py-1 text-[11px] rounded font-medium border ${
+              className={`py-1 text-[11px] font-medium rounded transition-all ${
                 inputMode === 'structured'
-                  ? 'bg-card text-foreground border-primary/50'
-                  : 'bg-muted/40 text-muted-foreground border-transparent'
+                  ? 'bg-card text-foreground font-bold shadow-xs'
+                  : 'text-muted-foreground'
               }`}
             >
-              📋 ช่องแยก
+              📋 ช่องแยก 10 หัวข้อ
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`py-1 text-[11px] rounded font-medium border ${
+              className={`py-1 text-[11px] font-medium rounded transition-all ${
                 inputMode === 'single'
-                  ? 'bg-card text-foreground border-primary/50'
-                  : 'bg-muted/40 text-muted-foreground border-transparent'
+                  ? 'bg-card text-foreground font-bold shadow-xs'
+                  : 'text-muted-foreground'
               }`}
             >
-              📝 ช่องเดียว (Markdown)
+              ⚡ ช่องเดียวรวด
             </button>
           </div>
         )}
       </div>
 
-      {/* Workspace Area: Responsive Split Screen on Desktop / Full view on Mobile */}
-      <main className="flex-1 flex overflow-hidden" aria-label="ส่วนหลักของแอปพลิเคชัน">
-        {/* Left: Input Panel (Guided Form or Single-box) */}
-        <section
-          aria-label="Master Input Panel"
-          className={`w-full md:w-[48%] md:min-w-[340px] md:max-w-[650px] flex-shrink-0 md:border-r border-border overflow-hidden bg-background flex flex-col ${
-            mobileTab === 'editor' ? 'flex' : 'hidden md:flex'
+      {/* Main Workspace Body */}
+      <main className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+        {/* Left Column: Form Editor */}
+        <div
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-background ${
+            mobileTab === 'preview' ? 'hidden md:flex' : 'flex'
           }`}
         >
           {inputMode === 'structured' ? (
@@ -181,31 +206,32 @@ export default function HomePage() {
               onClear={resetCharacter}
             />
           )}
-        </section>
+        </div>
 
-        {/* Right: Platform Preview Panel */}
-        <section
-          aria-label="Platform Output Preview"
-          className={`flex-1 overflow-hidden bg-background ${
-            mobileTab === 'preview' ? 'flex flex-col' : 'hidden md:flex md:flex-col'
+        {/* Right Column: Platform Preview & Smart Export */}
+        <div
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-muted/20 ${
+            mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
           }`}
         >
           <PlatformPreview character={character} />
-        </section>
+        </div>
       </main>
 
-      {/* Status Bar */}
-      <footer className="flex-shrink-0 h-6 flex items-center justify-between px-3 sm:px-4 border-t border-border bg-card/60">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] text-muted-foreground font-mono truncate">
-            SedChar.AI v2.0 • PWA Ready for Mobile & Desktop
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
-          <span className="text-[10px] text-muted-foreground">Ready</span>
-        </div>
-      </footer>
+      {/* Modals */}
+      <AuthModal />
+      <CharacterLibraryModal
+        currentCharacter={character}
+        onLoadCharacter={handleLoadFromLibrary}
+      />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <AuthProvider>
+      <MainWorkspace />
+    </AuthProvider>
   );
 }
