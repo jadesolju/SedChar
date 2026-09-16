@@ -50,9 +50,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-baseline gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
-            <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
-              Thai Character Parser Engine v2.0
-            </span>
+            <span className="hidden sm:inline text-xs text-muted-foreground font-normal"></span>
           </div>
 
           {/* Mode Switcher */}
@@ -60,22 +58,20 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                inputMode === 'structured'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'structured'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <span>📋</span> ช่องแยกตามหัวข้อ
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                inputMode === 'single'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'single'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <span>📝</span> ช่องเดียวรวด (Markdown)
             </button>
