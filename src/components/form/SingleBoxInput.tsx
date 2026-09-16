@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 interface SingleBoxInputProps {
@@ -22,6 +22,26 @@ export function SingleBoxInput({
   const [copied, setCopied] = useState(false);
   const [parseNotice, setParseNotice] = useState<string | null>(null);
   const [quotaWarning, setQuotaWarning] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus fullscreen textarea when opened
+  useEffect(() => {
+    if (isFullscreen && fullscreenTextareaRef.current) {
+      fullscreenTextareaRef.current.focus();
+    }
+  }, [isFullscreen]);
+
+  // Handle escape key to close fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
 
   // Analyze which sections are detected in ANY format (Plaintext, JSON, YAML, Markdown)
   const detectedSections = useMemo(() => {
@@ -31,11 +51,11 @@ export function SingleBoxInput({
       { name: 'ส่วนลับ NSFW', detected: /(?:ส่วนลับ|NSFW|โจ้ย|หน้าอก|จิ๊มิ|sex)/i.test(rawMarkdown) },
       { name: 'จิตวิทยา & นิสัย', detected: /(?:นิสัย|Psychology|Personality|traits|ซึน|ยัน|คูล)/i.test(rawMarkdown) },
       { name: 'สิ่งที่ชอบ/เกลียด', detected: /(?:สิ่งที่ชอบ|Likes|Dislikes|เกลียด)/i.test(rawMarkdown) },
-      { name: 'ความสัมพันธ์ {{user}}', detected: /(?:ความสัมพันธ์|Relationship|{{user}})/i.test(rawMarkdown) },
-      { name: 'กฎระบบ & ข้อห้าม', detected: /(?:กฎระบบ|Directives|ขอบเขต|ข้อห้าม)/i.test(rawMarkdown) },
-      { name: 'ตัวละครเสริม', detected: /(?:ตัวละครเสริม|Supporting Characters|คนรอบข้าง)/i.test(rawMarkdown) },
-      { name: 'สถานที่ในเรื่อง', detected: /(?:สถานที่|Locations|ฉากหลัง|บรรยากาศ)/i.test(rawMarkdown) },
-      { name: 'ฉากเปิด (Greeting)', detected: /(?:ฉากเปิด|Open Greeting|คำทักทาย|greeting)/i.test(rawMarkdown) },
+      { name: 'ความสัมพันธ์ {{user}}', detected: /(?:ความสัมพันธ์|Relationship|{{user}}|User)/i.test(rawMarkdown) },
+      { name: 'กฎระบบ & ข้อห้าม', detected: /(?:กฎระบบ|System Rules|ข้อห้าม|ห้าม|Anti-Behavior)/i.test(rawMarkdown) },
+      { name: 'สไตล์บนเตียง', detected: /(?:บนเตียง|Sexual Style|Kinks|Aftercare|ลีลา)/i.test(rawMarkdown) },
+      { name: 'ตัวละครเสริม & สถานที่', detected: /(?:ตัวละครเสริม|Sub-character|สถานที่|Location|ฉาก)/i.test(rawMarkdown) },
+      { name: 'คำโปรย & ฉากเปิด', detected: /(?:คำโปรย|เรื่องย่อ|Greeting|ฉากเปิด|Punchline)/i.test(rawMarkdown) },
     ];
   }, [rawMarkdown]);
 
@@ -67,8 +87,11 @@ export function SingleBoxInput({
     const ok = consumeQuota();
     if (ok) {
       onApplyParse(rawMarkdown);
-      setParseNotice(`⚡ ซิงค์ข้อมูลเข้า Form สำเร็จ! (ใช้สิทธิ์ AI สำเร็จ เหลือ ${quotaRemaining - 1}/${quotaMax} ครั้งวันนี้)`);
+      setParseNotice('⚡ ซิงค์ข้อมูลเข้า Form สำเร็จ! (ใช้สิทธิ์ AI สำเร็จ เหลือ ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
       setTimeout(() => setParseNotice(null), 3500);
+      if (isFullscreen) {
+        setIsFullscreen(false);
+      }
     }
   };
 
@@ -86,7 +109,7 @@ export function SingleBoxInput({
           </span>
         </div>
 
-        {/* Quota indicator */}
+        {/* Quota indicator & Controls */}
         <div className="flex items-center gap-2">
           {user ? (
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25">
@@ -104,10 +127,20 @@ export function SingleBoxInput({
 
           <button
             type="button"
+            onClick={() => setIsFullscreen(true)}
+            title="ขยายเต็มจอ (Fullscreen Focus Mode)"
+            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:border-primary/50 text-foreground transition-all cursor-pointer shadow-xs flex items-center gap-1"
+          >
+            <span>⛶</span>
+            <span className="hidden sm:inline">เต็มจอ</span>
+          </button>
+
+          <button
+            type="button"
             onClick={onLoadSample}
             className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-xs"
           >
-            📋 โหลดตัวอย่าง
+            📋 ตัวอย่าง
           </button>
           <button
             type="button"
@@ -166,6 +199,17 @@ export function SingleBoxInput({
 กดปุ่ม "แปลงข้อมูลสู่ฟอร์ม" ด้านล่างเพื่อซิงค์ข้อมูลเข้าสู่ 10 หมวดหมู่แบบ 100%`}
           className="w-full h-full p-4 rounded-xl bg-[#1F1F24] border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed"
         />
+
+        {/* Quick expand floating button */}
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(true)}
+          title="ขยายช่องเขียนเต็มจอ"
+          className="absolute bottom-5 right-5 p-1.5 rounded-lg bg-[#1F1F24]/90 backdrop-blur-xs border border-border text-muted-foreground hover:text-primary transition-all text-xs cursor-pointer shadow-sm flex items-center gap-1"
+        >
+          <span>⛶</span>
+          <span className="text-[10px] font-semibold">ขยายเต็มจอ</span>
+        </button>
       </div>
 
       {/* Detection Pills & Action Footer */}
@@ -216,6 +260,88 @@ export function SingleBoxInput({
           </button>
         </div>
       </div>
+
+      {/* FULLSCREEN FOCUS MODAL FOR SINGLE BOX */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-5xl h-[92vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+            {/* Top Fullscreen Header */}
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    Auto-Parser โหมดแก้ไขข้อความเต็มจอ (Fullscreen Focus Mode)
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    ตรวจพบ {detectedCount}/10 หมวดหมู่ • รองรับ Plaintext / Markdown / JSON / YAML
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground font-mono">
+                  {rawMarkdown.length.toLocaleString()} ตัวอักษร
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={!rawMarkdown.trim()}
+                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
+                >
+                  <span>✨</span>
+                  <span>แปลงข้อมูลทันที (Sync & Close)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition-all cursor-pointer"
+                >
+                  ปิด (Esc)
+                </button>
+              </div>
+            </div>
+
+            {/* Large Fullscreen Textarea */}
+            <div className="flex-1 p-5 bg-background relative flex flex-col">
+              <textarea
+                ref={fullscreenTextareaRef}
+                value={rawMarkdown}
+                onChange={(e) => onChangeRaw(e.target.value)}
+                placeholder="วางหรือเขียนเนื้อหาตัวละครแบบอิสระที่นี่..."
+                className="w-full flex-1 p-5 rounded-xl bg-[#1F1F24] border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+              />
+            </div>
+
+            {/* Bottom Fullscreen Helper Footer */}
+            <div className="flex-shrink-0 px-5 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                {detectedSections.map((s) => (
+                  <span
+                    key={s.name}
+                    className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                      s.detected ? 'bg-emerald-500/15 text-emerald-500 font-bold' : 'text-muted-foreground/40'
+                    }`}
+                  >
+                    {s.detected ? '✓ ' : '○ '}{s.name}
+                  </span>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+              >
+                🗑️ ล้างทั้งหมด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

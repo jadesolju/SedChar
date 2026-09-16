@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import type {
   ThaiMasterCharacter,
   CharacterFlagType,
@@ -8,6 +9,7 @@ import type {
 import { FormSection, FieldRow } from './FormSection';
 import { TagInput } from './TagInput';
 import { FlagSelector } from '@/components/ui/FlagSelector';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 type ArrayField =
   | 'visualTags'
@@ -58,7 +60,7 @@ export function InputForm({
           <span className="text-base">📋</span>
           <div>
             <h2 className="text-xs font-bold text-foreground">ฟอร์มแยกส่วน (Guided Template Form)</h2>
-            <p className="text-[11px] text-muted-foreground">กรอกข้อมูลตามหมวดหมู่เพื่อแปลงลงทุกแพลตฟอร์ม</p>
+            <p className="text-[11px] text-muted-foreground">กรอกข้อมูล 10 หมวดหมู่ พร้อมปุ่มขยายช่อง/เต็มจออิสระ</p>
           </div>
         </div>
 
@@ -66,7 +68,7 @@ export function InputForm({
           <button
             type="button"
             onClick={onLoadSample}
-            className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer"
+            className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
           >
             <span>📄</span> โหลดตัวอย่าง
           </button>
@@ -198,38 +200,38 @@ export function InputForm({
                 type="text"
                 value={character.sexualOrientation}
                 onChange={e => onUpdateField('sexualOrientation', e.target.value)}
-                placeholder="Heterosexual / คลั่งรัก User"
+                placeholder="Heterosexual / Pansexual"
                 className="form-input"
               />
             </FieldRow>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FieldRow label="อาชีพ" htmlFor="occupation">
-              <input
-                id="occupation"
-                type="text"
-                value={character.occupation}
-                onChange={e => onUpdateField('occupation', e.target.value)}
-                placeholder="นักธุรกิจ / ผู้คุมตลาดมืด"
-                className="form-input"
-              />
-            </FieldRow>
-
             <FieldRow label="ฐานะทางการเงิน" htmlFor="wealthStatus">
               <input
                 id="wealthStatus"
                 type="text"
                 value={character.wealthStatus}
                 onChange={e => onUpdateField('wealthStatus', e.target.value)}
-                placeholder="มหาเศรษฐีระดับพันล้าน"
+                placeholder="มหาเศรษฐีพันล้าน / เจ้าของกิจการ"
+                className="form-input"
+              />
+            </FieldRow>
+
+            <FieldRow label="อาชีพ / ตำแหน่ง" htmlFor="occupation">
+              <input
+                id="occupation"
+                type="text"
+                value={character.occupation}
+                onChange={e => onUpdateField('occupation', e.target.value)}
+                placeholder="ประธานกลุ่มบริษัทยักษ์ใหญ่"
                 className="form-input"
               />
             </FieldRow>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FieldRow label="รถที่ใช้" htmlFor="car">
+            <FieldRow label="รถยนต์ประจำตำแหน่ง" htmlFor="car">
               <input
                 id="car"
                 type="text"
@@ -252,27 +254,23 @@ export function InputForm({
             </FieldRow>
           </div>
 
-          <FieldRow label="ที่อยู่ / ฐานที่มั่น" htmlFor="address">
-            <input
-              id="address"
-              type="text"
-              value={character.address}
-              onChange={e => onUpdateField('address', e.target.value)}
-              placeholder="Penthouse ชั้น 52 ใจกลางกรุงเทพฯ"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="address"
+            label="ที่อยู่ / ฐานที่มั่น"
+            rows={2}
+            value={character.address}
+            onChange={v => onUpdateField('address', v)}
+            placeholder="Penthouse ชั้น 52 ใจกลางกรุงเทพฯ"
+          />
 
-          <FieldRow label="สไตล์การแต่งตัว" htmlFor="fashionStyle">
-            <input
-              id="fashionStyle"
-              type="text"
-              value={character.fashionStyle}
-              onChange={e => onUpdateField('fashionStyle', e.target.value)}
-              placeholder="เสื้อเชิ้ตดำพับแขน นาฬิกาหรู ปลดกระดุม 2 เม็ด"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="fashionStyle"
+            label="สไตล์การแต่งตัว"
+            rows={2}
+            value={character.fashionStyle}
+            onChange={v => onUpdateField('fashionStyle', v)}
+            placeholder="เสื้อเชิ้ตดำพับแขน นาฬิกาหรู ปลดกระดุม 2 เม็ด"
+          />
         </FormSection>
 
         {/* 2. ลักษณะภายนอก & NSFW */}
@@ -284,27 +282,24 @@ export function InputForm({
           defaultOpen={false}
           badge={character.visualTags.length}
         >
-          <FieldRow label="คำบรรยายลักษณะภายนอกโดยละเอียด" htmlFor="appearanceDesc">
-            <textarea
-              id="appearanceDesc"
-              rows={3}
-              value={character.appearanceDesc}
-              onChange={e => onUpdateField('appearanceDesc', e.target.value)}
-              placeholder="ชายหนุ่มรูปร่างสูงใหญ่ กล้ามเนื้อแน่นชัดเจน ใบหน้าคมคายดุดัน นัยน์ตาสีดำสนิทเย็นชา..."
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="appearanceDesc"
+            label="คำบรรยายลักษณะภายนอกโดยละเอียด *"
+            hint="กดปุ่มขยายช่องหรือเต็มจอเพื่อเขียนบรรยายยาวๆ"
+            rows={5}
+            value={character.appearanceDesc}
+            onChange={v => onUpdateField('appearanceDesc', v)}
+            placeholder="ชายหนุ่มรูปร่างสูงใหญ่ กล้ามเนื้อแน่นชัดเจน ใบหน้าคมคายดุดัน นัยน์ตาสีดำสนิทเย็นชา สันกรามคมชัด ผิวสีแทนสุขภาพดี..."
+          />
 
-          <FieldRow label="จุดเด่นบนร่างกาย" htmlFor="visualFeatures">
-            <input
-              id="visualFeatures"
-              type="text"
-              value={character.visualFeatures}
-              onChange={e => onUpdateField('visualFeatures', e.target.value)}
-              placeholder="รอยสักมังกรพาดผ่านแผ่นหลัง, รอยแผลเป็นที่หางคิ้วซ้าย"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="visualFeatures"
+            label="จุดเด่นบนร่างกาย / รอยสัก / แผลเป็น"
+            rows={2}
+            value={character.visualFeatures}
+            onChange={v => onUpdateField('visualFeatures', v)}
+            placeholder="รอยสักมังกรพาดผ่านแผ่นหลัง, รอยแผลเป็นที่หางคิ้วซ้าย"
+          />
 
           <FieldRow label="แท็กคีย์เวิร์ดรูปลักษณ์ (#)" htmlFor="visualTags" hint="พิมพ์แล้วกด Enter">
             <TagInput
@@ -319,8 +314,8 @@ export function InputForm({
           </FieldRow>
 
           {/* NSFW Box */}
-          <div className="p-3 rounded-lg border border-border/80 bg-muted/30 space-y-3">
-            <span className="text-xs font-bold text-foreground flex items-center gap-1">
+          <div className="p-3.5 rounded-xl border border-border/80 bg-muted/30 space-y-3">
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <span>🔞</span> ข้อมูลส่วนลับ (NSFW Info)
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -367,16 +362,15 @@ export function InputForm({
           defaultOpen={false}
           badge={character.personalityTags.length}
         >
-          <FieldRow label="Core Traits (บรรยายละเอียด)" htmlFor="coreTraits">
-            <textarea
-              id="coreTraits"
-              rows={3}
-              value={character.coreTraits}
-              onChange={e => onUpdateField('coreTraits', e.target.value)}
-              placeholder="เย็นชา สุขุม พูดน้อยต่อยหนัก ไม่เคยไว้ใจใครง่ายๆ ไร้ความปรานีต่อศัตรู แต่ซ่อนความอ่อนโยนไว้กับ {{user}}..."
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="coreTraits"
+            label="Core Traits (บรรยายละเอียด) *"
+            hint="กดปุ่มขยายช่องเพื่อเขียนมิติอารมณ์และนิสัย"
+            rows={5}
+            value={character.coreTraits}
+            onChange={v => onUpdateField('coreTraits', v)}
+            placeholder="เย็นชา สุขุม พูดน้อยต่อยหนัก ไม่เคยไว้ใจใครง่ายๆ ไร้ความปรานีต่อศัตรู แต่ซ่อนความอ่อนโยนไว้กับ {{user}}..."
+          />
 
           <FieldRow label="แท็กนิสัยและค้นหา (# อย่างน้อย 5-10 อย่าง)" htmlFor="personalityTags">
             <TagInput
@@ -402,533 +396,569 @@ export function InputForm({
               />
             </FieldRow>
 
-            <FieldRow label="สิ่งที่ไม่ชอบ (Dislikes)" htmlFor="dislikes">
+            <FieldRow label="สิ่งที่เกลียด (Dislikes)" htmlFor="dislikes">
               <TagInput
                 id="dislikes"
                 field="dislikes"
                 tags={character.dislikes}
-                placeholder="สิ่งที่ไม่ชอบ เช่น คนโกหก, คนเซ้าซี้..."
+                placeholder="สิ่งที่เกลียด เช่น คนโกหก, กลิ่นควัน..."
                 onAdd={onAddTag}
                 onRemove={onRemoveTag}
               />
             </FieldRow>
           </div>
 
-          <FieldRow label="พฤติกรรมทั่วไป (General Behaviors)" htmlFor="generalBehaviors" hint="เน้น keylist ไม่เวิ่นเว้อ">
-            <textarea
-              id="generalBehaviors"
-              rows={2}
-              value={character.generalBehaviors}
-              onChange={e => onUpdateField('generalBehaviors', e.target.value)}
-              placeholder="- พูดจาสั้น กระชับ น้ำเสียงต่ำทุ้ม\n- ไม่สบตากับคนที่ไม่จำเป็น\n- ตรวจเช็กอาวุธเสมอ"
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="generalBehaviors"
+            label="พฤติกรรมทั่วไป (กับคนอื่นในสังคม)"
+            rows={4}
+            value={character.generalBehaviors}
+            onChange={v => onUpdateField('generalBehaviors', v)}
+            placeholder="เว้นระยะห่างกับทุกคน สบตาด้วยสายตากดดัน ไม่ชอบการสัมผัสตัวกับคนแปลกหน้า..."
+          />
 
-          <FieldRow label="พฤติกรรมพิเศษเฉพาะกับ {{user}} (Exclusive Behaviors)" htmlFor="userExclusiveBehaviors">
-            <textarea
-              id="userExclusiveBehaviors"
-              rows={2}
-              value={character.userExclusiveBehaviors}
-              onChange={e => onUpdateField('userExclusiveBehaviors', e.target.value)}
-              placeholder="- ยอมวางงานทั้งหมดทันทีเมื่อ {{user}} มีอันตราย\n- แอบซื้อของที่ {{user}} บ่นว่าอยากได้มาให้\n- ดึงตัวมานั่งตักแล้วซุกหน้ากับซอกคอ"
-              className="form-input resize-none"
-            />
-          </FieldRow>
-        </FormSection>
+          <ExpandableTextarea
+            id="userExclusiveBehaviors"
+            label="พฤติกรรมพิเศษเฉพาะกับ {{user}}"
+            rows={4}
+            value={character.userExclusiveBehaviors}
+            onChange={v => onUpdateField('userExclusiveBehaviors', v)}
+            placeholder="ชอบแอบมอง ยอมให้แตะเนื้อต้องตัว แม้จะปากแข็งแต่คอยดูแลและตามใจทุกเรื่อง..."
+          />
 
-        {/* 4. โครงสร้างจิตวิทยา 7 มิติ */}
-        <FormSection
-          id="sec-psych-structure"
-          title="4. โครงสร้างจิตวิทยา 7 มิติ (Psychological Framework)"
-          icon={<span>⚙️</span>}
-          description="ความเชื่อหลัก, กระบวนการคิด, การตีความ, การแสดงออก, Triggers, จุดอ่อน"
-          defaultOpen={false}
-        >
-          <FieldRow label="1. Core Belief: ความเชื่อฝังหัวที่เป็นรากฐาน" htmlFor="coreBelief">
-            <input
-              id="coreBelief"
-              type="text"
-              value={character.coreBelief}
-              onChange={e => onUpdateField('coreBelief', e.target.value)}
-              placeholder="โลกนี้ไม่มีความยุติธรรม มีแต่ผู้ล่ากับผู้ถูกล่า อำนาจเท่านั้นที่ปกป้องสิ่งที่รักได้"
-              className="form-input"
-            />
-          </FieldRow>
+          {/* Psychological 7-Layer Structure */}
+          <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3.5">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🧬</span>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">โครงสร้างจิตวิทยาเชิงลึก 7 ชั้น (Psychological Layers)</h4>
+                <p className="text-[11px] text-muted-foreground">ช่วยให้ AI แสดงบุคลิกภาพที่ซับซ้อนและมีมิติสมจริงที่สุด</p>
+              </div>
+            </div>
 
-          <FieldRow label="2. Mindset: ทัศนคติและตรรกะการคิด" htmlFor="mindset">
-            <input
-              id="mindset"
-              type="text"
-              value={character.mindset}
-              onChange={e => onUpdateField('mindset', e.target.value)}
-              placeholder="คิดเป็นระบบ วิเคราะห์ความเสี่ยงตลอดเวลา ควบคุมอารมณ์ได้ดีในสถานการณ์วิกฤต"
-              className="form-input"
-            />
-          </FieldRow>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <ExpandableTextarea
+                id="coreBelief"
+                label="1. ความเชื่อฝังใจ (Core Belief)"
+                rows={3}
+                value={character.coreBelief}
+                onChange={v => onUpdateField('coreBelief', v)}
+                placeholder="ความแข็งแกร่งเท่านั้นที่ปกป้องสิ่งสำคัญได้"
+              />
 
-          <FieldRow label="3. Perception: การตีความโลกและเจตนาของ {{user}}" htmlFor="perception">
-            <input
-              id="perception"
-              type="text"
-              value={character.perception}
-              onChange={e => onUpdateField('perception', e.target.value)}
-              placeholder="ระแวงทุกคน แต่กับ {{user}} จะพยายามอดทน แม้บางครั้งจะขี้หึงจนควบคุมตัวเองยาก"
-              className="form-input"
-            />
-          </FieldRow>
+              <ExpandableTextarea
+                id="mindset"
+                label="2. กระบวนการคิด (Mindset)"
+                rows={3}
+                value={character.mindset}
+                onChange={v => onUpdateField('mindset', v)}
+                placeholder="วิเคราะห์สถานการณ์ด้วยเหตุผล ไม่ใช้อารมณ์ตัดสิน"
+              />
 
-          <FieldRow label="4. Expression: รูปแบบการสื่อสารและน้ำเสียง" htmlFor="expression">
-            <input
-              id="expression"
-              type="text"
-              value={character.expression}
-              onChange={e => onUpdateField('expression', e.target.value)}
-              placeholder='สรรพนาม: "ฉัน" | เรียก User: "เธอ/เด็กดื้อ" | น้ำเสียง: นิ่งทุ้ม เย็นชา | คำติดปาก: "อย่าให้ต้องพูดซ้ำ"'
-              className="form-input"
-            />
-          </FieldRow>
+              <ExpandableTextarea
+                id="perception"
+                label="3. มุมมองต่อโลกและผู้คน"
+                rows={3}
+                value={character.perception}
+                onChange={v => onUpdateField('perception', v)}
+                placeholder="โลกนี้โหดร้าย ทุกคนมีเจตนาแอบแฝง"
+              />
 
-          <FieldRow label="5. Behavior: พฤติกรรมทางกายภาพตามอารมณ์ (เขิน/โกรธ/ใคร่)" htmlFor="behaviorUnderEmotion">
-            <input
-              id="behaviorUnderEmotion"
-              type="text"
-              value={character.behaviorUnderEmotion}
-              onChange={e => onUpdateField('behaviorUnderEmotion', e.target.value)}
-              placeholder="เขิน: เบือนหน้าหนีแล้วแกล้งจุดบุหรี่สูบ | โกรธ: นิ่งเงียบ แววตามืดสนิท | ใคร่: กัดริมฝีปากล่าง หายใจหนักหน่วง"
-              className="form-input"
-            />
-          </FieldRow>
+              <ExpandableTextarea
+                id="expression"
+                label="4. วิธีแสดงออก (Expression)"
+                rows={3}
+                value={character.expression}
+                onChange={v => onUpdateField('expression', v)}
+                placeholder="นิ่งสงบ ไม่แสดงความกลัวหรือความอ่อนแอออกมา"
+              />
 
-          <FieldRow label="6. Emotional Triggers: สิ่งที่กระตุ้นอารมณ์รุนแรง" htmlFor="emotionalTriggers">
-            <input
-              id="emotionalTriggers"
-              type="text"
-              value={character.emotionalTriggers}
-              onChange={e => onUpdateField('emotionalTriggers', e.target.value)}
-              placeholder="{{user}} บาดเจ็บหรือมีใครคิดแย่ง {{user}} ไป | สิ่งที่ทำให้เปิดใจ: {{user}} กอดจากข้างหลัง"
-              className="form-input"
-            />
-          </FieldRow>
+              <ExpandableTextarea
+                id="behaviorUnderEmotion"
+                label="5. พฤติกรรมเมื่อเกิดอารมณ์รุนแรง"
+                rows={3}
+                value={character.behaviorUnderEmotion}
+                onChange={v => onUpdateField('behaviorUnderEmotion', v)}
+                placeholder="ยิ่งโกรธจะยิ่งเงียบและสุขุม แต่สายตาจะดุดันน่ากลัว"
+              />
 
-          <FieldRow label="7. Flaws & Weaknesses: จุดอ่อนและปมในใจ" htmlFor="flawsWeaknesses">
-            <input
+              <ExpandableTextarea
+                id="emotionalTriggers"
+                label="6. จุดเปราะบางทางอารมณ์ (Triggers)"
+                rows={3}
+                value={character.emotionalTriggers}
+                onChange={v => onUpdateField('emotionalTriggers', v)}
+                placeholder="เมื่อ {{user}} ตกอยู่ในอันตราย หรือถูกทำร้าย"
+              />
+            </div>
+
+            <ExpandableTextarea
               id="flawsWeaknesses"
-              type="text"
+              label="7. ข้อเสียและจุดอ่อน (Flaws & Weaknesses)"
+              rows={3}
               value={character.flawsWeaknesses}
-              onChange={e => onUpdateField('flawsWeaknesses', e.target.value)}
-              placeholder="กลัว {{user}} จะรังเกียจตัวตนด้านมืด และกลัวการสูญเสียจนกลายเป็นคนครอบงำ (Possessive)"
-              className="form-input"
+              onChange={v => onUpdateField('flawsWeaknesses', v)}
+              placeholder="หึงหวงรุนแรง ควบคุมอารมณ์ยากเมื่อเกี่ยวกับ {{user}} ไม่ยอมรับความช่วยเหลือจากใครง่ายๆ"
             />
-          </FieldRow>
+          </div>
         </FormSection>
 
-        {/* 5. ความสัมพันธ์กับ user */}
+        {/* 4. ความสัมพันธ์กับ {{user}} */}
         <FormSection
           id="sec-relationship"
-          title="5. ความสัมพันธ์กับ {{user}} (Relationship & Lore)"
-          icon={<span>🔗</span>}
-          description="บทบาทของ User, ความสัมพันธ์เริ่มต้น, ภูมิหลัง และทัศนคติ"
+          title="4. ความสัมพันธ์กับ {{user}} (Relationship)"
+          icon={<span>💞</span>}
+          description="บทบาทในเรื่อง, ปูมหลัง, สถานะเริ่มต้น และทัศนคติที่มีต่อ {{user}}"
           defaultOpen={false}
         >
-          <FieldRow label="บทบาทของ {{user}} ในเนื้อเรื่อง (Story Role)" htmlFor="userStoryRole">
-            <input
-              id="userStoryRole"
-              type="text"
-              value={character.userStoryRole}
-              onChange={e => onUpdateField('userStoryRole', e.target.value)}
-              placeholder="พยานปากเอกในคดีอันตรายที่ต้องมาอยู่ใต้การคุ้มครองในเพนต์เฮาส์"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="userStoryRole"
+            label="บทบาทของ {{user}} ในสายตาตัวละคร"
+            rows={3}
+            value={character.userStoryRole}
+            onChange={v => onUpdateField('userStoryRole', v)}
+            placeholder="เป็นลูกหนี้ที่ต้องชดใช้ด้วยร่างกาย / เป็นแฟนเก่าที่กลับมาเจอกัน / เป็นเลขาคนโปรด"
+          />
 
-          <FieldRow label="ความสัมพันธ์เริ่มต้น" htmlFor="initialRelationship">
+          <FieldRow label="สถานะความสัมพันธ์เริ่มต้น" htmlFor="initialRelationship">
             <input
               id="initialRelationship"
               type="text"
               value={character.initialRelationship}
               onChange={e => onUpdateField('initialRelationship', e.target.value)}
-              placeholder="คนแปลกหน้าที่ต้องพึ่งพาอาศัยกัน คชาทำตัวเย็นชาแต่คอยจับตาปกป้อง"
+              placeholder="เจ้าหนี้กับลูกหนี้ / คนแปลกหน้าที่ต้องแต่งงานกัน"
               className="form-input"
             />
           </FieldRow>
 
-          <FieldRow label="ทัศนคติที่เขามีต่อ {{user}}" htmlFor="userAttitude">
-            <input
-              id="userAttitude"
-              type="text"
-              value={character.userAttitude}
-              onChange={e => onUpdateField('userAttitude', e.target.value)}
-              placeholder="มองว่าเป็นสิ่งล้ำค่าชิ้นเดียวในชีวิตที่พร้อมจะแลกด้วยทุกสิ่งเพื่อปกป้องไว้"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="relationshipBackstory"
+            label="ปูมหลังความสัมพันธ์ (Backstory)"
+            hint="เล่าเหตุการณ์ในอดีตที่ผูกพันกัน"
+            rows={5}
+            value={character.relationshipBackstory}
+            onChange={v => onUpdateField('relationshipBackstory', v)}
+            placeholder="ทั้งสองเคยรู้จักกันในวัยเด็ก ก่อนที่ฝ่ายชายจะหายตัวไปและกลับมาในฐานะหัวหน้าแก๊ง..."
+          />
 
-          <FieldRow label="ภูมิหลังความสัมพันธ์ (Backstory & Lore)" htmlFor="relationshipBackstory">
-            <textarea
-              id="relationshipBackstory"
-              rows={3}
-              value={character.relationshipBackstory}
-              onChange={e => onUpdateField('relationshipBackstory', e.target.value)}
-              placeholder="คชาเคยสูญเสียคนสำคัญในอดีตทำให้ปิดตายหัวใจ จนได้พบกับความจริงใจของ {{user}} ที่ค่อยๆ สลายกำแพงน้ำแข็ง..."
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="userAttitude"
+            label="ทัศนคติที่มีต่อ {{user}} (Attitude)"
+            rows={4}
+            value={character.userAttitude}
+            onChange={v => onUpdateField('userAttitude', v)}
+            placeholder="มองว่า {{user}} เป็นคนดื้อรั้นแต่น่ารัก อยากปกป้องและอยากครอบครองไว้คนเดียว"
+          />
         </FormSection>
 
-        {/* 6. ขอบเขต & Logic ขั้นเด็ดขาด */}
+        {/* 5. ขอบเขตและ Logic ขั้นเด็ดขาด */}
         <FormSection
-          id="sec-boundaries"
-          title="6. ขอบเขต & Logic ขั้นเด็ดขาด (Rules & Boundaries)"
+          id="sec-rules"
+          title="5. ขอบเขตและ Logic ขั้นเด็ดขาด (Rules & Logic)"
           icon={<span>🛡️</span>}
-          description="สิ่งที่จะไม่ทำเด็ดขาด, มุมอ่อนโยน, ด้านมืด, กฎข้อห้ามระบบ"
+          description="พฤติกรรมที่ห้ามทำเด็ดขาด, มุมอ่อนโยน, ด้านมืด และกฎระบบ"
           defaultOpen={false}
+          badge={character.systemRules.length}
         >
-          <FieldRow label="1. สิ่งที่จะไม่ทำเด็ดขาด (Absolute Anti-Behaviors)" htmlFor="absoluteAntiBehaviors">
-            <textarea
-              id="absoluteAntiBehaviors"
-              rows={2}
-              value={character.absoluteAntiBehaviors}
-              onChange={e => onUpdateField('absoluteAntiBehaviors', e.target.value)}
-              placeholder="1. จะไม่มีวันทำร้ายร่างกายหรือบังคับขืนใจ {{user}} เด็ดขาด\n2. จะไม่ยอมให้ใครมาแตะต้อง {{user}}"
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="absoluteAntiBehaviors"
+            label="พฤติกรรมที่ห้ามทำเด็ดขาด (Anti-Behaviors) *"
+            hint="เช่น ห้ามทำร้าย {{user}}, ห้ามร้องไห้ต่อหน้าศัตรู"
+            rows={4}
+            value={character.absoluteAntiBehaviors}
+            onChange={v => onUpdateField('absoluteAntiBehaviors', v)}
+            placeholder="ห้ามทำร้ายร่างกาย {{user}} โดยเด็ดขาด, ห้ามยอมก้มหัวให้ใคร, ห้ามยอมแพ้ต่อแรงกดดัน"
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FieldRow label="2. ด้านน่ารัก / มุมอ่อนโยนที่ซ่อนอยู่ (Hidden Soft Side)" htmlFor="hiddenSoftSide">
-              <textarea
-                id="hiddenSoftSide"
-                rows={2}
-                value={character.hiddenSoftSide}
-                onChange={e => onUpdateField('hiddenSoftSide', e.target.value)}
-                placeholder="เวลา {{user}} หลับ จะชอบลูบผมเบาๆ จูบหน้าผาก และดึงผ้าห่มขึ้นมาคลุมให้"
-                className="form-input resize-none"
-              />
-            </FieldRow>
+          <ExpandableTextarea
+            id="hiddenSoftSide"
+            label="มุมอ่อนโยนที่ซ่อนไว้ (Hidden Soft Side)"
+            rows={4}
+            value={character.hiddenSoftSide}
+            onChange={v => onUpdateField('hiddenSoftSide', v)}
+            placeholder="เมื่ออยู่กับ {{user}} สองต่อสองจะชอบนอนหนุนตัก ลูบผมเบาๆ และพูดด้วยน้ำเสียงนุ่มนวล"
+          />
 
-            <FieldRow label="3. ด้านมืด (The Dark Side)" htmlFor="darkSide">
-              <textarea
-                id="darkSide"
-                rows={2}
-                value={character.darkSide}
-                onChange={e => onUpdateField('darkSide', e.target.value)}
-                placeholder="พร้อมจะทำลายล้างทุกคนหรือองค์กรใดก็ตามที่กล้าแตะต้องคนของเขาอย่างไร้ความปรานี"
-                className="form-input resize-none"
-              />
-            </FieldRow>
-          </div>
+          <ExpandableTextarea
+            id="darkSide"
+            label="ด้านมืด / ความดิบเถื่อน (Dark Side)"
+            rows={4}
+            value={character.darkSide}
+            onChange={v => onUpdateField('darkSide', v)}
+            placeholder="พร้อมที่จะทำลายทุกคนที่คิดจะแตะต้องหรือพราก {{user}} ไปจากเขา"
+          />
 
-          <FieldRow label="กฎข้อบังคับ System Prompt Rules (Directives)" htmlFor="systemRules">
+          <FieldRow label="กฎระบบ & ข้อห้ามสำหรับ AI" htmlFor="systemRules" hint="พิมพ์แล้วกด Enter">
             <TagInput
               id="systemRules"
               field="systemRules"
               tags={character.systemRules}
-              placeholder="เช่น ห้ามบรรยายแทน User, ห้ามหลุดคาแรคเตอร์..."
+              placeholder="เช่น #ห้ามพูดแทนUser #เน้นบทสนทนาโต้ตอบ #ใช้ภาษาไทยสุภาพผสมดิบ..."
               onAdd={onAddTag}
               onRemove={onRemoveTag}
             />
           </FieldRow>
         </FormSection>
 
-        {/* 7. พฤติกรรมทางเพศและบนเตียง */}
+        {/* 6. พฤติกรรมทางเพศและบนเตียง */}
         <FormSection
-          id="sec-sexual"
-          title="7. พฤติกรรมทางเพศและบนเตียง (Sexual Behavior)"
+          id="sec-nsfw-bed"
+          title="6. พฤติกรรมทางเพศและบนเตียง (Bedroom & NSFW)"
           icon={<span>🔥</span>}
-          description="สไตล์, Kinks / Preferences, Aftercare"
+          description="ลีลา, Kinks, Aftercare และบทสนทนาบนเตียง"
           defaultOpen={false}
         >
-          <FieldRow label="สไตล์และแนวทาง (Sexual Style)" htmlFor="sexualStyle">
-            <input
-              id="sexualStyle"
-              type="text"
-              value={character.sexualStyle}
-              onChange={e => onUpdateField('sexualStyle', e.target.value)}
-              placeholder="ดุดัน ร้อนแรง ครอบงำ (Dominant / Possessive) แต่ใส่ใจความปลอดภัยของคู่นอน"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="sexualStyle"
+            label="ลีลาและบทบาทบนเตียง (Sexual Style)"
+            rows={4}
+            value={character.sexualStyle}
+            onChange={v => onUpdateField('sexualStyle', v)}
+            placeholder="ดุดัน เผด็จการ ชอบควบคุมจังหวะทั้งหมด แต่คอยมองสีหน้าและฟังเสียงครางของ {{user}} ตลอดเวลา"
+          />
 
-          <FieldRow label="รสนิยมจำเพาะ (Kinks / Preferences)" htmlFor="kinksPreferences">
-            <input
-              id="kinksPreferences"
-              type="text"
-              value={character.kinksPreferences}
-              onChange={e => onUpdateField('kinksPreferences', e.target.value)}
-              placeholder="Overstimulation, กัดทำรอยตามซอกคอ, พันธนาการมือ, Praise kink"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="kinksPreferences"
+            label="รสนิยมเฉพาะตัว / Kinks & Fetishes"
+            rows={4}
+            value={character.kinksPreferences}
+            onChange={v => onUpdateField('kinksPreferences', v)}
+            placeholder="ชอบกัดต้นคอทำรอย, ชอบจับข้อมือล็อกไว้เหนือหัว, Dirty Talk ด้วยเสียงกระซิบต่ำ"
+          />
 
-          <FieldRow label="การดูแลหลังกิจกรรม (Aftercare Style)" htmlFor="aftercareStyle">
-            <input
-              id="aftercareStyle"
-              type="text"
-              value={character.aftercareStyle}
-              onChange={e => onUpdateField('aftercareStyle', e.target.value)}
-              placeholder="โอบกอดแน่น อุ้มไปอาบน้ำอุ่น เช็ดตัว ทายา และนอนกอดจนถึงเช้า"
-              className="form-input"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="aftercareStyle"
+            label="การดูแลหลังเสร็จกิจ (Aftercare Style)"
+            rows={4}
+            value={character.aftercareStyle}
+            onChange={v => onUpdateField('aftercareStyle', v)}
+            placeholder="ดึงตัว {{user}} เข้ามากอดแนบอก เช็ดเหงื่อ จูบซับหน้าผาก และเตรียมน้ำดื่มให้"
+          />
         </FormSection>
 
-        {/* 8. สถานที่ในเรื่อง */}
+        {/* 7. Lifestyle */}
+        <FormSection
+          id="sec-lifestyle"
+          title="7. Lifestyle & กิจวัตรประจำวัน"
+          icon={<span>☕</span>}
+          description="ตารางชีวิต, งานอดิเรก และกิจกรรมยามว่าง"
+          defaultOpen={false}
+        >
+          <ExpandableTextarea
+            id="dailyRoutine"
+            label="กิจวัตรประจำวัน (Daily Routine)"
+            rows={4}
+            value={character.dailyRoutine}
+            onChange={v => onUpdateField('dailyRoutine', v)}
+            placeholder="ตื่นเช้า 05:30 ออกกำลังกาย / ดื่มกาแฟดำ / ทำงานในห้องทำงานลับ / กลับ Penthouse ตอนค่ำ"
+          />
+        </FormSection>
+
+        {/* 8. ฉากหลัง & สถานที่ */}
         <FormSection
           id="sec-locations"
-          title={`8. สถานที่ในเรื่อง (Locations — ${character.locations.length}/10)`}
+          title="8. ฉากหลัง & สถานที่ (Tone & Locations)"
           icon={<span>📍</span>}
-          description="ระบุสถานที่สำคัญในเรื่อง พร้อม Prompt สั้นกระชับ ไม่พรรณนา (Max 10 แห่ง)"
+          description="บรรยากาศของเรื่อง และสถานที่สำคัญ (สูงสุด 10 สถานที่)"
           defaultOpen={false}
           badge={character.locations.length}
         >
-          <div className="space-y-2.5">
+          <ExpandableTextarea
+            id="toneSetting"
+            label="โทนเรื่องและบรรยากาศ (Tone & Setting)"
+            rows={3}
+            value={character.toneSetting}
+            onChange={v => onUpdateField('toneSetting', v)}
+            placeholder="มาเฟียโรแมนติก ดาร์ก ดราม่า ตึงเครียด สลับกับความหวานซ่อนเปรี้ยว"
+          />
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground">
+                สถานที่ในเรื่อง ({character.locations.length}/10)
+              </span>
+              {character.locations.length < 10 && (
+                <button
+                  type="button"
+                  onClick={() => onAddLocation()}
+                  className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  + เพิ่มสถานที่
+                </button>
+              )}
+            </div>
+
             {character.locations.map((loc, idx) => (
-              <div key={loc.id} className="p-3 rounded-lg border border-border bg-muted/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">
-                    สถานที่ #{idx + 1}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveLocation(idx)}
-                    className="text-[11px] text-rose-500 hover:text-rose-600 hover:underline cursor-pointer"
-                  >
-                    ลบสถานที่
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={loc.name}
-                    onChange={e => onUpdateLocation(idx, { name: e.target.value })}
-                    placeholder="ชื่อสถานที่ เช่น Penthouse ชั้น 52"
-                    className="form-input text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={loc.prompt}
-                    onChange={e => onUpdateLocation(idx, { prompt: e.target.value })}
-                    placeholder="Prompt สถานที่ (สั้นๆ กระชับ ไม่พรรณนา)"
-                    className="form-input text-xs"
-                  />
+              <div key={loc.id || idx} className="p-3 rounded-xl border border-border bg-muted/20 space-y-2 relative">
+                <button
+                  type="button"
+                  onClick={() => onRemoveLocation(idx)}
+                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
+                >
+                  ✕
+                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pr-6">
+                  <FieldRow label={'ชื่อสถานที่ #' + (idx + 1)} htmlFor={'loc-name-' + idx}>
+                    <input
+                      id={'loc-name-' + idx}
+                      type="text"
+                      value={loc.name}
+                      onChange={e => onUpdateLocation(idx, { name: e.target.value })}
+                      placeholder="เช่น Penthouse หรู"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
+                  <FieldRow label="Prompt บรรยายสถานที่ (สั้น กระชับ)" htmlFor={'loc-prompt-' + idx}>
+                    <input
+                      id={'loc-prompt-' + idx}
+                      type="text"
+                      value={loc.prompt}
+                      onChange={e => onUpdateLocation(idx, { prompt: e.target.value })}
+                      placeholder="ห้องกว้าง วิวเมืองกระจกบานใหญ่ เฟอร์นิเจอร์สีดำ แสงสลัว"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
                 </div>
               </div>
             ))}
-
-            {character.locations.length < 10 && (
-              <button
-                type="button"
-                onClick={() => onAddLocation()}
-                className="w-full py-2 rounded-lg border border-dashed border-border hover:border-primary/50 text-xs font-medium text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <span>+</span> เพิ่มสถานที่ ({character.locations.length}/10)
-              </button>
-            )}
           </div>
         </FormSection>
 
         {/* 9. ตัวละครเสริม */}
         <FormSection
           id="sec-subchars"
-          title={`9. ตัวละครเสริม (Supporting Cast — ${character.supportingCharacters.length}/5)`}
+          title="9. ตัวละครเสริม (Supporting Characters)"
           icon={<span>👥</span>}
-          description="ตัวละครสมทบ 1-5 ตัว พร้อมคำอธิบาย 0/500 และ System Prompt 0/750"
+          description="จัดการตัวละครเสริมในเรื่อง (สูงสุด 5 ตัว)"
           defaultOpen={false}
           badge={character.supportingCharacters.length}
         >
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ExpandableTextarea
+              id="subCharRules"
+              label="กฎการควบคุมตัวละครเสริม (Sub-char Rules)"
+              rows={3}
+              value={character.subCharRules}
+              onChange={v => onUpdateField('subCharRules', v)}
+              placeholder="ห้ามแย่งซีนตัวหลัก, เปลี่ยนบุคลิกกะทันหัน..."
+            />
+            <ExpandableTextarea
+              id="subCharAllowed"
+              label="สิ่งที่ตัวละครเสริมทำได้ (Allowed Actions)"
+              rows={3}
+              value={character.subCharAllowed}
+              onChange={v => onUpdateField('subCharAllowed', v)}
+              placeholder="อยู่ในบทสนทนาหลักได้, ช่วยดำเนินเรื่องเมื่อถึงจุดตัน..."
+            />
+          </div>
+
+          <div className="space-y-3 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground">
+                รายชื่อตัวละครเสริม ({character.supportingCharacters.length}/5)
+              </span>
+              {character.supportingCharacters.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => onAddSubCharacter()}
+                  className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  + เพิ่มตัวละครเสริม
+                </button>
+              )}
+            </div>
+
             {character.supportingCharacters.map((sub, idx) => (
-              <div key={sub.id} className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <span>👤</span> ตัวละครเสริม #{idx + 1}: {sub.name || 'ยังไม่ระบุชื่อ'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveSubCharacter(idx)}
-                    className="text-[11px] text-rose-500 hover:text-rose-600 hover:underline cursor-pointer"
-                  >
-                    ลบตัวละครนี้
-                  </button>
-                </div>
+              <div key={sub.id || idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3 relative">
+                <button
+                  type="button"
+                  onClick={() => onRemoveSubCharacter(idx)}
+                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
+                >
+                  ✕
+                </button>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <input
-                    type="text"
-                    value={sub.name}
-                    onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
-                    placeholder="ชื่อตัวละครเสริม *"
-                    className="form-input text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={sub.gender}
-                    onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
-                    placeholder="เพศ"
-                    className="form-input text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={sub.age}
-                    onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
-                    placeholder="อายุ"
-                    className="form-input text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={sub.personality}
-                    onChange={e => onUpdateSubCharacter(idx, { personality: e.target.value })}
-                    placeholder="บุคลิกเด่นหลักๆ"
-                    className="form-input text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={sub.relationship}
-                    onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
-                    placeholder="ความสัมพันธ์กับ {{user}}/{{char}}"
-                    className="form-input text-xs"
-                  />
+                <div className="grid grid-cols-3 gap-2 pr-6">
+                  <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
+                    <input
+                      id={'sub-name-' + idx}
+                      type="text"
+                      value={sub.name}
+                      onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
+                      placeholder="เช่น ธันวา"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
+                  <FieldRow label="เพศ" htmlFor={'sub-gender-' + idx}>
+                    <input
+                      id={'sub-gender-' + idx}
+                      type="text"
+                      value={sub.gender}
+                      onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
+                      placeholder="ชาย"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
+                  <FieldRow label="อายุ" htmlFor={'sub-age-' + idx}>
+                    <input
+                      id={'sub-age-' + idx}
+                      type="text"
+                      value={sub.age}
+                      onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
+                      placeholder="30 ปี"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={sub.mainRole}
-                    onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
-                    placeholder="หน้าที่หลักในเรื่อง"
-                    className="form-input text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={sub.appearWhen}
-                    onChange={e => onUpdateSubCharacter(idx, { appearWhen: e.target.value })}
-                    placeholder="ปรากฏเมื่อ / ความถี่"
-                    className="form-input text-xs"
-                  />
+                  <FieldRow label="ความสัมพันธ์กับตัวหลัก" htmlFor={'sub-rel-' + idx}>
+                    <input
+                      id={'sub-rel-' + idx}
+                      type="text"
+                      value={sub.relationship}
+                      onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
+                      placeholder="มือขวาคนสนิท"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
+                  <FieldRow label="บทบาทหลักในเรื่อง" htmlFor={'sub-role-' + idx}>
+                    <input
+                      id={'sub-role-' + idx}
+                      type="text"
+                      value={sub.mainRole}
+                      onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
+                      placeholder="คอยรับคำสั่งและรายงานสถานการณ์"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">คำอธิบายแสดงในหน้ารายละเอียด</span>
-                    <span className={sub.shortDesc.length > 500 ? 'text-rose-500 font-bold' : 'text-muted-foreground'}>
-                      {sub.shortDesc.length}/500
-                    </span>
-                  </div>
-                  <textarea
-                    rows={2}
-                    value={sub.shortDesc}
-                    onChange={e => onUpdateSubCharacter(idx, { shortDesc: e.target.value })}
-                    placeholder="คำอธิบายสั้นๆ สำหรับแสดงในหน้ารายละเอียดตัวละคร..."
-                    className="form-input text-xs resize-none"
-                  />
-                </div>
+                <ExpandableTextarea
+                  id={'sub-shortDesc-' + idx}
+                  label="คำบรรยายตัวละครเสริม (สั้นกระชับ 0/500)"
+                  rows={3}
+                  charLimit={500}
+                  value={sub.shortDesc}
+                  onChange={v => onUpdateSubCharacter(idx, { shortDesc: v })}
+                  placeholder="ชายหนุ่มร่างสูง สวมสูทดำ นิ่งขรึม ภักดีต่อคิงสูงสุด..."
+                />
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">บทบาทและตัวตน (System Prompt for subchar)</span>
-                    <span className={sub.systemPrompt.length > 750 ? 'text-rose-500 font-bold' : 'text-muted-foreground'}>
-                      {sub.systemPrompt.length}/750
-                    </span>
-                  </div>
-                  <textarea
-                    rows={2}
-                    value={sub.systemPrompt}
-                    onChange={e => onUpdateSubCharacter(idx, { systemPrompt: e.target.value })}
-                    placeholder="บทบาทและตัวตนคำสั่ง prompt สำหรับตัวละครนี้..."
-                    className="form-input text-xs resize-none"
-                  />
-                </div>
+                <ExpandableTextarea
+                  id={'sub-sysPrompt-' + idx}
+                  label="System Prompt สำหรับควบคุมตัวละครเสริม (0/750)"
+                  rows={4}
+                  charLimit={750}
+                  value={sub.systemPrompt}
+                  onChange={v => onUpdateSubCharacter(idx, { systemPrompt: v })}
+                  placeholder="[Character: ธันวา] หน้าที่: มือขวา จงปฏิบัติตามคำสั่งของคิงอย่างเคร่งครัด..."
+                />
               </div>
             ))}
-
-            {character.supportingCharacters.length < 5 && (
-              <button
-                type="button"
-                onClick={() => onAddSubCharacter()}
-                className="w-full py-2 rounded-lg border border-dashed border-border hover:border-primary/50 text-xs font-medium text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <span>+</span> เพิ่มตัวละครเสริม ({character.supportingCharacters.length}/5)
-              </button>
-            )}
           </div>
         </FormSection>
 
-        {/* 10. คำโปรย, หมวดหมู่ & ฉากเปิด */}
+        {/* 10. คำโปรย & บทนำ */}
         <FormSection
-          id="sec-intro-greeting"
-          title="10. คำโปรย & ฉากเปิด (Intro, Moment & Greeting)"
-          icon={<span>✨</span>}
-          description="คำโปรยสั้นๆ, ประโยคเด็ด, โมเมนต์ Rubii, หมวดหมู่, และฉากเปิด Open Greeting"
+          id="sec-pitches"
+          title="10. คำโปรย & บทนำ / ฉากเปิด (Greeting & Pitch)"
+          icon={<span>📢</span>}
+          description="Short Intro, Punchline, เรื่องย่อ และบทนำฉากเปิดตัวละคร"
           defaultOpen={false}
+          badge={character.categoryTags.length}
         >
-          <FieldRow label="คำโปรยสั้นๆ (Short Intro)" htmlFor="shortIntro" hint="ไม่เกิน 500 ตัวอักษร">
-            <textarea
-              id="shortIntro"
-              rows={2}
-              value={character.shortIntro}
-              onChange={e => onUpdateField('shortIntro', e.target.value)}
-              placeholder="แนะนำตัวละครนี้สั้นๆ ให้น่าสนใจ..."
-              className="form-input resize-none"
-            />
-          </FieldRow>
+          <ExpandableTextarea
+            id="shortIntro"
+            label="คำโปรยสั้น (Short Intro - 0/500)"
+            rows={3}
+            charLimit={500}
+            value={character.shortIntro}
+            onChange={v => onUpdateField('shortIntro', v)}
+            placeholder="เมื่อลูกหนี้ตัวน้อยต้องมาชดใช้หนี้ด้วยการเป็นเลขาข้างกายมาเฟียหนุ่มสุดเย็นชา..."
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FieldRow label="ประโยคเด็ด (Punchline)" htmlFor="punchline" hint="1 ประโยคประจำตัว">
-              <input
-                id="punchline"
-                type="text"
-                value={character.punchline}
-                onChange={e => onUpdateField('punchline', e.target.value)}
-                placeholder='"อยากหนีก็ลองดู... แต่จำไว้ว่าทุกก้าวที่เธอเดิน ยังอยู่ในสายตาฉัน"'
-                className="form-input"
-              />
-            </FieldRow>
+          <ExpandableTextarea
+            id="punchline"
+            label="ประโยคเด็ดประจำตัว (Punchline - 1 ประโยคเด็ด)"
+            rows={2}
+            value={character.punchline}
+            onChange={v => onUpdateField('punchline', v)}
+            placeholder={"'หนี้ของคุณ... ต้องจ่ายด้วยทั้งตัวและหัวใจเท่านั้น'"}
+          />
 
-            <FieldRow
-              label="สร้างโมเมนต์ Rubii (Moment Intro)"
-              htmlFor="momentIntro"
-              hint={`${character.momentIntro.length}/100 ตัวอักษร`}
-            >
-              <input
-                id="momentIntro"
-                type="text"
-                maxLength={100}
-                value={character.momentIntro}
-                onChange={e => onUpdateField('momentIntro', e.target.value)}
-                placeholder='คำโปรยสั้นๆ Max 100 ตัวอักษร...'
-                className="form-input"
-              />
-            </FieldRow>
-          </div>
+          <ExpandableTextarea
+            id="plotSummary"
+            label="พล็อตและเรื่องย่อ (Plot Summary)"
+            rows={5}
+            value={character.plotSummary}
+            onChange={v => onUpdateField('plotSummary', v)}
+            placeholder="การพบกันอีกครั้งระหว่างสองคนในสถานการณ์ที่บีบคั้น นำพาไปสู่ความสัมพันธ์อันซับซ้อน..."
+          />
 
-          <FieldRow label="แท็กสำหรับจัดหมวดหมู่เรื่องนี้ (#)" htmlFor="categoryTags">
+          <ExpandableTextarea
+            id="publicInfo"
+            label="ข้อมูลสาธารณะ (Public Info)"
+            rows={4}
+            value={character.publicInfo}
+            onChange={v => onUpdateField('publicInfo', v)}
+            placeholder="ประธานบริษัท คชา กรุ๊ป บุคคลผู้ทรงอิทธิพลที่สุดในวงการธุรกิจ"
+          />
+
+          <FieldRow label="แท็กหมวดหมู่เนื้อหา" htmlFor="categoryTags">
             <TagInput
               id="categoryTags"
               field="categoryTags"
               tags={character.categoryTags}
-              placeholder="เพิ่มแท็ก เช่น #drama #romantic #mafia #action..."
+              placeholder="เพิ่มแท็ก เช่น #มาเฟีย #โรแมนติก #ดราม่า..."
               onAdd={onAddTag}
               onRemove={onRemoveTag}
-              prefixHash={true}
             />
           </FieldRow>
 
-          <FieldRow label="ฉากเปิด (Open Greeting) *" htmlFor="fullGreeting" hint="บรรยาย Sensory/Vivid สลับบทพูด">
-            <textarea
+          <ExpandableTextarea
+            id="momentIntro"
+            label="คำแนะนำตัวสั้น (Moment Intro - 0/100)"
+            rows={2}
+            charLimit={100}
+            value={character.momentIntro}
+            onChange={v => onUpdateField('momentIntro', v)}
+            placeholder={"คชา - 'อย่าคิดจะหนีไปจากฉัน... เพราะเธอไม่มีวันทำสำเร็จ'"}
+          />
+
+          {/* Open Greetings */}
+          <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3.5">
+            <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <span>🎭</span> ฉากเปิดตัวละคร (Open Greeting)
+            </h4>
+
+            <ExpandableTextarea
+              id="openGreetingNarrative"
+              label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
+              rows={4}
+              value={character.openGreetingNarrative}
+              onChange={v => onUpdateField('openGreetingNarrative', v)}
+              placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ..."
+            />
+
+            <ExpandableTextarea
+              id="openGreetingDialogue"
+              label="บทพูดเปิดตัว (Dialogue)"
+              rows={3}
+              value={character.openGreetingDialogue}
+              onChange={v => onUpdateField('openGreetingDialogue', v)}
+              placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
+            />
+
+            <ExpandableTextarea
               id="fullGreeting"
-              rows={5}
+              label="ฉากเปิดรวมทั้งหมด (Full Open Greeting) *"
+              hint="ฉากเริ่มต้นเมื่อผู้ใช้เริ่มเปิดการสนทนา"
+              rows={7}
               value={character.fullGreeting}
-              onChange={e => onUpdateField('fullGreeting', e.target.value)}
-              placeholder={`แสงไฟนีออนสีแดงจากตึกระฟ้าสะท้อนผ่านกระจกบานใหญ่ของเพนต์เฮาส์...
-
-"ดึกขนาดนี้แล้ว... ยังไม่ยอมนอนอีกงั้นเหรอ?" น้ำเสียงทุ้มต่ำเย็นเยียบเอ่ยขึ้น`}
-              className="form-input resize-none"
+              onChange={v => onUpdateField('fullGreeting', v)}
+              placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
             />
-          </FieldRow>
+          </div>
         </FormSection>
       </div>
     </div>
