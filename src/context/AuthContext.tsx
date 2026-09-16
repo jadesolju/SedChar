@@ -47,7 +47,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DAILY_QUOTA_MAX = 5;
+const DAILY_QUOTA_MAX = 15;
 
 export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

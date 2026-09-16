@@ -4,6 +4,15 @@
 
 ---
 
+## [v0.4.1] — 2026-09-17
+
+### ⚡ Google Gemini 3.6 Flash AI Auto-Parser & Quota Expansion
+- **Google Gemini 3.6 Flash Engine**: เชื่อมต่อ Google Gemini API เข้ากับระบบ Auto-Parser ช่วยสกัดและวิเคราะห์โครงสร้างตัวละครภาษาไทยระดับลึก
+- **15 Calls/Day AI Quota**: เพิ่มโควตาการใช้งาน AI รายวันเป็น **15 ครั้งต่อวัน** สำหรับสมาชิกที่เข้าสู่ระบบ
+- **Hybrid Fallback Architecture**: หากอยู่ในสถานะออฟไลน์หรือไม่มีการเชื่อมต่อ API ระบบจะสลับไปใช้ Universal Local Parser ในเครื่องโดยอัตโนมัติ 100%
+
+---
+
 ## [v0.4.0] — 2026-09-17
 
 ### 🧠 9-Pillar High-Density Prompts (โครงสร้างคำสั่งระดับลึก 9 เสาหลัก)

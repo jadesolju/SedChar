@@ -159,6 +159,12 @@ export function useCharacterData() {
     setRawMarkdown(text);
   }, []);
 
+  // Direct parsed character setter from Gemini AI
+  const applyParsedCharacter = useCallback((parsedChar: ThaiMasterCharacter) => {
+    setCharacter(parsedChar);
+    setRawMarkdown(characterToFullMarkdown(parsedChar));
+  }, []);
+
   // Keep rawMarkdown in sync when switching to single mode
   const syncToMarkdown = useCallback(() => {
     setRawMarkdown(characterToFullMarkdown(character));
@@ -184,6 +190,7 @@ export function useCharacterData() {
     loadSample,
     resetCharacter,
     importRawMarkdown,
+    applyParsedCharacter,
     syncToMarkdown,
   };
 }

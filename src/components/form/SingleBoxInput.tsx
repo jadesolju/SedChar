@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import type { ThaiMasterCharacter } from '@/shared/types';
 
 interface SingleBoxInputProps {
   rawMarkdown: string;
   onChangeRaw: (text: string) => void;
   onApplyParse: (text: string) => void;
+  onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
   onLoadSample: () => void;
   onClear: () => void;
 }
@@ -14,6 +16,7 @@ export function SingleBoxInput({
   rawMarkdown,
   onChangeRaw,
   onApplyParse,
+  onApplyParsedCharacter,
   onLoadSample,
   onClear,
 }: SingleBoxInputProps) {
@@ -22,6 +25,7 @@ export function SingleBoxInput({
   const [copied, setCopied] = useState(false);
   const [parseNotice, setParseNotice] = useState<string | null>(null);
   const [quotaWarning, setQuotaWarning] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,7 +74,7 @@ export function SingleBoxInput({
     } catch {}
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!rawMarkdown.trim()) return;
 
     if (!user) {
@@ -84,15 +88,44 @@ export function SingleBoxInput({
       return;
     }
 
-    const ok = consumeQuota();
-    if (ok) {
-      onApplyParse(rawMarkdown);
-      setParseNotice('⚡ ซิงค์ข้อมูลเข้า Form สำเร็จ! (ใช้สิทธิ์ AI สำเร็จ เหลือ ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
-      setTimeout(() => setParseNotice(null), 3500);
-      if (isFullscreen) {
-        setIsFullscreen(false);
+    setIsParsing(true);
+
+    try {
+      // 1. Try Google Gemini API Endpoint
+      const res = await fetch('/api/ai/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawText: rawMarkdown }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.character) {
+          if (onApplyParsedCharacter) {
+            onApplyParsedCharacter(data.character);
+          } else {
+            onApplyParse(rawMarkdown);
+          }
+          consumeQuota();
+          const modelTag = data.model === 'gemini-1.5-flash' ? 'Google Gemini AI ⚡' : 'Universal Parser ⚡';
+          setParseNotice('✨ ซิงค์ข้อมูลเข้า Form ด้วย ' + modelTag + ' สำเร็จ! (เหลือโควตา ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
+          setTimeout(() => setParseNotice(null), 4000);
+          if (isFullscreen) setIsFullscreen(false);
+          setIsParsing(false);
+          return;
+        }
       }
+    } catch (err) {
+      console.warn('API error, falling back to local parse:', err);
     }
+
+    // Fallback: Local Client-Side Parser
+    consumeQuota();
+    onApplyParse(rawMarkdown);
+    setParseNotice('⚡ ซิงค์ข้อมูลเข้า Form สำเร็จ! (เหลือโควตา ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
+    setTimeout(() => setParseNotice(null), 3500);
+    if (isFullscreen) setIsFullscreen(false);
+    setIsParsing(false);
   };
 
   return (
@@ -102,7 +135,7 @@ export function SingleBoxInput({
         <div className="flex items-center gap-2">
           <span className="text-sm">⚡</span>
           <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-            Auto-Parser ช่องเดียวรวด
+            Auto-Parser ช่องเดียวรวด (Gemini AI)
           </h2>
           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
             Plaintext / MD / JSON / YAML
@@ -121,7 +154,7 @@ export function SingleBoxInput({
               onClick={() => openAuthModal('signin')}
               className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
             >
-              🔒 เข้าสู่ระบบเพื่อรับโควตา 5 ครั้ง/วัน
+              🔒 เข้าสู่ระบบเพื่อรับโควตา 15 ครั้ง/วัน
             </button>
           )}
 
@@ -159,7 +192,7 @@ export function SingleBoxInput({
             <span className="text-base">🔒</span>
             <div>
               <span className="font-bold text-primary">ฟีเจอร์สำหรับสมาชิก: </span>
-              <span className="text-muted-foreground">เข้าสู่ระบบเพื่อใช้งาน Auto-Parser แปลงข้อความอัตโนมัติ (รับโควตาฟรี 5 ครั้ง/วัน)</span>
+              <span className="text-muted-foreground">เข้าสู่ระบบเพื่อใช้งาน Auto-Parser แปลงข้อความอัตโนมัติด้วย Gemini AI (รับโควตาฟรี 15 ครั้ง/วัน)</span>
             </div>
           </div>
           <button
@@ -181,7 +214,7 @@ export function SingleBoxInput({
 
       {quotaWarning && (
         <div className="flex-shrink-0 px-4 py-2 bg-amber-500/15 border-b border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-between animate-in fade-in">
-          <span>⚠️ คุณใช้โควตา AI ประจำวันครบ 5 ครั้งแล้ว (ระบบจะรีเซ็ตใหม่อัตโนมัติทุกเที่ยงคืน)</span>
+          <span>⚠️ คุณใช้โควตา AI ประจำวันครบ 15 ครั้งแล้ว (ระบบจะรีเซ็ตใหม่อัตโนมัติทุกเที่ยงคืน)</span>
         </div>
       )}
 
@@ -252,11 +285,11 @@ export function SingleBoxInput({
           <button
             type="button"
             onClick={handleApply}
-            disabled={!rawMarkdown.trim()}
+            disabled={!rawMarkdown.trim() || isParsing}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            <span>✨</span>
-            <span>แปลงข้อมูลสู่ฟอร์ม (Auto-Parse & Sync)</span>
+            <span>{isParsing ? '⏳' : '✨'}</span>
+            <span>{isParsing ? 'กำลังวิเคราะห์ด้วย Gemini AI...' : 'แปลงข้อมูลสู่ฟอร์ม (Auto-Parse & Sync)'}</span>
           </button>
         </div>
       </div>
@@ -273,7 +306,7 @@ export function SingleBoxInput({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">
-                    Auto-Parser โหมดแก้ไขข้อความเต็มจอ (Fullscreen Focus Mode)
+                    Auto-Parser โหมดแก้ไขข้อความเต็มจอ (Gemini AI Enhanced)
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
                     ตรวจพบ {detectedCount}/10 หมวดหมู่ • รองรับ Plaintext / Markdown / JSON / YAML
@@ -289,11 +322,11 @@ export function SingleBoxInput({
                 <button
                   type="button"
                   onClick={handleApply}
-                  disabled={!rawMarkdown.trim()}
+                  disabled={!rawMarkdown.trim() || isParsing}
                   className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
                 >
-                  <span>✨</span>
-                  <span>แปลงข้อมูลทันที (Sync & Close)</span>
+                  <span>{isParsing ? '⏳' : '✨'}</span>
+                  <span>{isParsing ? 'กำลังวิเคราะห์...' : 'แปลงข้อมูลทันที (Sync & Close)'}</span>
                 </button>
 
                 <button

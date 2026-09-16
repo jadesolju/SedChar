@@ -33,6 +33,7 @@ function MainWorkspace() {
     loadSample,
     resetCharacter,
     importRawMarkdown,
+    applyParsedCharacter,
     syncToMarkdown,
   } = useCharacterData();
 
@@ -202,6 +203,7 @@ function MainWorkspace() {
               rawMarkdown={rawMarkdown}
               onChangeRaw={setRawMarkdown}
               onApplyParse={importRawMarkdown}
+              onApplyParsedCharacter={applyParsedCharacter}
               onLoadSample={loadSample}
               onClear={resetCharacter}
             />
