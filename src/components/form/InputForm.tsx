@@ -10,6 +10,7 @@ import { FormSection, FieldRow } from './FormSection';
 import { TagInput } from './TagInput';
 import { FlagSelector } from '@/components/ui/FlagSelector';
 import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
+import { AIAssistantModal } from './AIAssistantModal';
 
 type ArrayField =
   | 'visualTags'
@@ -20,6 +21,8 @@ type ArrayField =
   | 'categoryTags';
 
 interface InputFormProps {
+  onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
+  onShowToast?: (msg: string) => void;
   character: ThaiMasterCharacter;
   onUpdateField: <K extends keyof ThaiMasterCharacter>(field: K, value: ThaiMasterCharacter[K]) => void;
   onAddTag: (field: ArrayField, value: string) => void;
@@ -37,6 +40,8 @@ interface InputFormProps {
 }
 
 export function InputForm({
+  onApplyParsedCharacter,
+  onShowToast,
   character,
   onUpdateField,
   onAddTag,
@@ -52,6 +57,16 @@ export function InputForm({
   onLoadSample,
   onReset,
 }: InputFormProps) {
+  const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
+
+  const handleAIApply = (enhancedChar: ThaiMasterCharacter, notice: string) => {
+    if (onApplyParsedCharacter) {
+      onApplyParsedCharacter(enhancedChar);
+    }
+    if (onShowToast) {
+      onShowToast(notice);
+    }
+  };
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Top Controls Bar */}
@@ -65,6 +80,14 @@ export function InputForm({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsAIModalOpen(true)}
+            className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+          >
+            <span>✨</span>
+            <span>AI ช่วยเติมเต็มฟอร์ม</span>
+          </button>
           <button
             type="button"
             onClick={onLoadSample}
@@ -961,6 +984,14 @@ export function InputForm({
           </div>
         </FormSection>
       </div>
+    
+      {/* AI Assistant Modal */}
+      <AIAssistantModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        currentCharacter={character}
+        onApplyCharacter={handleAIApply}
+      />
     </div>
   );
 }

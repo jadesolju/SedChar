@@ -4,6 +4,18 @@
 
 ---
 
+## [v0.4.2] — 2026-09-17
+
+### ⚡ Hybrid AI Provider (Next.js Server & Client Sync) & Auto-Fill Form
+- **Instant Two-Way Form Auto-Fill**: ปรับปรุงระบบ Auto-Parser ให้ซิงค์และสลับหน้าจอเข้าสู่ **ช่องแยก 10 หมวดหมู่ (Structured Form)** ทันทีเมื่อแปลงข้อมูลสำเร็จ พร้อมระบบแจ้งเตือน Toast ยืนยันผลลัพธ์
+- **AI Form Assistant Modal (✨ ให้ AI ช่วยเติมเต็มฟอร์ม)**: เพิ่มปุ่ม AI Assistant บนแถบเครื่องมือของ InputForm สามารถเลือก:
+  1. *Auto-Fill เติมเต็มช่องว่าง*: รักษาข้อมูลเดิมที่กรอกไว้ และให้ Gemini 3.6 Flash เติมข้อมูลในหมวดที่ว่างให้ครบ 10 เสาหลัก
+  2. *Quick Parse วางข้อความดิบ*: วางข้อความจากภายนอกเพื่อให้ AI สกัดและจัดเข้าฟอร์มทันที
+  3. *Custom Tone/Persona Instructions*: ใส่คำสั่งเสริมเพื่อปรับจูนบุคลิก นิสัย และฉากเปิดตัวละคร
+- **Next.js & Node.js AI Server Architecture**: พัฒนา Backend Route `/api/ai/parse` และ `/api/ai/enhance` เชื่อมต่อ Google Gemini 3.6 Flash พร้อม Normalization และระบบ Local Universal Parser สำรองอัตโนมัติ
+
+---
+
 ## [v0.4.1] — 2026-09-17
 
 ### ⚡ Google Gemini 3.6 Flash AI Auto-Parser & Quota Expansion

@@ -1,15 +1,14 @@
 'use client';
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { AuthModal } from '@/components/auth/AuthModal';
-import { UserMenu } from '@/components/auth/UserMenu';
-import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useCharacterData } from '@/hooks/useCharacterData';
 import { InputForm } from '@/components/form/InputForm';
 import { SingleBoxInput } from '@/components/form/SingleBoxInput';
 import { PlatformPreview } from '@/components/preview/PlatformPreview';
-import { useCharacterData } from '@/hooks/useCharacterData';
-import { CHARACTER_FLAGS } from '@/shared/types';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
 function MainWorkspace() {
@@ -41,6 +40,16 @@ function MainWorkspace() {
 
   // Mobile active screen: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
+  
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 4500);
+  };
 
   const handleModeSwitch = (mode: 'structured' | 'single') => {
     if (mode === 'single') {
@@ -55,10 +64,40 @@ function MainWorkspace() {
       updateField(key as keyof ThaiMasterCharacter, (loadedChar as any)[key]);
     });
     syncToMarkdown();
+    showToast('📂 โหลดตัวละครจาก Cloud Library เรียบร้อยแล้ว!');
+  };
+
+  const handleParsedFromSingleBox = (parsedChar: ThaiMasterCharacter) => {
+    applyParsedCharacter(parsedChar);
+    setInputMode('structured');
+    setMobileTab('editor');
+  };
+
+  const handleSingleBoxSuccess = (notice: string) => {
+    setInputMode('structured');
+    setMobileTab('editor');
+    showToast(notice);
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
+      {/* Global Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="px-4 py-2.5 rounded-xl bg-card/95 border border-primary/40 shadow-xl backdrop-blur-md flex items-center gap-2.5 text-xs font-bold text-foreground">
+            <span className="text-primary text-base">✨</span>
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Global Navbar */}
       <header className="flex-shrink-0 h-13 flex items-center justify-between px-3.5 sm:px-5 border-b border-border bg-card/85 backdrop-blur-md z-10">
         <div className="flex items-center gap-2.5 sm:gap-3">
@@ -69,7 +108,7 @@ function MainWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 shadow-xs">
-              Demo
+              Gemini 3.6 AI
             </span>
           </div>
 
@@ -84,7 +123,7 @@ function MainWorkspace() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <span>📋</span> ช่องแยกตามหัวข้อ
+              <span>📋</span> ช่องแยกตามหัวข้อ (10 หมวดหมู่)
             </button>
             <button
               type="button"
@@ -167,7 +206,7 @@ function MainWorkspace() {
                   : 'text-muted-foreground'
               }`}
             >
-              ⚡ ช่องเดียวรวด
+              ⚡ ช่องเดียวรวด (Auto-Parser)
             </button>
           </div>
         )}
@@ -197,13 +236,16 @@ function MainWorkspace() {
               onAutoDetectFlag={autoDetectFlag}
               onLoadSample={loadSample}
               onReset={resetCharacter}
+              onApplyParsedCharacter={applyParsedCharacter}
+              onShowToast={showToast}
             />
           ) : (
             <SingleBoxInput
               rawMarkdown={rawMarkdown}
               onChangeRaw={setRawMarkdown}
               onApplyParse={importRawMarkdown}
-              onApplyParsedCharacter={applyParsedCharacter}
+              onApplyParsedCharacter={handleParsedFromSingleBox}
+              onParseSuccess={handleSingleBoxSuccess}
               onLoadSample={loadSample}
               onClear={resetCharacter}
             />

@@ -8,6 +8,7 @@ interface SingleBoxInputProps {
   onChangeRaw: (text: string) => void;
   onApplyParse: (text: string) => void;
   onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
+  onParseSuccess?: (notice: string) => void;
   onLoadSample: () => void;
   onClear: () => void;
 }
@@ -17,6 +18,7 @@ export function SingleBoxInput({
   onChangeRaw,
   onApplyParse,
   onApplyParsedCharacter,
+  onParseSuccess,
   onLoadSample,
   onClear,
 }: SingleBoxInputProps) {
@@ -107,9 +109,12 @@ export function SingleBoxInput({
             onApplyParse(rawMarkdown);
           }
           consumeQuota();
-          const modelTag = data.model === 'gemini-1.5-flash' ? 'Google Gemini AI ⚡' : 'Universal Parser ⚡';
-          setParseNotice('✨ ซิงค์ข้อมูลเข้า Form ด้วย ' + modelTag + ' สำเร็จ! (เหลือโควตา ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
-          setTimeout(() => setParseNotice(null), 4000);
+          const modelTag = data.model === 'gemini-3.6-flash' ? 'Gemini 3.6 Flash ⚡' : 'Universal Parser ⚡';
+          const msg = '✨ แปลงข้อมูลด้วย ' + modelTag + ' เข้าสู่ 10 หมวดหมู่เรียบร้อยแล้ว!';
+          setParseNotice(msg);
+          if (onParseSuccess) {
+            onParseSuccess(msg);
+          }
           if (isFullscreen) setIsFullscreen(false);
           setIsParsing(false);
           return;
@@ -122,8 +127,11 @@ export function SingleBoxInput({
     // Fallback: Local Client-Side Parser
     consumeQuota();
     onApplyParse(rawMarkdown);
-    setParseNotice('⚡ ซิงค์ข้อมูลเข้า Form สำเร็จ! (เหลือโควตา ' + (quotaRemaining - 1) + '/' + quotaMax + ' ครั้งวันนี้)');
-    setTimeout(() => setParseNotice(null), 3500);
+    const fallbackMsg = '⚡ แปลงข้อมูลด้วย Universal Parser เข้าสู่ 10 หมวดหมู่เรียบร้อยแล้ว!';
+    setParseNotice(fallbackMsg);
+    if (onParseSuccess) {
+      onParseSuccess(fallbackMsg);
+    }
     if (isFullscreen) setIsFullscreen(false);
     setIsParsing(false);
   };
