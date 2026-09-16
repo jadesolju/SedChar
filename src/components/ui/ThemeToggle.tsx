@@ -1,22 +1,43 @@
-﻿'use client';
+'use client';
+import { useState, useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 
 export function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR or before client hydration completes, render stable button structure
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        aria-label="Toggle theme"
+        suppressHydrationWarning
+        className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-card text-foreground transition-all duration-200 cursor-pointer"
+      >
+        <span className="opacity-70">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+        </span>
+      </button>
+    );
+  }
+
   const isDark = theme === 'dark';
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDark ? 'Light mode' : 'Dark mode'}
-      className="
-        relative flex items-center justify-center w-9 h-9 rounded-lg
-        border border-border bg-card text-foreground
-        hover:bg-muted hover:border-primary/50
-        transition-all duration-200 cursor-pointer
-        focus:outline-none focus:ring-2 focus:ring-primary/50
-      "
+      suppressHydrationWarning
+      className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-card text-foreground hover:bg-muted hover:border-primary/50 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
     >
       <span
         className="absolute transition-all duration-300"

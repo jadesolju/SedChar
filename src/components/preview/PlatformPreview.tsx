@@ -19,6 +19,7 @@ type TabType = 'rubii' | 'purrpaw' | 'khui' | 'master';
 
 export function PlatformPreview({ character }: PlatformPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('purrpaw');
+  const [exportFormat, setExportFormat] = useState<'md' | 'txt' | 'json'>('md');
 
   const rubiiData = useMemo(() => generateRubiiOutput(character), [character]);
   const purrpawData = useMemo(() => generatePurrpawOutput(character), [character]);
@@ -26,7 +27,19 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
   const masterMarkdown = useMemo(() => characterToFullMarkdown(character), [character]);
 
   // Download export files
-  const downloadFile = (format: 'txt' | 'md') => {
+  const downloadFile = (format: 'txt' | 'md' | 'json') => {
+    if (format === 'json') {
+      const jsonStr = JSON.stringify(character, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const charName = character.fullName || character.nickname || 'character';
+      link.href = url;
+      link.download = `${charName}_${activeTab}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
     let textToExport = '';
     const charName = character.fullName || character.nickname || 'character';
 
@@ -192,18 +205,18 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
             </div>
 
             <CodeBlock
-              label="ขชื่อ (Name)"
+              label="ชื่อ (Name)"
               required={true}
               content={rubiiData.name}
             />
 
             <CodeBlock
-              label="ขคำอธิบายสาธารณะ (Public Description)"
+              label="คำอธิบายสาธารณะ (Public Description)"
               content={rubiiData.publicDescription}
             />
 
             <CodeBlock
-              label="ขการตั้งค่าตัวละคร (Persona Prompt + System Prompt)"
+              label="การตั้งค่าตัวละคร (Persona Prompt + System Prompt)"
               required={true}
               hint="Profile, Appearance, Core Psychology, Boundaries, NSFW & System Constraints"
               content={rubiiData.personaSystemPrompt}
@@ -211,7 +224,7 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
             />
 
             <CodeBlock
-              label="ขสร้างโมเมนต์ (Moment Intro)"
+              label="สร้างโมเมนต์ (Moment Intro)"
               required={true}
               hint="คำโปรยสั้นๆ"
               content={rubiiData.momentIntro}
@@ -221,7 +234,7 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
             />
 
             <CodeBlock
-              label="ขเปิดเรื่อง (Open Greeting)"
+              label="เปิดเรื่อง (Open Greeting)"
               required={true}
               hint="บรรยาย Sensory/Vivid สลับบทพูดตาม Expression"
               content={rubiiData.openGreeting}

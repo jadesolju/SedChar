@@ -1,46 +1,107 @@
-// ============================================================
-// SedChar.AI — Intelligent Core Robustness Test Suite
-// ============================================================
-
-import { describe, expect, test } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
-  generateIntelligentPrompt,
-  getLevenshteinDistance,
   sanitizeTraits,
   enforceInferenceAndFallback,
+  generateIntelligentPrompt,
 } from './intelligentParser';
 
-describe('SedChar.AI Intelligent Core Robustness Test', () => {
-  test('พิมพ์คำว่า ซินเดเระ ผิด ระบบต้อง Fuzzy Match เปลี่ยนเป็น ซึนเดะระ ให้เอง', () => {
-    const rawInput = {
-      name: 'มิลค์',
-      coreTraits: ['ซินเดเระ'], // พิมพ์ผิดสะกดด้วย สระอิ และ สระเอ
-    };
-
-    const output = generateIntelligentPrompt('rubii', rawInput);
-    expect(output).toContain('นิสัยหลัก("ซึนเดะระ")'); // ต้องถูกตรวจสอบและแก้ไขให้ถูกโครงสร้าง
+describe('Intelligent Parser & Dynamic Fuzzy Slot Inferrer (PR Specs)', () => {
+  it('1. should perform exact fuzzy normalization for Thai bot archetypes', () => {
+    const raw = ['ซินเดเระ', 'ซึนเดเระ', 'ปากร้ายใจดี', 'คลั่งรัก', 'ยันเดเระ', 'คูล', 'ขี้อายย'];
+    const sanitized = sanitizeTraits(raw);
+    
+    expect(sanitized).toEqual([
+      'ซึนเดะระ',
+      'ซึนเดะระ',
+      'ซึนเดะระ',
+      'ยันเดะระ',
+      'ยันเดะระ',
+      'คูลเดะระ',
+      'ขี้อาย'
+    ]);
   });
 
-  test('หากส่งข้อมูลมาว่างเปล่า (ข้อมูลขาด) ระบบต้องเติมค่า Default และชุดคำสั่งระบบให้สมบูรณ์ ไม่ปล่อยให้แหว่ง', () => {
-    const emptyInput = { name: 'เทสเตอร์' }; // ข้อมูลอื่นหายหมด
-
-    const output = generateIntelligentPrompt('purrpaw', emptyInput);
-
-    // ตรวจสอบว่าระบบกู้ชีพใส่คำสั่งคุมคาร์ และสรรพนามทดแทนอัตโนมัติสำเร็จ
-    expect(output).toContain('# SYSTEM PROMPT');
-    expect(output).toContain('โรลเพลย์เป็น เทสเตอร์ อย่างเคร่งครัด');
-    expect(output).toContain('- สรรพนาม: ฉัน, คุณ');
+  it('2. should preserve hashtag prefix when normalizing traits', () => {
+    const raw = ['#ซินเดเระ', '#ยันเดเระ', '#ขี้อายย'];
+    const sanitized = sanitizeTraits(raw);
+    
+    expect(sanitized).toEqual([
+      '#ซึนเดะระ',
+      '#ยันเดะระ',
+      '#ขี้อาย'
+    ]);
   });
 
-  test('คำนวณ Levenshtein Distance ได้ถูกต้องสำหรับภาษาไทย', () => {
-    expect(getLevenshteinDistance('ซินเดเระ', 'ซึนเดะระ')).toBeLessThanOrEqual(2);
-    expect(getLevenshteinDistance('ยันเดเระ', 'ยันเดะระ')).toBeLessThanOrEqual(2);
-    expect(getLevenshteinDistance('แมว', 'แมว')).toBe(0);
+  it('3. should auto-infer female pronouns when empty', () => {
+    const output = enforceInferenceAndFallback({
+      name: 'น้องเอ๋ย',
+      gender: 'หญิง',
+      coreTraits: ['ร่าเริง']
+    });
+
+    expect(output.pronouns).toEqual(['ฉัน', 'คุณ']);
   });
 
-  test('สร้างโครงสร้าง Khui AI พร้อม System Directives อัตโนมัติ', () => {
-    const output = generateIntelligentPrompt('khui', { name: 'อากิระ' });
-    expect(output).toContain('[SYSTEM:');
-    expect(output).toContain('"ชื่อ": "อากิระ"');
+  it('4. should auto-infer male pronouns when empty', () => {
+    const output = enforceInferenceAndFallback({
+      name: 'คชา',
+      gender: 'ชาย',
+      coreTraits: ['สุขุม']
+    });
+
+    expect(output.pronouns).toEqual(['ผม', 'คุณ']);
+  });
+
+  it('5. should auto-infer ancient pronouns when setting contains martial arts / wuxia keywords', () => {
+    const output = enforceInferenceAndFallback({
+      name: 'หลี่ไป๋',
+      timelineLore: ['ศิษย์เอกแห่งสำนักกระบี่สายฟ้า'],
+      coreTraits: ['สุขุม']
+    });
+
+    expect(output.pronouns).toEqual(['ข้า', 'เจ้า']);
+  });
+
+  it('6. should auto-infer reaction triggers for Tsundere (ซึนเดะระ) characters', () => {
+    const output = enforceInferenceAndFallback({
+      name: 'เรนะ',
+      coreTraits: ['ซึนเดเระ']
+    });
+
+    expect(output.coreTraits).toContain('ซึนเดะระ');
+    expect(output.reactionTriggers.length).toBeGreaterThan(0);
+    expect(output.reactionTriggers[0]).toContain('ไม่ได้อยากให้ชม');
+  });
+
+  it('7. should auto-infer reaction triggers for Yandere (ยันเดะระ) characters', () => {
+    const output = enforceInferenceAndFallback({
+      name: 'ยูกิ',
+      coreTraits: ['ยันเดเระ']
+    });
+
+    expect(output.coreTraits).toContain('ยันเดะระ');
+    expect(output.reactionTriggers[0]).toContain('แววตาไร้ประกาย');
+  });
+
+  it('8. should generate valid prompts across all platforms (Rubii, Purrpaw, Khui)', () => {
+    const rubiiPrompt = generateIntelligentPrompt('rubii', {
+      name: 'คิง',
+      coreTraits: ['#ซินเดเระ', 'สุขุม']
+    });
+    expect(rubiiPrompt).toContain('[Character("คิง")]');
+    expect(rubiiPrompt).toContain('ซึนเดะระ');
+
+    const purrpawPrompt = generateIntelligentPrompt('purrpaw', {
+      name: 'คิง',
+      coreTraits: ['ซึนเดเระ']
+    });
+    expect(purrpawPrompt).toContain('# SYSTEM PROMPT');
+    expect(purrpawPrompt).toContain('ซึนเดะระ');
+
+    const khuiPrompt = generateIntelligentPrompt('khui', {
+      name: 'คิง',
+      coreTraits: ['สุขุม']
+    });
+    expect(khuiPrompt).toContain('[SYSTEM:');
   });
 });

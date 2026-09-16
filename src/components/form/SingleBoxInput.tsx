@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useMemo } from 'react';
 
 interface SingleBoxInputProps {
@@ -19,19 +19,19 @@ export function SingleBoxInput({
   const [copied, setCopied] = useState(false);
   const [parseNotice, setParseNotice] = useState(false);
 
-  // Analyze which sections are detected in the pasted text
+  // Analyze which sections are detected in ANY format (Plaintext, JSON, YAML, Markdown)
   const detectedSections = useMemo(() => {
     return [
-      { name: 'ข้อมูลพื้นฐาน', detected: /ข้อมูลพื้นฐาน|Character Profile/i.test(rawMarkdown) },
-      { name: 'รูปลักษณ์', detected: /ลักษณะภายนอก|Appearance/i.test(rawMarkdown) },
-      { name: 'ส่วนลับ NSFW', detected: /ส่วนลับ|NSFW/i.test(rawMarkdown) },
-      { name: 'จิตวิทยา & นิสัย', detected: /นิสัยและพฤติกรรม|Psychology/i.test(rawMarkdown) },
-      { name: 'โครงสร้างจิตวิทยา 7 ข้อ', detected: /Core Belief|Mindset/i.test(rawMarkdown) },
-      { name: 'ความสัมพันธ์ {{user}}', detected: /ตัวตนของ\s*\{\{user\}\}|Story Role/i.test(rawMarkdown) },
-      { name: 'ขอบเขต & Logic', detected: /สิ่งที่จะไม่ทำเด็ดขาด|Anti-Behaviors/i.test(rawMarkdown) },
-      { name: 'พฤติกรรมทางเพศ', detected: /พฤติกรรมทางเพศ|Sexual Behavior/i.test(rawMarkdown) },
-      { name: 'ตัวละครเสริม', detected: /ตัวละครเสริม|Supporting/i.test(rawMarkdown) },
-      { name: 'ฉากเปิด Greeting', detected: /ฉากเปิด|Open Greeting/i.test(rawMarkdown) },
+      { name: 'ข้อมูลพื้นฐาน', detected: /(?:ข้อมูลพื้นฐาน|Character Profile|ชื่อ|name|nickname|อายุ|age)/i.test(rawMarkdown) },
+      { name: 'รูปลักษณ์', detected: /(?:ลักษณะภายนอก|Appearance|รูปลักษณ์|visual|ผมสี|ตาสี)/i.test(rawMarkdown) },
+      { name: 'ส่วนลับ NSFW', detected: /(?:ส่วนลับ|NSFW|โจ้ย|หน้าอก|จิ๊มิ)/i.test(rawMarkdown) },
+      { name: 'จิตวิทยา & นิสัย', detected: /(?:นิสัยและพฤติกรรม|Psychology|นิสัย|personality|traits|ซึน|ยัน)/i.test(rawMarkdown) },
+      { name: 'สิ่งที่ชอบ/เกลียด', detected: /(?:สิ่งที่ชอบ|สิ่งที่ไม่ชอบ|likes|dislikes|ชอบ|เกลียด)/i.test(rawMarkdown) },
+      { name: 'ความสัมพันธ์ {{user}}', detected: /(?:ความสัมพันธ์|userExclusiveBehaviors|Story Role|กับผู้ใช้)/i.test(rawMarkdown) },
+      { name: 'กฎระบบ & ข้อห้าม', detected: /(?:กฎเหล็ก|System Rules|ห้ามทำ|Anti-Behaviors)/i.test(rawMarkdown) },
+      { name: 'ตัวละครเสริม', detected: /(?:ตัวละครเสริม|Supporting|subchar)/i.test(rawMarkdown) },
+      { name: 'สถานที่', detected: /(?:สถานที่|Locations|ฉาก)/i.test(rawMarkdown) },
+      { name: 'ฉากเปิด Greeting', detected: /(?:ฉากเปิด|Open Greeting|greeting|ข้อความแรก|")/i.test(rawMarkdown) },
     ];
   }, [rawMarkdown]);
 
@@ -59,11 +59,11 @@ export function SingleBoxInput({
       <div className="flex-shrink-0 p-3.5 border-b border-border bg-card/60 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-base">📝</span>
+            <span className="text-base">⚡</span>
             <div>
-              <h2 className="text-xs font-bold text-foreground">Input แบบช่องเดียวรวด (Markdown Auto-Parser)</h2>
+              <h2 className="text-xs font-bold text-foreground">Universal Auto-Parser (ช่องเดียวรวด)</h2>
               <p className="text-[11px] text-muted-foreground">
-                วางข้อความ Markdown ทั้งหมด แล้วกดแปลงเพื่อแยกข้อมูลลงแต่ละช่องอัตโนมัติ
+                รองรับทุกรูปแบบ: Plaintext, JSON, YAML, Markdown หรือข้อความอิสระ แปลงแยกข้อมูลลงฟอร์ม 100% ทันที
               </p>
             </div>
           </div>
@@ -71,21 +71,21 @@ export function SingleBoxInput({
             <button
               type="button"
               onClick={onLoadSample}
-              className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1"
+              className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer"
             >
               <span>📄</span> โหลดตัวอย่าง
             </button>
             <button
               type="button"
               onClick={handleCopy}
-              className="text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors flex items-center gap-1"
+              className="text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors flex items-center gap-1 cursor-pointer"
             >
               {copied ? <span>✓ คัดลอกแล้ว</span> : <span>📋 คัดลอก</span>}
             </button>
             <button
               type="button"
               onClick={onClear}
-              className="text-xs px-2 py-1 rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors"
+              className="text-xs px-2 py-1 rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
               title="ล้างกล่องข้อความ"
             >
               ล้าง
@@ -96,14 +96,14 @@ export function SingleBoxInput({
         {/* Section detector badges */}
         <div className="flex flex-wrap items-center gap-1 pt-1">
           <span className="text-[10px] text-muted-foreground font-medium mr-1">
-            พบ {detectedCount}/{detectedSections.length} ส่วน:
+            ตรวจพบ {detectedCount}/{detectedSections.length} ส่วน:
           </span>
           {detectedSections.map(s => (
             <span
               key={s.name}
               className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
                 s.detected
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium'
+                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-medium'
                   : 'bg-muted/50 text-muted-foreground/50 border border-border/40'
               }`}
             >
@@ -118,17 +118,27 @@ export function SingleBoxInput({
         <textarea
           value={rawMarkdown}
           onChange={e => onChangeRaw(e.target.value)}
-          placeholder={`วาง Markdown ข้อมูลตัวละครตาม Template ที่นี่...
+          placeholder={`วางข้อความได้ทุกรูปแบบ (Plaintext / JSON / YAML / Markdown / แชทอิสระ)...
 
-ตัวอย่าง:
-## **[ข้อมูลพื้นฐาน - Character Profile (General Info)]**
-- **ชื่อเล่น**: คิง
-- **ชื่อเต็ม**: คชา รัตนเวคิน
-- **อายุ**: 28 ปี
-- **เพศ**: ชาย
-- **MBTI**: ISTP
-...`}
-          className="flex-1 w-full p-3.5 text-xs font-mono bg-card text-foreground rounded-lg border border-border focus:border-primary focus:ring-1 focus:ring-primary resize-none overflow-y-auto leading-relaxed outline-none"
+ตัวอย่าง Plaintext / YAML:
+ชื่อเล่น: คิง
+ชื่อเต็ม: คชา รัตนเวคิน
+อายุ: 28 ปี
+เพศ: ชาย
+MBTI: ISTP
+นิสัย: ซึนเดเระ สุขุม เย็นชา ปากร้ายแต่ใจดี
+สิ่งที่ชอบ: รถยนต์, กาแฟดำ
+สิ่งที่เกลียด: คนพูดโกหก
+ฉากเปิด: "ดึกขนาดนี้แล้ว... ยังไม่ยอมนอนอีกงั้นเหรอ?"
+
+หรือ JSON:
+{
+  "name": "คชา รัตนเวคิน",
+  "nickname": "คิง",
+  "age": "28 ปี",
+  "personality": "ซึนเดเระ"
+}`}
+          className="flex-1 w-full p-3.5 text-xs font-mono form-input resize-none overflow-y-auto leading-relaxed outline-none"
         />
       </div>
 
@@ -139,8 +149,8 @@ export function SingleBoxInput({
           <span>·</span>
           <span>{rawMarkdown.split('\n').length} บรรทัด</span>
           {parseNotice && (
-            <span className="text-emerald-600 dark:text-emerald-400 font-semibold animate-fade-in">
-              ✓ แยกส่วนข้อมูลเข้าฟอร์มเรียบร้อยแล้ว!
+            <span className="text-rose-600 dark:text-rose-400 font-semibold animate-fade-in">
+              ✓ แยกส่วนข้อมูลเข้าฟอร์มครบ 100% เรียบร้อยแล้ว!
             </span>
           )}
         </div>
@@ -148,7 +158,7 @@ export function SingleBoxInput({
         <button
           type="button"
           onClick={handleParseClick}
-          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
         >
           <span>🚀</span> แปลง & แยกส่วนข้อมูลเข้าฟอร์ม
         </button>

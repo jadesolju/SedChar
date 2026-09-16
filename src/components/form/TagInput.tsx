@@ -88,7 +88,7 @@ export function TagInput({
       {/* Input */}
       <div className="
         flex items-center gap-2 border border-border rounded-md px-3 py-1.5
-        bg-background focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary
+        bg-muted/40 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary
         transition-all duration-150
       ">
         <input

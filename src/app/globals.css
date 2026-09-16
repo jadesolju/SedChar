@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,36 +6,48 @@
 
 @layer base {
   :root {
-    /* Light Mode */
-    --background: 210 20% 98%;       /* #F9FAFB */
+    /* Light Mode - Soft, gentle contrast with Luxe Rose Pink */
+    --background: 330 20% 98%;       /* #FAF7F8 */
     --foreground: 224 71% 4%;        /* #111827 */
     --card: 0 0% 100%;               /* #FFFFFF */
     --card-foreground: 224 71% 4%;
-    --border: 220 13% 91%;           /* #E5E7EB */
-    --primary: 221 83% 53%;          /* #2563EB */
+    --border: 330 13% 90%;           /* #F0E6EA */
+    --primary: 346 84% 53%;          /* #F43F5E - Vibrant Rose Pink */
     --primary-foreground: 0 0% 100%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 221 83% 53%;
+    --muted: 330 14% 95%;            /* #F7EEF1 */
+    --muted-foreground: 330 9% 46%;  /* #7E6C74 */
+    --accent: 330 81% 60%;           /* #EC4899 - Sakura / Hot Pink */
     --danger: 0 84% 60%;
     --success: 142 71% 45%;
     --radius: 0.5rem;
+
+    /* Form Input Colors - Soft Gray for Light Mode */
+    --input-bg: 330 10% 97%;         /* #F6F4F5 */
+    --input-border: 330 10% 86%;     /* #DBD3D7 */
+    --input-foreground: 224 71% 4%;  /* #111827 */
+    --input-placeholder: 330 8% 50%; /* #7E6C74 */
   }
 
   .dark {
-    /* Dark Mode */
+    /* Dark Mode - Matte Sleek Charcoal with Neon Rose Pink Accents */
     --background: 240 10% 4%;        /* #09090B */
     --foreground: 0 0% 96%;          /* #F4F4F5 */
-    --card: 240 10% 10%;             /* #18181B */
+    --card: 240 10% 9%;              /* #17171A */
     --card-foreground: 0 0% 96%;
-    --border: 240 6% 16%;            /* #27272A */
-    --primary: 217 91% 60%;          /* #3B82F6 */
-    --primary-foreground: 0 0% 100%;
-    --muted: 240 6% 14%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 217 91% 60%;
+    --border: 240 6% 18%;            /* #27272A */
+    --primary: 346 90% 64%;          /* #FB7185 - Neon Luxe Pink */
+    --primary-foreground: 240 10% 4%;
+    --muted: 240 6% 14%;             /* #222226 */
+    --muted-foreground: 240 5% 65%;  /* #A1A1AA */
+    --accent: 330 85% 65%;           /* #F472B6 */
     --danger: 0 84% 60%;
     --success: 142 71% 45%;
+
+    /* Form Input Colors - Matte Dark Gray for Dark Mode (Soft, non-hardcore) */
+    --input-bg: 240 6% 13%;          /* #1F1F24 - Soft Matte Charcoal */
+    --input-border: 240 6% 22%;      /* #33333A - Subtle border */
+    --input-foreground: 0 0% 94%;    /* #ECECEE - Crisp readable text */
+    --input-placeholder: 240 5% 50%; /* #7A7A85 - Soft readable placeholder */
   }
 
   * {
@@ -58,12 +70,58 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
   }
 
-  /* Custom scrollbar */
+  /* Universal Form Input Styling (Pink focus glow & Soft Gray Fill) */
+  input[type='text'],
+  input[type='number'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='url'],
+  textarea,
+  select,
+  .form-input,
+  .input-base {
+    background-color: hsl(var(--input-bg)) !important;
+    color: hsl(var(--input-foreground)) !important;
+    border: 1px solid hsl(var(--input-border)) !important;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    width: 100%;
+  }
+
+  input[type='text']::placeholder,
+  input[type='number']::placeholder,
+  input[type='search']::placeholder,
+  textarea::placeholder,
+  .form-input::placeholder,
+  .input-base::placeholder {
+    color: hsl(var(--input-placeholder)) !important;
+    opacity: 0.9;
+  }
+
+  input[type='text']:focus,
+  input[type='number']:focus,
+  input[type='email']:focus,
+  input[type='search']:focus,
+  textarea:focus,
+  select:focus,
+  .form-input:focus,
+  .input-base:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 1.5px hsl(var(--primary) / 0.4) !important;
+  }
+
+  /* Custom scrollbar with pink hover */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: hsl(var(--background));
@@ -73,7 +131,7 @@
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--primary) / 0.6);
   }
 }
 
@@ -82,16 +140,9 @@
     @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
   }
 
-  .input-base {
-    @apply w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground
-           placeholder:text-muted-foreground
-           focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
-           transition-colors duration-150;
-  }
-
   .btn-primary {
-    @apply bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium
-           hover:bg-primary/90 active:scale-95
+    @apply bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-semibold
+           hover:bg-primary/90 active:scale-95 shadow-xs
            transition-all duration-150 cursor-pointer;
   }
 
