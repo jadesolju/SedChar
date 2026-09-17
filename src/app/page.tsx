@@ -201,14 +201,7 @@ function MainWorkspace() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSaveAsNewCopy}
-              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs flex items-center gap-1"
-            >
-              <Save className="w-3 h-3" />
-              <span>บันทึกเป็นตัวละครใหม่ของฉัน</span>
-            </button>
+            
             <button
               type="button"
               onClick={() => setSharedBanner(null)}

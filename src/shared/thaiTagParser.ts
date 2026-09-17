@@ -419,6 +419,104 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   return char;
 }
 
+export function buildPurrpawSystemPrompt(char: ThaiMasterCharacter): string {
+  const visualTagsStr = char.visualTags.length > 0 ? char.visualTags.map(t => t.startsWith('#') ? t : '#' + t).join(' ') : '';
+  const pTagsStr = char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(' ') : '';
+
+  let md = `## **[ข้อมูลพื้นฐาน - Character Profile (General Info)]**\n\n`;
+  if (char.nickname) md += `- **ชื่อเล่น**: ${char.nickname}\n`;
+  if (char.fullName) md += `- **ชื่อเต็ม**: ${char.fullName}\n`;
+  if (char.age) md += `- **อายุ**: ${char.age}\n`;
+  if (char.gender) md += `- **เพศ**: ${char.gender}\n`;
+  if (char.status) md += `- **สถานะ**: ${char.status}\n`;
+  if (char.birthdate) md += `- **วันเดือนปีเกิด**: ${char.birthdate}\n`;
+  if (char.weightHeight) md += `- **น้ำหนัก / ส่วนสูง**: ${char.weightHeight}\n`;
+  if (char.mbti) md += `- **MBTI**: ${char.mbti}\n`;
+  if (char.sexualOrientation) md += `- **รสนิยมทางเพศ**: ${char.sexualOrientation}\n`;
+  if (char.car) md += `- **รถที่ใช้**: ${char.car}\n`;
+  if (char.perfume) md += `- **กลิ่นน้ำหอม**: ${char.perfume}\n`;
+  if (char.address) md += `- **ที่อยู่**: ${char.address}\n`;
+  if (char.wealthStatus) md += `- **ฐานะ**: ${char.wealthStatus}\n`;
+  if (char.occupation) md += `- **อาชีพ**: ${char.occupation}\n`;
+  if (char.fashionStyle) md += `- **สไตล์การแต่งตัว**: ${char.fashionStyle}\n`;
+
+  md += `\n## ลักษณะภายนอก (Appearance)\n\n`;
+  if (char.appearanceDesc) md += `${char.appearanceDesc}\n`;
+  if (char.visualFeatures) md += `\nจุดเด่น: ${char.visualFeatures}\n`;
+  if (visualTagsStr) md += `\n${visualTagsStr}\n`;
+
+  if (char.nsfwMaleSize || char.nsfwFemaleChest || char.nsfwFemaleVagina) {
+    md += `\n### ส่วนลับ (NSFW Info)\n`;
+    if (char.nsfwMaleSize) md += `- **ขนาดโจ้ย:** ${char.nsfwMaleSize}\n`;
+    if (char.nsfwFemaleChest) md += `- **ขนาดหน้าอก:** ${char.nsfwFemaleChest}\n`;
+    if (char.nsfwFemaleVagina) md += `- **จิ๊มิ:** ${char.nsfwFemaleVagina}\n`;
+  }
+
+  md += `\n## [นิสัยและพฤติกรรม Psychology & Personality]\n\n`;
+  if (char.coreTraits) md += `${char.coreTraits}\n`;
+  if (pTagsStr) md += `\n${pTagsStr}\n`;
+
+  if (char.likes.length > 0 || char.dislikes.length > 0) {
+    md += `\n## [สิ่งที่ชอบ / สิ่งที่ไม่ชอบ และปฏิกิริยา (Likes & Dislikes Logic)]\n\n`;
+    if (char.likes.length > 0) {
+      md += `สิ่งที่ชอบ:\n`;
+      char.likes.forEach(l => { md += `- ${l}\n`; });
+    }
+    if (char.dislikes.length > 0) {
+      md += `\nสิ่งที่ไม่ชอบ:\n`;
+      char.dislikes.forEach(d => { md += `- ${d}\n`; });
+    }
+  }
+
+  if (char.generalBehaviors || char.userExclusiveBehaviors) {
+    md += `\n## พฤติกรรม (Behaviors)\n\n`;
+    if (char.generalBehaviors) md += `### พฤติกรรมทั่วไป (General Behaviors)\n${char.generalBehaviors}\n\n`;
+    if (char.userExclusiveBehaviors) md += `### พฤติกรรมพิเศษเฉพาะกับ {{user}} (Exclusive Behaviors)\n${char.userExclusiveBehaviors}\n\n`;
+  }
+
+  if (char.coreBelief || char.mindset || char.perception || char.expression || char.behaviorUnderEmotion || char.emotionalTriggers || char.flawsWeaknesses) {
+    md += `## [โครงสร้างจิตวิทยา 7 ข้อ]\n\n`;
+    if (char.coreBelief) md += `1. Core Belief: "${char.coreBelief}"\n`;
+    if (char.mindset) md += `2. Mindset: "${char.mindset}"\n`;
+    if (char.perception) md += `3. Perception: "${char.perception}"\n`;
+    if (char.expression) md += `4. Expression: ${char.expression}\n`;
+    if (char.behaviorUnderEmotion) md += `5. Behavior: ${char.behaviorUnderEmotion}\n`;
+    if (char.emotionalTriggers) md += `6. Emotional Triggers: ${char.emotionalTriggers}\n`;
+    if (char.flawsWeaknesses) md += `7. Flaws & Weaknesses: ${char.flawsWeaknesses}\n\n`;
+  }
+
+  if (char.userStoryRole || char.userAttitude) {
+    md += `## ตัวตนของ {{user}} ในสายตา {{char}}\n\n`;
+    if (char.userStoryRole) md += `- **บทบาทในเนื้อเรื่อง (Story Role):** ${char.userStoryRole}\n`;
+    if (char.userAttitude) md += `- **ทัศนคติที่มีต่อ {{user}}:** ${char.userAttitude}\n\n`;
+  }
+
+  if (char.relationshipBackstory) {
+    md += `## [ภูมิหลังความสัมพันธ์ (Backstory & Lore)]\n\n${char.relationshipBackstory}\n\n`;
+  }
+
+  if (char.absoluteAntiBehaviors || char.hiddenSoftSide || char.darkSide) {
+    md += `## [ขอบเขตพฤติกรรมและ Logic ขั้นเด็ดขาดของ {{char}}]\n\n`;
+    if (char.absoluteAntiBehaviors) md += `### สิ่งที่จะไม่ทำเด็ดขาด (Absolute Anti-Behaviors)\n${char.absoluteAntiBehaviors}\n\n`;
+    if (char.hiddenSoftSide) md += `### ด้านน่ารัก หรือ มุมอ่อนโยนที่ซ่อนอยู่ (Hidden Soft Side)\n${char.hiddenSoftSide}\n\n`;
+    if (char.darkSide) md += `### ด้านมืด (The Dark Side)\n${char.darkSide}\n\n`;
+  }
+
+  if (char.sexualStyle || char.kinksPreferences || char.aftercareStyle) {
+    md += `## [พฤติกรรมทางเพศและบนเตียง (Sexual Behavior)]\n\n`;
+    if (char.sexualStyle) md += `- **สไตล์และแนวทาง (Sexual Style):** ${char.sexualStyle}\n`;
+    if (char.kinksPreferences) md += `- **รสนิยมจำเพาะ (Kinks / Preferences):** ${char.kinksPreferences}\n`;
+    if (char.aftercareStyle) md += `- **การดูแลหลังกิจกรรม (Aftercare Style):** ${char.aftercareStyle}\n\n`;
+  }
+
+  if (char.toneSetting) {
+    md += `## [Core Concept & Setting]\n\n`;
+    md += `### โทนเรื่องและฉากหลัง (Tone & Setting)\n${char.toneSetting}\n\n`;
+  }
+
+  return md.trim();
+}
+
 export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput {
   const displayName = char.fullName || char.nickname || 'ตัวละคร';
   const tagline = extractPunchyHook(char);
@@ -427,10 +525,10 @@ export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput 
     ? char.categoryTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ')
     : (char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ') : '#Roleplay');
 
-  // Build Standard System Prompt
-  const sysPrompt = characterToFullMarkdown(char);
+  // Purrpaw System Prompt: Includes character personality & lore, WITHOUT subcharacters & WITHOUT open greeting
+  const sysPrompt = buildPurrpawSystemPrompt(char);
 
-  // SubCharacters
+  // SubCharacters (Purrpaw has dedicated slots)
   const subCharacters = char.supportingCharacters.map(s => ({
     name: s.name,
     shortDesc: s.shortDesc || [s.relationship, s.personality, s.mainRole].filter(Boolean).join(' | '),
@@ -463,6 +561,10 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
   const name = char.fullName || char.nickname || 'ตัวละคร';
   const punchyHook = extractPunchyHook(char);
 
+  const subCharsStr = char.supportingCharacters.length > 0
+    ? char.supportingCharacters.map((s, idx) => `${idx + 1}. ${s.name} (${s.relationship || 'ความสัมพันธ์'}: ${s.personality || ''} - ${s.mainRole || ''} ${s.appearWhen ? 'ปรากฏเมื่อ: ' + s.appearWhen : ''})`).join('; ')
+    : '';
+
   const sections: string[] = [
     `# SYSTEM PROMPT FOR ${name.toUpperCase()}`,
     `[Character("${name}")]`,
@@ -476,8 +578,14 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
     char.personalityTags.length > 0 ? `[Personality("${char.personalityTags.join(', ')}")]` : '',
     char.likes.length > 0 ? `[Likes("${char.likes.join(', ')}")]` : '',
     char.dislikes.length > 0 ? `[Dislikes("${char.dislikes.join(', ')}")]` : '',
+    char.generalBehaviors ? `[GeneralBehaviors("${char.generalBehaviors.replace(/\n/g, ' ')}")]` : '',
     char.userExclusiveBehaviors ? `[InteractionWithUser("${char.userExclusiveBehaviors.replace(/\n/g, ' ')}")]` : '',
+    (char.userStoryRole || char.userAttitude) ? `[UserRole("${[char.userStoryRole, char.userAttitude].filter(Boolean).join(' | ')}")]` : '',
+    char.relationshipBackstory ? `[Backstory("${char.relationshipBackstory.replace(/\n/g, ' ')}")]` : '',
     char.absoluteAntiBehaviors ? `[StrictRules("ห้ามทำเด็ดขาด: ${char.absoluteAntiBehaviors.replace(/\n/g, ' ')}")]` : '',
+    (char.sexualStyle || char.kinksPreferences || char.aftercareStyle) ? `[SexualBehavior("${[char.sexualStyle, char.kinksPreferences, char.aftercareStyle].filter(Boolean).join(' | ')}")]` : '',
+    char.toneSetting ? `[Setting("${char.toneSetting.replace(/\n/g, ' ')}")]` : '',
+    subCharsStr ? `[SupportingCharacters("${subCharsStr}")]` : '',
   ];
 
   const personaSystemPrompt = sections.filter(Boolean).join('\n');
@@ -495,8 +603,21 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
 export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
   const displayName = char.fullName || char.nickname || 'ตัวละคร';
   const tagline = extractPunchyHook(char);
-  const purrpaw = generatePurrpawOutput(char);
-  const sysPrompt = purrpaw.historyPersonalityPrompt;
+
+  // System Prompt: Concise Thai Keylist Prompt Persona, NO open greeting
+  const sysPromptLines: string[] = [
+    `# PROMPT PERSONA & BEHAVIOR RULES (KHUI AI)`,
+    `[บทบาทและตัวตน]: ${char.fullName || char.nickname || 'ตัวละคร'} (${char.occupation || 'ไม่ระบุอาชีพ'})`,
+    `[บุคลิกภาพหลัก]: ${char.personalityTags.length > 0 ? char.personalityTags.join(', ') : (char.coreTraits || 'ตามข้อมูลบทบาท')}`,
+    char.generalBehaviors ? `[รูปแบบคำพูดและการตอบสนอง]: ${char.generalBehaviors.replace(/\n/g, ' ')}` : '',
+    char.userExclusiveBehaviors ? `[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: ${char.userExclusiveBehaviors.replace(/\n/g, ' ')}` : (char.userAttitude ? `[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: ${char.userAttitude}` : ''),
+    char.absoluteAntiBehaviors ? `[กฎเหล็กและข้อห้ามเด็ดขาด]: ห้ามทำเด็ดขาด - ${char.absoluteAntiBehaviors.replace(/\n/g, ' ')}` : '',
+    char.coreBelief ? `[ความเชื่อหลัก]: "${char.coreBelief}"` : '',
+    char.mindset ? `[แนวคิด]: "${char.mindset}"` : '',
+    char.flawsWeaknesses ? `[จุดอ่อน/จุดเปราะบาง]: ${char.flawsWeaknesses}` : '',
+  ].filter(Boolean);
+
+  const sysPrompt = sysPromptLines.join('\n');
 
   // Rich Markdown + Emoji Character Description
   let charDesc = '## 📌 ข้อมูลเบื้องต้น\n';

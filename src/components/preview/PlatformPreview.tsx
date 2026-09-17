@@ -117,9 +117,9 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
         `Khui AI Platform Output\n\n` +
         `ชื่อ\n${khuiData.name}\n\n` +
         `คำโปรย\n${khuiData.tagline}\n\n` +
-        `System / Prompt\n${khuiData.systemPrompt}\n\n` +
-        `หน้าคำอธิบายตัวละคร\n${khuiData.characterDescription}\n\n` +
-        `Open Greeting\n${khuiData.openGreeting}\n\n` +
+        `คำอธิบาย (System Prompt)\n${khuiData.systemPrompt}\n\n` +
+        `ประวัติตัวละคร (Profile)\n${khuiData.characterDescription}\n\n` +
+        `คำทักทาย\n${khuiData.openGreeting}\n\n` +
         (khuiData.subCharacters.length > 0
           ? `ตัวละครเสริม (Max 3 ตัว) — ${khuiData.subCharacters.length}/3\n` +
             khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
@@ -219,9 +219,9 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
             `Khui AI Platform Output\n\n` +
             `ชื่อ\n${khuiData.name}\n\n` +
             `คำโปรย\n${khuiData.tagline}\n\n` +
-            `System / Prompt\n${khuiData.systemPrompt}\n\n` +
-            `หน้าคำอธิบายตัวละคร\n${khuiData.characterDescription}\n\n` +
-            `Open Greeting\n${khuiData.openGreeting}\n\n` +
+            `คำอธิบาย (System Prompt)\n${khuiData.systemPrompt}\n\n` +
+            `ประวัติตัวละคร (Profile)\n${khuiData.characterDescription}\n\n` +
+            `คำทักทาย\n${khuiData.openGreeting}\n\n` +
             (khuiData.subCharacters.length > 0
               ? `ตัวละครเสริม (Max 3 ตัว) — ${khuiData.subCharacters.length}/3\n` +
                 khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
@@ -603,19 +603,19 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
               required
             />
             <CodeBlock
-              label="3. System / Prompt"
+              label="3. คำอธิบาย (System Prompt)"
               subtitle="คำสั่งหลักสำหรับควบคุม AI Khui"
               content={khuiData.systemPrompt}
               required
             />
             <CodeBlock
-              label="4. หน้าคำอธิบายตัวละคร"
+              label="4. ประวัติตัวละคร (Profile)"
               subtitle="ข้อมูลเบื้องต้น, ประวัติภูมิหลัง, สถานการณ์ และความสัมพันธ์"
               content={khuiData.characterDescription}
               required
             />
             <CodeBlock
-              label="5. Open Greeting"
+              label="5. คำทักทาย"
               subtitle="บทเปิดฉากพร้อมการกระทำและการตอบสนอง"
               content={khuiData.openGreeting}
               required
