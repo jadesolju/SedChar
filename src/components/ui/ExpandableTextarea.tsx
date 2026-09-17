@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
+import { Maximize2, Minimize2, Copy, Check, Lock } from 'lucide-react';
 
 interface ExpandableTextareaProps {
   id: string;
@@ -12,6 +13,7 @@ interface ExpandableTextareaProps {
   charLimit?: number;
   className?: string;
   allowFullscreen?: boolean;
+  readOnly?: boolean;
 }
 
 export function ExpandableTextarea({
@@ -25,6 +27,7 @@ export function ExpandableTextarea({
   charLimit,
   className = '',
   allowFullscreen = true,
+  readOnly = false,
 }: ExpandableTextareaProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,14 +35,14 @@ export function ExpandableTextarea({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fullscreenTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus fullscreen textarea when opened
+  // Focus when entering fullscreen
   useEffect(() => {
     if (isFullscreen && fullscreenTextareaRef.current) {
       fullscreenTextareaRef.current.focus();
     }
   }, [isFullscreen]);
 
-  // Handle escape key to close fullscreen
+  // Handle Esc key to close fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
@@ -60,176 +63,155 @@ export function ExpandableTextarea({
   };
 
   const charCount = value ? value.length : 0;
-  const effectiveRows = isExpanded ? Math.max(rows * 2.5, 10) : rows;
+  const isOverLimit = charLimit ? charCount > charLimit : false;
 
   return (
-    <div className="relative group w-full space-y-1.5">
-      {/* Header with Title and Quick Expand Toolbar */}
-      {(label || hint || allowFullscreen) && (
-        <div className="flex items-center justify-between gap-2">
-          {label ? (
-            <label htmlFor={id} className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+    <div className={`relative flex flex-col gap-1 w-full ${className}`}>
+      {/* Optional Top Label / Character counter */}
+      {(label || charLimit) && (
+        <div className="flex items-center justify-between text-xs">
+          {label && (
+            <label htmlFor={id} className="font-semibold text-foreground/90 flex items-center gap-1.5">
               <span>{label}</span>
-              {hint && <span className="text-[11px] font-normal text-muted-foreground">({hint})</span>}
+              {readOnly && (
+                <span className="text-[10px] text-amber-500 font-normal flex items-center gap-0.5">
+                  <Lock className="w-2.5 h-2.5" /> อ่านอย่างเดียว
+                </span>
+              )}
             </label>
-          ) : <div />}
-
-          <div className="flex items-center gap-1">
-            {/* Char Counter */}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-              charLimit && charCount > charLimit
-                ? 'bg-rose-500/15 text-rose-500 font-bold'
-                : 'text-muted-foreground/80'
-            }`}>
-              {charCount.toLocaleString('th-TH')} ตัวอักษร
-            </span>
-
-            {/* Expand / Collapse Height Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsExpanded(!isExpanded)}
-              title={isExpanded ? 'ย่อความสูงลง' : 'ขยายความสูงช่องกรอก'}
-              className={`p-1 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-0.5 ${
-                isExpanded
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {isExpanded ? (
-                  <>
-                    <polyline points="4 14 12 6 20 14" />
-                    <polyline points="4 20 12 12 20 20" />
-                  </>
-                ) : (
-                  <>
-                    <polyline points="4 10 12 18 20 10" />
-                    <polyline points="4 4 12 12 20 4" />
-                  </>
-                )}
-              </svg>
-              <span>{isExpanded ? 'ย่อลง' : 'ขยายช่อง'}</span>
-            </button>
-
-            {/* Fullscreen Modal Toggle */}
-            {allowFullscreen && (
-              <button
-                type="button"
-                onClick={() => setIsFullscreen(true)}
-                title="ขยายเต็มจอ (Fullscreen Focus Mode)"
-                className="p-1 px-1.5 rounded-md text-[11px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all cursor-pointer flex items-center gap-1"
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            {charLimit && (
+              <span
+                className={`font-mono text-[11px] ${
+                  isOverLimit ? 'text-destructive font-bold' : 'text-muted-foreground'
+                }`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                </svg>
-                <span>เต็มจอ</span>
-              </button>
+                {charCount.toLocaleString()} / {charLimit.toLocaleString()}
+              </span>
             )}
           </div>
         </div>
       )}
 
       {/* Main Textarea Container */}
-      <div className="relative w-full">
+      <div className="relative group">
         <textarea
-          ref={textareaRef}
           id={id}
-          rows={effectiveRows}
+          ref={textareaRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => !readOnly && onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full p-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed ${
-            isExpanded ? 'min-h-[220px]' : 'min-h-[100px]'
-          } ${className}`}
+          rows={isExpanded ? Math.max(rows * 2, 8) : rows}
+          readOnly={readOnly}
+          className={`w-full p-2.5 rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground/60 font-mono transition-all leading-relaxed focus:outline-none ${
+            readOnly
+              ? 'bg-muted/30 cursor-not-allowed select-text'
+              : 'bg-muted/50 focus:ring-2 focus:ring-primary/40 focus:border-primary/50 resize-y'
+          }`}
         />
 
-        {/* Quick action floating buttons on bottom right */}
-        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-card/90 backdrop-blur-xs p-0.5 rounded-lg border border-border/60 shadow-xs">
+        {/* Floating Quick Actions (Copy & Fullscreen) */}
+        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
           {value && (
             <button
               type="button"
               onClick={handleCopy}
               title="คัดลอกข้อความ"
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted text-[10px] cursor-pointer"
+              className="p-1 rounded bg-card/80 backdrop-blur-xs border border-border text-muted-foreground hover:text-foreground transition-all text-xs cursor-pointer shadow-xs"
             >
-              {copied ? '✅' : '📋'}
+              {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(true)}
-            title="ขยายเต็มจอเพื่อเขียนยาวๆ"
-            className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted text-[10px] cursor-pointer flex items-center gap-0.5"
-          >
-            <span>⛶</span>
-          </button>
+
+          {allowFullscreen && (
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(true)}
+              title="ขยายเต็มหน้าจอ"
+              className="p-1 rounded bg-card/80 backdrop-blur-xs border border-border text-muted-foreground hover:text-foreground transition-all text-xs cursor-pointer shadow-xs"
+            >
+              <Maximize2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* FULLSCREEN FOCUS MODAL */}
+      {hint && <p className="text-[11px] text-muted-foreground/80 leading-normal">{hint}</p>}
+
+      {/* Fullscreen Modal Focus View */}
       {isFullscreen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative w-full max-w-4xl h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-            {/* Top Fullscreen Header */}
-            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/40">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  ✏️
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    {label || 'โหมดแก้ไขข้อความเต็มจอ (Fullscreen Focus Mode)'}
-                  </h3>
-                  {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-4xl h-[85vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-border bg-muted/40">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground">
+                  {label || 'โหมดเขียนข้อความแบบเต็มจอ (Focus Mode)'}
+                </h3>
+                {readOnly && (
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-semibold border border-amber-500/30">
+                    อ่านอย่างเดียว
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground font-mono">
-                  {charCount.toLocaleString('th-TH')} ตัวอักษร
-                </span>
+                {charLimit && (
+                  <span
+                    className={`font-mono text-xs px-2.5 py-1 rounded bg-muted ${
+                      isOverLimit ? 'text-destructive font-bold' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {charCount.toLocaleString()} / {charLimit.toLocaleString()} ตัวอักษร
+                  </span>
+                )}
 
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer flex items-center gap-1"
                 >
-                  <span>{copied ? '✅' : '📋'}</span>
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
-                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                  className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                  title="ปิดโหมดเต็มจอ (Esc)"
                 >
-                  <span>✓ เสร็จสิ้น (Esc)</span>
+                  <Minimize2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Large Fullscreen Textarea */}
-            <div className="flex-1 p-5 bg-background relative flex flex-col">
+            {/* Modal Body / Full Textarea */}
+            <div className="flex-1 p-4 bg-background relative flex flex-col">
               <textarea
                 ref={fullscreenTextareaRef}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder || 'เขียนบรรยายรายละเอียดที่นี่...'}
-                className="w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+                onChange={(e) => !readOnly && onChange(e.target.value)}
+                placeholder={placeholder}
+                readOnly={readOnly}
+                className={`w-full flex-1 p-4 rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none leading-relaxed focus:outline-none ${
+                  readOnly
+                    ? 'bg-muted/30 cursor-not-allowed select-text'
+                    : 'bg-muted/40 focus:ring-2 focus:ring-primary/40'
+                }`}
               />
             </div>
 
-            {/* Bottom Fullscreen Helper Footer */}
+            {/* Modal Footer */}
             <div className="flex-shrink-0 px-5 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-3">
-                <span>💡 <strong>คำแนะนำ:</strong> สามารถกด <code>Esc</code> หรือกดปุ่ม <strong>เสร็จสิ้น</strong> เพื่อบันทึกและกลับสู่หน้าหลัก</span>
-              </div>
+              <span>{hint || 'กดปุ่ม Esc หรือคลิกปิดที่มุมบนขวาเพื่อย้อนกลับ'}</span>
               <button
                 type="button"
-                onClick={() => onChange('')}
-                className="text-xs text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                onClick={() => setIsFullscreen(false)}
+                className="px-3 py-1 rounded bg-primary text-white font-semibold text-xs cursor-pointer hover:bg-primary/90 transition-all"
               >
-                🗑️ ล้างข้อความทั้งหมด
+                เสร็จสิ้น
               </button>
             </div>
           </div>

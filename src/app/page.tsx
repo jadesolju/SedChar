@@ -55,6 +55,8 @@ function MainWorkspace() {
 
   const { user, openAuthModal, openLibraryModal, saveToLibrary } = useAuth();
 
+
+
   // Mobile active screen: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
 

@@ -39,6 +39,7 @@ type ArrayField =
   | 'categoryTags';
 
 interface InputFormProps {
+  isReadOnly?: boolean;
   onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
   onShowToast?: (msg: string) => void;
   character: ThaiMasterCharacter;
@@ -59,6 +60,7 @@ interface InputFormProps {
 }
 
 export function InputForm({
+  isReadOnly = false,
   onApplyParsedCharacter,
   onShowToast,
   character,
@@ -100,28 +102,37 @@ export function InputForm({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsAIModalOpen(true)}
-            className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-          >
-            <span>✨</span>
-            <span>AI ช่วยเติมเต็มฟอร์ม</span>
-          </button>
-          <button
-            type="button"
-            onClick={onLoadSample}
-            className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
-          >
-            <span>📄</span> โหลดตัวอย่าง
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-xs px-2.5 py-1 rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-          >
-            ล้างฟอร์ม
-          </button>
+          {isReadOnly ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold shadow-xs">
+              <span>🔒</span>
+              <span>โหมดอ่านอย่างเดียว (Read-Only)</span>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsAIModalOpen(true)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              >
+                <span>✨</span>
+                <span>AI ช่วยเติมเต็มฟอร์ม</span>
+              </button>
+              <button
+                type="button"
+                onClick={onLoadSample}
+                className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+              >
+                <span>📄</span> โหลดตัวอย่าง
+              </button>
+              <button
+                type="button"
+                onClick={onReset}
+                className="text-xs px-2.5 py-1 rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+              >
+                ล้างฟอร์ม
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -150,7 +161,7 @@ export function InputForm({
                 value={character.nickname}
                 onChange={e => onUpdateField('nickname', e.target.value)}
                 placeholder="ชื่อเล่นตัวละคร"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -161,7 +172,7 @@ export function InputForm({
                 value={character.fullName}
                 onChange={e => onUpdateField('fullName', e.target.value)}
                 placeholder="คชา รัตนเวคิน"
-                className="form-input font-medium"
+                className={`form-input font-medium ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
@@ -174,7 +185,7 @@ export function InputForm({
                 value={character.age}
                 onChange={e => onUpdateField('age', e.target.value)}
                 placeholder="28 ปี"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -185,7 +196,7 @@ export function InputForm({
                 value={character.gender}
                 onChange={e => onUpdateField('gender', e.target.value)}
                 placeholder="ชาย / หญิง / LGBTQ+"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -196,7 +207,7 @@ export function InputForm({
                 value={character.mbti}
                 onChange={e => onUpdateField('mbti', e.target.value)}
                 placeholder="ISTP"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
@@ -209,7 +220,7 @@ export function InputForm({
                 value={character.status}
                 onChange={e => onUpdateField('status', e.target.value)}
                 placeholder="โสด / หัวหน้าแก๊ง"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -220,7 +231,7 @@ export function InputForm({
                 value={character.birthdate}
                 onChange={e => onUpdateField('birthdate', e.target.value)}
                 placeholder="14 พฤศจิกายน (พิจิก)"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
@@ -233,7 +244,7 @@ export function InputForm({
                 value={character.weightHeight}
                 onChange={e => onUpdateField('weightHeight', e.target.value)}
                 placeholder="188 ซม. / 82 กก."
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -244,7 +255,7 @@ export function InputForm({
                 value={character.sexualOrientation}
                 onChange={e => onUpdateField('sexualOrientation', e.target.value)}
                 placeholder="Heterosexual / Pansexual"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
@@ -257,7 +268,7 @@ export function InputForm({
                 value={character.wealthStatus}
                 onChange={e => onUpdateField('wealthStatus', e.target.value)}
                 placeholder="มหาเศรษฐีพันล้าน / เจ้าของกิจการ"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -268,7 +279,7 @@ export function InputForm({
                 value={character.occupation}
                 onChange={e => onUpdateField('occupation', e.target.value)}
                 placeholder="ประธานกลุ่มบริษัทยักษ์ใหญ่"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
@@ -281,7 +292,7 @@ export function InputForm({
                 value={character.car}
                 onChange={e => onUpdateField('car', e.target.value)}
                 placeholder="Porsche 911 GT3 RS สีดำด้าน"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
 
@@ -292,12 +303,12 @@ export function InputForm({
                 value={character.perfume}
                 onChange={e => onUpdateField('perfume', e.target.value)}
                 placeholder="Tom Ford Tobacco Vanille"
-                className="form-input"
+                className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
               />
             </FieldRow>
           </div>
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="address"
             label="ที่อยู่ / ฐานที่มั่น"
             rows={2}
@@ -306,7 +317,7 @@ export function InputForm({
             placeholder="Penthouse ชั้น 52 ใจกลางกรุงเทพฯ"
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="fashionStyle"
             label="สไตล์การแต่งตัว"
             rows={2}
@@ -325,7 +336,7 @@ export function InputForm({
           defaultOpen={false}
           badge={character.visualTags.length}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="appearanceDesc"
             label="คำบรรยายลักษณะภายนอกโดยละเอียด *"
             hint="กดปุ่มขยายช่องหรือเต็มจอเพื่อเขียนบรรยายยาวๆ"
@@ -335,7 +346,7 @@ export function InputForm({
             placeholder="ชายหนุ่มรูปร่างสูงใหญ่ กล้ามเนื้อแน่นชัดเจน ใบหน้าคมคายดุดัน นัยน์ตาสีดำสนิทเย็นชา สันกรามคมชัด ผิวสีแทนสุขภาพดี..."
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="visualFeatures"
             label="จุดเด่นบนร่างกาย / รอยสัก / แผลเป็น"
             rows={2}
@@ -345,7 +356,7 @@ export function InputForm({
           />
 
           <FieldRow label="แท็กคีย์เวิร์ดรูปลักษณ์ (#)" htmlFor="visualTags" hint="พิมพ์แล้วกด Enter">
-            <TagInput
+            <TagInput readOnly={isReadOnly}
               id="visualTags"
               field="visualTags"
               tags={character.visualTags}
@@ -405,7 +416,7 @@ export function InputForm({
           defaultOpen={false}
           badge={character.personalityTags.length}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="coreTraits"
             label="Core Traits (บรรยายละเอียด) *"
             hint="กดปุ่มขยายช่องเพื่อเขียนมิติอารมณ์และนิสัย"
@@ -416,7 +427,7 @@ export function InputForm({
           />
 
           <FieldRow label="แท็กนิสัยและค้นหา (# อย่างน้อย 5-10 อย่าง)" htmlFor="personalityTags">
-            <TagInput
+            <TagInput readOnly={isReadOnly}
               id="personalityTags"
               field="personalityTags"
               tags={character.personalityTags}
@@ -429,7 +440,7 @@ export function InputForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="สิ่งที่ชอบ (Likes)" htmlFor="likes">
-              <TagInput
+              <TagInput readOnly={isReadOnly}
                 id="likes"
                 field="likes"
                 tags={character.likes}
@@ -440,7 +451,7 @@ export function InputForm({
             </FieldRow>
 
             <FieldRow label="สิ่งที่เกลียด (Dislikes)" htmlFor="dislikes">
-              <TagInput
+              <TagInput readOnly={isReadOnly}
                 id="dislikes"
                 field="dislikes"
                 tags={character.dislikes}
@@ -451,7 +462,7 @@ export function InputForm({
             </FieldRow>
           </div>
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="generalBehaviors"
             label="พฤติกรรมทั่วไป (กับคนอื่นในสังคม)"
             rows={4}
@@ -460,7 +471,7 @@ export function InputForm({
             placeholder="เว้นระยะห่างกับทุกคน สบตาด้วยสายตากดดัน ไม่ชอบการสัมผัสตัวกับคนแปลกหน้า..."
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="userExclusiveBehaviors"
             label="พฤติกรรมพิเศษเฉพาะกับ {{user}}"
             rows={4}
@@ -480,7 +491,7 @@ export function InputForm({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="coreBelief"
                 label="1. ความเชื่อฝังใจ (Core Belief)"
                 rows={3}
@@ -489,7 +500,7 @@ export function InputForm({
                 placeholder="ความแข็งแกร่งเท่านั้นที่ปกป้องสิ่งสำคัญได้"
               />
 
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="mindset"
                 label="2. กระบวนการคิด (Mindset)"
                 rows={3}
@@ -498,7 +509,7 @@ export function InputForm({
                 placeholder="วิเคราะห์สถานการณ์ด้วยเหตุผล ไม่ใช้อารมณ์ตัดสิน"
               />
 
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="perception"
                 label="3. มุมมองต่อโลกและผู้คน"
                 rows={3}
@@ -507,7 +518,7 @@ export function InputForm({
                 placeholder="โลกนี้โหดร้าย ทุกคนมีเจตนาแอบแฝง"
               />
 
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="expression"
                 label="4. วิธีแสดงออก (Expression)"
                 rows={3}
@@ -516,7 +527,7 @@ export function InputForm({
                 placeholder="นิ่งสงบ ไม่แสดงความกลัวหรือความอ่อนแอออกมา"
               />
 
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="behaviorUnderEmotion"
                 label="5. พฤติกรรมเมื่อเกิดอารมณ์รุนแรง"
                 rows={3}
@@ -525,7 +536,7 @@ export function InputForm({
                 placeholder="ยิ่งโกรธจะยิ่งเงียบและสุขุม แต่สายตาจะดุดันน่ากลัว"
               />
 
-              <ExpandableTextarea
+              <ExpandableTextarea readOnly={isReadOnly}
                 id="emotionalTriggers"
                 label="6. จุดเปราะบางทางอารมณ์ (Triggers)"
                 rows={3}
@@ -535,7 +546,7 @@ export function InputForm({
               />
             </div>
 
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="flawsWeaknesses"
               label="7. ข้อเสียและจุดอ่อน (Flaws & Weaknesses)"
               rows={3}
@@ -554,7 +565,7 @@ export function InputForm({
           description="บทบาทในเรื่อง, ปูมหลัง, สถานะเริ่มต้น และทัศนคติที่มีต่อ {{user}}"
           defaultOpen={false}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="userStoryRole"
             label="บทบาทของ {{user}} ในสายตาตัวละคร"
             rows={3}
@@ -570,11 +581,11 @@ export function InputForm({
               value={character.initialRelationship}
               onChange={e => onUpdateField('initialRelationship', e.target.value)}
               placeholder="เจ้าหนี้กับลูกหนี้ / คนแปลกหน้าที่ต้องแต่งงานกัน"
-              className="form-input"
+              className={`form-input ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`} readOnly={isReadOnly}
             />
           </FieldRow>
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="relationshipBackstory"
             label="ปูมหลังความสัมพันธ์ (Backstory)"
             hint="เล่าเหตุการณ์ในอดีตที่ผูกพันกัน"
@@ -584,7 +595,7 @@ export function InputForm({
             placeholder="ทั้งสองเคยรู้จักกันในวัยเด็ก ก่อนที่ฝ่ายชายจะหายตัวไปและกลับมาในฐานะหัวหน้าแก๊ง..."
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="userAttitude"
             label="ทัศนคติที่มีต่อ {{user}} (Attitude)"
             rows={4}
@@ -603,7 +614,7 @@ export function InputForm({
           defaultOpen={false}
           badge={character.systemRules.length}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="absoluteAntiBehaviors"
             label="พฤติกรรมที่ห้ามทำเด็ดขาด (Anti-Behaviors) *"
             hint="เช่น ห้ามทำร้าย {{user}}, ห้ามร้องไห้ต่อหน้าศัตรู"
@@ -613,7 +624,7 @@ export function InputForm({
             placeholder="ห้ามทำร้ายร่างกาย {{user}} โดยเด็ดขาด, ห้ามยอมก้มหัวให้ใคร, ห้ามยอมแพ้ต่อแรงกดดัน"
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="hiddenSoftSide"
             label="มุมอ่อนโยนที่ซ่อนไว้ (Hidden Soft Side)"
             rows={4}
@@ -622,7 +633,7 @@ export function InputForm({
             placeholder="เมื่ออยู่กับ {{user}} สองต่อสองจะชอบนอนหนุนตัก ลูบผมเบาๆ และพูดด้วยน้ำเสียงนุ่มนวล"
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="darkSide"
             label="ด้านมืด / ความดิบเถื่อน (Dark Side)"
             rows={4}
@@ -632,7 +643,7 @@ export function InputForm({
           />
 
           <FieldRow label="กฎระบบ & ข้อห้ามสำหรับ AI" htmlFor="systemRules" hint="พิมพ์แล้วกด Enter">
-            <TagInput
+            <TagInput readOnly={isReadOnly}
               id="systemRules"
               field="systemRules"
               tags={character.systemRules}
@@ -651,7 +662,7 @@ export function InputForm({
           description="ลีลา, Kinks, Aftercare และบทสนทนาบนเตียง"
           defaultOpen={false}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="sexualStyle"
             label="ลีลาและบทบาทบนเตียง (Sexual Style)"
             rows={4}
@@ -660,7 +671,7 @@ export function InputForm({
             placeholder="ดุดัน เผด็จการ ชอบควบคุมจังหวะทั้งหมด แต่คอยมองสีหน้าและฟังเสียงครางของ {{user}} ตลอดเวลา"
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="kinksPreferences"
             label="รสนิยมเฉพาะตัว / Kinks & Fetishes"
             rows={4}
@@ -669,7 +680,7 @@ export function InputForm({
             placeholder="ชอบกัดต้นคอทำรอย, ชอบจับข้อมือล็อกไว้เหนือหัว, Dirty Talk ด้วยเสียงกระซิบต่ำ"
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="aftercareStyle"
             label="การดูแลหลังเสร็จกิจ (Aftercare Style)"
             rows={4}
@@ -687,7 +698,7 @@ export function InputForm({
           description="ตารางชีวิต, งานอดิเรก และกิจกรรมยามว่าง"
           defaultOpen={false}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="dailyRoutine"
             label="กิจวัตรประจำวัน (Daily Routine)"
             rows={4}
@@ -706,7 +717,7 @@ export function InputForm({
           defaultOpen={false}
           badge={character.locations.length}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="toneSetting"
             label="โทนเรื่องและบรรยากาศ (Tone & Setting)"
             rows={3}
@@ -720,7 +731,7 @@ export function InputForm({
               <span className="text-xs font-bold text-foreground">
                 สถานที่ในเรื่อง ({character.locations.length}/10)
               </span>
-              {character.locations.length < 10 && (
+              {!isReadOnly && character.locations.length < 10 && (
                 <div className="flex items-center gap-2">
                 {onLoadDefaultLocations && (
                   <button
@@ -791,7 +802,7 @@ export function InputForm({
           badge={character.supportingCharacters.length}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="subCharRules"
               label="กฎการควบคุมตัวละครเสริม (Sub-char Rules)"
               rows={3}
@@ -799,7 +810,7 @@ export function InputForm({
               onChange={v => onUpdateField('subCharRules', v)}
               placeholder="ห้ามแย่งซีนตัวหลัก, เปลี่ยนบุคลิกกะทันหัน..."
             />
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="subCharAllowed"
               label="สิ่งที่ตัวละครเสริมทำได้ (Allowed Actions)"
               rows={3}
@@ -891,7 +902,7 @@ export function InputForm({
                   </FieldRow>
                 </div>
 
-                <ExpandableTextarea
+                <ExpandableTextarea readOnly={isReadOnly}
                   id={'sub-shortDesc-' + idx}
                   label="คำบรรยายตัวละครเสริม (หน้ารายละเอียด)"
                   rows={3}
@@ -900,7 +911,7 @@ export function InputForm({
                   placeholder="ชายหนุ่มร่างสูง สวมสูทดำ นิ่งขรึม ภักดีต่อคิงสูงสุด..."
                 />
 
-                <ExpandableTextarea
+                <ExpandableTextarea readOnly={isReadOnly}
                   id={'sub-sysPrompt-' + idx}
                   label="System Prompt สำหรับควบคุมตัวละครเสริม (บทบาทและตัวตน)"
                   rows={4}
@@ -922,7 +933,7 @@ export function InputForm({
           defaultOpen={false}
           badge={character.categoryTags.length}
         >
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="shortIntro"
             label="คำโปรยสั้น (Short Intro)"
             rows={3}
@@ -931,7 +942,7 @@ export function InputForm({
             placeholder="เมื่อลูกหนี้ตัวน้อยต้องมาชดใช้หนี้ด้วยการเป็นเลขาข้างกายมาเฟียหนุ่มสุดเย็นชา..."
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="punchline"
             label="ประโยคเด็ดประจำตัว (Punchline - 1 ประโยคเด็ด)"
             rows={2}
@@ -940,7 +951,7 @@ export function InputForm({
             placeholder={"'หนี้ของคุณ... ต้องจ่ายด้วยทั้งตัวและหัวใจเท่านั้น'"}
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="plotSummary"
             label="พล็อตและเรื่องย่อ (Plot Summary)"
             rows={5}
@@ -949,7 +960,7 @@ export function InputForm({
             placeholder="การพบกันอีกครั้งระหว่างสองคนในสถานการณ์ที่บีบคั้น นำพาไปสู่ความสัมพันธ์อันซับซ้อน..."
           />
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="publicInfo"
             label="ข้อมูลสาธารณะ (Public Info)"
             rows={4}
@@ -959,7 +970,7 @@ export function InputForm({
           />
 
           <FieldRow label="แท็กหมวดหมู่เนื้อหา" htmlFor="categoryTags">
-            <TagInput
+            <TagInput readOnly={isReadOnly}
               id="categoryTags"
               field="categoryTags"
               tags={character.categoryTags}
@@ -969,7 +980,7 @@ export function InputForm({
             />
           </FieldRow>
 
-          <ExpandableTextarea
+          <ExpandableTextarea readOnly={isReadOnly}
             id="momentIntro"
             label="คำแนะนำตัวสั้น / สร้างโมเมนต์ (Moment Intro)"
             rows={2}
@@ -984,7 +995,7 @@ export function InputForm({
               <span>🎭</span> ฉากเปิดตัวละคร (Open Greeting)
             </h4>
 
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="openGreetingNarrative"
               label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
               rows={4}
@@ -993,7 +1004,7 @@ export function InputForm({
               placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ..."
             />
 
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="openGreetingDialogue"
               label="บทพูดเปิดตัว (Dialogue)"
               rows={3}
@@ -1002,7 +1013,7 @@ export function InputForm({
               placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
             />
 
-            <ExpandableTextarea
+            <ExpandableTextarea readOnly={isReadOnly}
               id="fullGreeting"
               label="ฉากเปิดรวมทั้งหมด (Full Open Greeting) *"
               hint="ฉากเริ่มต้นเมื่อผู้ใช้เริ่มเปิดการสนทนา"

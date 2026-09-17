@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
 interface SingleBoxInputProps {
+  isReadOnly?: boolean;
   rawMarkdown: string;
   onChangeRaw: (text: string) => void;
   onApplyParse: (text: string) => void;
@@ -15,6 +16,7 @@ interface SingleBoxInputProps {
 }
 
 export function SingleBoxInput({
+  isReadOnly = false,
   rawMarkdown,
   onChangeRaw,
   onApplyParse,
@@ -231,7 +233,8 @@ export function SingleBoxInput({
       <div className="flex-1 relative p-3">
         <textarea
           value={rawMarkdown}
-          onChange={(e) => onChangeRaw(e.target.value)}
+          onChange={(e) => !isReadOnly && onChangeRaw(e.target.value)}
+          readOnly={isReadOnly}
           placeholder={`วางข้อความตัวละครรูปแบบใดก็ได้ที่นี่:
 1. Markdown: # ชื่อตัวละคร, ## 1. ข้อมูลพื้นฐาน...
 2. JSON: { "name": "...", "age": "24", "traits": "..." }
@@ -256,6 +259,12 @@ export function SingleBoxInput({
 
       {/* Detection Pills & Action Footer */}
       <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/30 space-y-2.5">
+        {isReadOnly && (
+          <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5">
+            <span>🔒</span>
+            <span>กำลังเปิดดูในโหมดอ่านอย่างเดียว (Read-Only) — ข้อความถูกล็อกไม่ให้แก้ไข</span>
+          </div>
+        )}
         {/* Detection Status */}
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5">
@@ -293,7 +302,7 @@ export function SingleBoxInput({
           <button
             type="button"
             onClick={handleApply}
-            disabled={!rawMarkdown.trim() || isParsing}
+            disabled={!rawMarkdown.trim() || isParsing || isReadOnly}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <span>{isParsing ? '⏳' : '✨'}</span>

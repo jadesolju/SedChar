@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useCallback, useRef, type KeyboardEvent } from 'react';
 
 type ArrayField =
@@ -17,6 +17,7 @@ interface TagInputProps {
   onAdd: (field: ArrayField, value: string) => void;
   onRemove: (field: ArrayField, index: number) => void;
   prefixHash?: boolean;
+  readOnly?: boolean;
 }
 
 export function TagInput({
@@ -27,93 +28,93 @@ export function TagInput({
   onAdd,
   onRemove,
   prefixHash = false,
+  readOnly = false,
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const commitTag = useCallback(() => {
-    let trimmed = inputValue.trim();
+  const handleAdd = useCallback(() => {
+    if (readOnly) return;
+    const trimmed = inputValue.trim();
     if (!trimmed) return;
-    if (prefixHash && !trimmed.startsWith('#')) {
-      trimmed = `#${trimmed}`;
-    }
-    onAdd(field, trimmed);
+
+    // Support comma-separated batch input
+    const newTags = trimmed
+      .split(/[,،]+/)
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+
+    newTags.forEach(tag => {
+      let finalTag = tag;
+      if (prefixHash && !finalTag.startsWith('#')) {
+        finalTag = `#${finalTag}`;
+      }
+      onAdd(field, finalTag);
+    });
+
     setInputValue('');
-    inputRef.current?.focus();
-  }, [inputValue, field, onAdd, prefixHash]);
+  }, [inputValue, field, onAdd, prefixHash, readOnly]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (readOnly) return;
+      if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
-        commitTag();
-      }
-      if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
+        handleAdd();
+      } else if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
         onRemove(field, tags.length - 1);
       }
     },
-    [commitTag, inputValue, tags.length, field, onRemove]
+    [handleAdd, inputValue, tags.length, field, onRemove, readOnly]
   );
 
   return (
-    <div className="space-y-2">
-      {/* Tags Display */}
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5" role="list" aria-label="รายการแท็ก">
-          {tags.map((tag, i) => (
-            <span
-              key={`${tag}-${i}`}
-              role="listitem"
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border group transition-all"
-            >
-              <span className="max-w-[220px] truncate" title={tag}>{tag}</span>
+    <div className="flex flex-col gap-1.5 w-full">
+      <div
+        className={`flex flex-wrap items-center gap-1.5 p-2 rounded-lg border border-border min-h-[38px] transition-all ${
+          readOnly ? 'bg-muted/30 cursor-not-allowed' : 'bg-muted/50 focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/50'
+        }`}
+        onClick={() => !readOnly && inputRef.current?.focus()}
+      >
+        {tags.map((tag, index) => (
+          <span
+            key={`${tag}-${index}`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 animate-in fade-in duration-100"
+          >
+            <span>{tag}</span>
+            {!readOnly && (
               <button
                 type="button"
-                onClick={() => onRemove(field, i)}
-                aria-label={`ลบ "${tag}"`}
-                className="
-                  flex-shrink-0 w-3.5 h-3.5 rounded-full
-                  flex items-center justify-center
-                  text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10
-                  transition-colors duration-100 cursor-pointer
-                "
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(field, index);
+                }}
+                className="text-primary/70 hover:text-primary transition-colors cursor-pointer text-xs font-bold leading-none p-0.5"
+                title="ลบแท็ก"
               >
                 ✕
               </button>
-            </span>
-          ))}
-        </div>
-      )}
+            )}
+          </span>
+        ))}
 
-      {/* Input */}
-      <div className="
-        flex items-center gap-2 border border-border rounded-md px-3 py-1.5
-        bg-muted/40 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary
-        transition-all duration-150
-      ">
-        <input
-          ref={inputRef}
-          id={id}
-          value={inputValue}
-          placeholder={placeholder}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 min-w-[120px] bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
-          aria-label={placeholder}
-        />
-        <button
-          type="button"
-          onClick={commitTag}
-          disabled={!inputValue.trim()}
-          aria-label="เพิ่มแท็ก"
-          className="
-            flex-shrink-0 text-[11px] text-muted-foreground px-2 py-0.5 rounded border border-border
-            hover:border-primary/60 hover:text-foreground
-            disabled:opacity-0 transition-all duration-150 cursor-pointer
-          "
-        >
-          + เพิ่ม
-        </button>
+        {!readOnly && (
+          <input
+            ref={inputRef}
+            id={id}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleAdd}
+            placeholder={tags.length === 0 ? placeholder : ''}
+            className="flex-1 min-w-[120px] bg-transparent text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+          />
+        )}
+
+        {readOnly && tags.length === 0 && (
+          <span className="text-xs text-muted-foreground/50 italic px-1">ไม่มีข้อมูลแท็ก</span>
+        )}
       </div>
     </div>
   );
