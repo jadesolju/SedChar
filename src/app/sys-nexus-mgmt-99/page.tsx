@@ -116,7 +116,7 @@ function AdminNexusDashboardContent() {
                 value={masterPasscode}
                 onChange={(e) => setMasterPasscode(e.target.value)}
                 placeholder="ใส่ Master Passcode"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#1F1F24] border border-border text-xs text-foreground text-center font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-xs text-foreground text-center font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
 
               {unlockError && (
@@ -323,7 +323,7 @@ function AdminNexusDashboardContent() {
                   <p>
                     หากต้องการกำหนดสิทธิ์ถาวรให้บัญชีผู้ใช้ใน Supabase สามารถรันคำสั่ง SQL ใน Supabase SQL Editor:
                   </p>
-                  <pre className="p-3 rounded-xl bg-[#1F1F24] border border-border text-foreground font-mono text-[11px] overflow-x-auto">
+                  <pre className="p-3 rounded-xl bg-muted/50 border border-border text-foreground font-mono text-[11px] overflow-x-auto">
                     {`-- กำหนดสิทธิ์ให้ผู้ใช้เป็น Admin (ไม่จำกัดโควตา)
 UPDATE auth.users 
 SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb 
@@ -345,7 +345,7 @@ WHERE email = 'premium_user@example.com';`}
                   <p>
                     หากต้องการเปลี่ยนตัวเลขโควตาของแต่ละ Role สามารถแก้ไขได้ที่ไฟล์ <code className="text-foreground bg-muted px-1.5 py-0.5 rounded font-mono">src/context/AuthContext.tsx</code>:
                   </p>
-                  <pre className="p-3 rounded-xl bg-[#1F1F24] border border-border text-foreground font-mono text-[11px] overflow-x-auto">
+                  <pre className="p-3 rounded-xl bg-muted/50 border border-border text-foreground font-mono text-[11px] overflow-x-auto">
                     {`export const ROLE_QUOTA_MAP: Record<UserRole, number> = {
   admin: 999999, // Unlimited / ไม่จำกัด
   premium: 50,   // เปลี่ยนตัวเลขตรงนี้ เช่น 100

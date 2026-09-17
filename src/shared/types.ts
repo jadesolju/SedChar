@@ -70,7 +70,7 @@ export const CHARACTER_FLAGS: Record<CharacterFlagType, CharacterFlagInfo> = {
     label: 'ธงดำ',
     emoji: '⚫',
     colorClass: 'text-zinc-900 dark:text-zinc-100',
-    badgeBg: 'bg-zinc-900 text-zinc-100 dark:bg-zinc-950 border-zinc-700',
+    badgeBg: 'bg-neutral-100 text-neutral-900 border-neutral-300 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700',
     description: 'ระดับอันตรายสูงสุด ร้ายกาจ เป็นพิษแบบรุนแรง ทำร้ายร่างกายหรือจิตใจแบบดิ่งลึก ไร้ความเห็นใจ',
   },
   watermelon: {

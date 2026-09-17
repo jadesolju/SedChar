@@ -184,7 +184,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                     value={filterQuery}
                     onChange={(e) => setFilterQuery(e.target.value)}
                     placeholder="ค้นหาชื่อตัวละคร, ฉายา, หรือรายละเอียด..."
-                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-[#1F1F24] border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
@@ -384,7 +384,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
                   placeholder="เช่น: ฮิคารุ (CEO ซึนเดเระ ver.1)"
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#1F1F24] border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
 
@@ -399,7 +399,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://... หรือวาง Data URL"
-                    className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-[#1F1F24] border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                   <input
                     type="file"
@@ -471,7 +471,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                     <select
                       value={sharePermission}
                       onChange={(e) => handleChangePermission(e.target.value as 'read-only' | 'edit')}
-                      className="w-full p-2.5 rounded-xl bg-[#1F1F24] border border-border text-foreground font-medium text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+                      className="w-full p-2.5 rounded-xl bg-muted/50 border border-border text-foreground font-medium text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                     >
                       <option value="read-only">🔒 Read-only — ดู, คัดลอก และ Export ได้อย่างเดียว (ห้ามแก้ไข)</option>
                       <option value="edit">✏️ Edit — อนุญาตให้ผู้รับแก้ไขและบันทึกข้อมูลได้</option>
@@ -500,7 +500,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                         type="text"
                         readOnly
                         value={generatedShareUrl || ''}
-                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-[#1F1F24] border border-border text-foreground font-mono focus:outline-none"
+                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground font-mono focus:outline-none"
                       />
                       <button
                         type="button"
@@ -543,7 +543,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-5">
-                  <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed bg-[#1F1F24] p-4 rounded-xl border border-border text-foreground">
+                  <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed bg-muted/50 p-4 rounded-xl border border-border text-foreground">
                     {characterToFullMarkdown(inspectingCharacter)}
                   </pre>
                 </div>

@@ -101,7 +101,7 @@ export function UserMenu() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 p-2 bg-card border border-border rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* User Info Header */}
-          <div className="p-2.5 mb-1.5 rounded-xl bg-[#1F1F24] border border-border">
+          <div className="p-2.5 mb-1.5 rounded-xl bg-muted/50 border border-border">
             <div className="text-[11px] uppercase font-bold tracking-wider mb-0.5 flex items-center justify-between">
               <span className="text-foreground flex items-center gap-1">
                 <span>{roleLabel.icon}</span>

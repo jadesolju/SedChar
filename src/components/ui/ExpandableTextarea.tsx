@@ -138,13 +138,13 @@ export function ExpandableTextarea({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full p-3 rounded-xl bg-[#1F1F24] border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed ${
+          className={`w-full p-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed ${
             isExpanded ? 'min-h-[220px]' : 'min-h-[100px]'
           } ${className}`}
         />
 
         {/* Quick action floating buttons on bottom right */}
-        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-[#1F1F24]/90 backdrop-blur-xs p-0.5 rounded-lg border border-border/60 shadow-xs">
+        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-card/90 backdrop-blur-xs p-0.5 rounded-lg border border-border/60 shadow-xs">
           {value && (
             <button
               type="button"
@@ -215,7 +215,7 @@ export function ExpandableTextarea({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder || 'เขียนบรรยายรายละเอียดที่นี่...'}
-                className="w-full flex-1 p-5 rounded-xl bg-[#1F1F24] border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+                className="w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
               />
             </div>
 

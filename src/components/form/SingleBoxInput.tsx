@@ -238,7 +238,7 @@ export function SingleBoxInput({
 4. Plaintext: ชื่อ: คชา, อายุ: 28, นิสัย: เย็นชาแต่รักเดียวใจเดียว...
 
 กดปุ่ม "แปลงข้อมูลสู่ฟอร์ม" ด้านล่างเพื่อซิงค์ข้อมูลเข้าสู่ 10 หมวดหมู่แบบ 100%`}
-          className="w-full h-full p-4 rounded-xl bg-[#1F1F24] border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed"
+          className="w-full h-full p-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed"
         />
 
         {/* Quick expand floating button */}
@@ -246,7 +246,7 @@ export function SingleBoxInput({
           type="button"
           onClick={() => setIsFullscreen(true)}
           title="ขยายช่องเขียนเต็มจอ"
-          className="absolute bottom-5 right-5 p-1.5 rounded-lg bg-[#1F1F24]/90 backdrop-blur-xs border border-border text-muted-foreground hover:text-primary transition-all text-xs cursor-pointer shadow-sm flex items-center gap-1"
+          className="absolute bottom-5 right-5 p-1.5 rounded-lg bg-card/90 backdrop-blur-xs border border-border text-muted-foreground hover:text-primary transition-all text-xs cursor-pointer shadow-sm flex items-center gap-1"
         >
           <span>⛶</span>
           <span className="text-[10px] font-semibold">ขยายเต็มจอ</span>
@@ -354,7 +354,7 @@ export function SingleBoxInput({
                 value={rawMarkdown}
                 onChange={(e) => onChangeRaw(e.target.value)}
                 placeholder="วางหรือเขียนเนื้อหาตัวละครแบบอิสระที่นี่..."
-                className="w-full flex-1 p-5 rounded-xl bg-[#1F1F24] border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+                className="w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
               />
             </div>
 
