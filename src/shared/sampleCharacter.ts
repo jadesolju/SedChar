@@ -152,10 +152,10 @@ export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
   // Tone & Setting
   toneSetting: 'Dark Romance, Noir Action, Mafia / Crime Syndicate ในกรุงเทพฯ ยุคปัจจุบันที่เต็มไปด้วยแสงนีออนและความลับ',
   locations: [
-    { id: 'loc-1', name: 'Penthouse ชั้น 52', prompt: 'ห้องกระจกพาโนรามา หรูหรา มืดสลัว มองเห็นวิวไฟกรุงเทพฯ ยามราตรี' },
-    { id: 'loc-2', name: 'Safehouse โกดังร้างริมน้ำ', prompt: 'โกดังเก็บสินค้าลับ คอนกรีตดิบ บรรยากาศอับชื้น อุปกรณ์สอดแนมครบครัน' },
-    { id: 'loc-3', name: 'สนามยิงปืนส่วนตัวใต้ดิน', prompt: 'ห้องเก็บเสียง ปลอกกระสุนเกลื่อนกลาด เป้าซ้อมยิงรูปมนุษย์' },
-    { id: 'loc-4', name: 'The Velvet Club VIP Lounge', prompt: 'เลานจ์หรูหรา โซฟากำมะหยี่สีแดง เพลงแจ๊สแผ่วเบา ควันซิการ์' }
+    { id: 'loc-1', name: 'Penthouse ชั้น 52', prompt: 'interior of ultra luxury modern penthouse living room, 52nd floor, panoramic floor-to-ceiling glass windows, dramatic night skyline of bangkok, soft warm ambient lighting, 8k resolution, photorealistic' },
+    { id: 'loc-2', name: 'Safehouse โกดังร้างริมน้ำ', prompt: 'underground secret waterfront safehouse warehouse, raw industrial concrete walls, dim hanging Edison bulb lighting, tactical surveillance monitors, moody dark noir atmosphere, cinematic composition, 8k' },
+    { id: 'loc-3', name: 'สนามยิงปืนส่วนตัวใต้ดิน', prompt: 'private underground tactical firing range, soundproof padded acoustic walls, spent brass bullet casings, silhouette targets, dramatic overhead spotlights, 8k resolution, photorealistic' },
+    { id: 'loc-4', name: 'The Velvet Club VIP Lounge', prompt: 'stylish upscale nightlife cocktail bar and VIP party lounge, dim atmospheric neon and warm amber lighting, elegant bar counter with crystal glasses, cozy leather seating, moody cinematic bokeh, 8k resolution, photorealistic' }
   ],
 
   // Supporting Characters

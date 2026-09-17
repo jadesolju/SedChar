@@ -517,6 +517,74 @@ export function buildPurrpawSystemPrompt(char: ThaiMasterCharacter): string {
   return md.trim();
 }
 
+export function generateEnglishLocationPrompt(name = '', desc = ''): string {
+  const combined = `${name} ${desc}`.toLowerCase();
+
+  // If already pure English with reasonable length, return trimmed
+  if (desc && !/[ก-๙]/.test(desc) && desc.trim().length > 10) {
+    return desc.trim();
+  }
+
+  // 1. University & Academic
+  if (/มหาวิทยาลัย|มหาลัย|คณะ|ศิลปกรรม|ห้องเรียน|นักศึกษา|university|faculty|campus/.test(combined)) {
+    return 'modern university art faculty building interior, spacious open studio classroom and creative student lounge, natural daylight streaming through tall windows, aesthetic academic atmosphere, 8k resolution, photorealistic';
+  }
+
+  // 2. Bar, Club & Nightlife
+  if (/บาร์|ผับ|ปาร์ตี้|กลางคืน|เหล้า|ค็อกเทล|คลับ|club|bar|pub|nightlife/.test(combined)) {
+    return 'stylish upscale nightlife cocktail bar and VIP party lounge, dim atmospheric neon and warm amber lighting, elegant bar counter with crystal glasses, cozy leather seating, moody cinematic bokeh, 8k resolution, photorealistic';
+  }
+
+  // 3. Condo, Penthouse & Luxury Bedroom
+  if (/คอนโด|เพนต์เฮาส์|penthouse|ห้องนอน|อารีย์|ชั้นสูง|condo|apartment/.test(combined)) {
+    return 'cinematic luxury high-rise condo master bedroom in Bangkok, panoramic floor-to-ceiling glass windows, stunning night city skyline view, warm aesthetic ambient lighting, cozy modern designer interior, 8k resolution, photorealistic';
+  }
+
+  // 4. Safehouse & Warehouse
+  if (/โกดัง|เซฟเฮาส์|ห้องลับ|ริมน้ำ|ฐานทัพ|safehouse|warehouse/.test(combined)) {
+    return 'underground secret waterfront safehouse warehouse, raw industrial concrete walls, dim hanging Edison bulb lighting, tactical surveillance monitors, moody dark noir atmosphere, cinematic composition, 8k';
+  }
+
+  // 5. Shooting Range & Tactical
+  if (/สนามยิงปืน|ยิงปืน|อาวุธ|shooting|range/.test(combined)) {
+    return 'private underground tactical firing range, soundproof padded acoustic walls, spent brass bullet casings, silhouette targets, dramatic overhead spotlights, 8k resolution, photorealistic';
+  }
+
+  // 6. Hospital & Clinic
+  if (/โรงพยาบาล|ห้องตรวจ|คลินิก|hospital|clinic/.test(combined)) {
+    return 'modern clean private hospital luxury suite interior, soft clinical lighting, peaceful calming atmosphere, minimalist aesthetic, 8k resolution, photorealistic';
+  }
+
+  // 7. Mansion & House
+  if (/บ้าน|คฤหาสน์|วิลล่า|mansion|villa|house/.test(combined)) {
+    return 'luxurious contemporary private mansion interior, spacious living room with grand marble architecture, elegant designer decor, warm sunlight, 8k resolution, photorealistic';
+  }
+
+  // 8. Beach & Resort
+  if (/ทะเล|ชายหาด|รีสอร์ท|เกาะ|beach|ocean|resort/.test(combined)) {
+    return 'exclusive tropical beachfront luxury villa resort, panoramic turquoise ocean view, golden hour warm sunset light, wooden balcony, photorealistic, 8k';
+  }
+
+  // 9. Office & Workplace
+  if (/ออฟฟิศ|ทำงาน|บริษัท|ห้องทำงาน|office|workplace/.test(combined)) {
+    return 'luxurious modern executive office interior, dark mahogany desk, panoramic glass window city view, warm brass ambient lamp, corporate aesthetic, 8k resolution';
+  }
+
+  // 10. Cafe & Coffee Shop
+  if (/คาเฟ่|ร้านกาแฟ|cafe|coffee/.test(combined)) {
+    return 'aesthetic modern specialty coffee shop cafe interior, warm natural wood decor, soft sunlight, cozy atmospheric ambience, photorealistic, 8k';
+  }
+
+  // 11. Garden & Nature
+  if (/สวน|ป่า|ธรรมชาติ|garden|park/.test(combined)) {
+    return 'serene lush Japanese botanical garden, tranquil koi pond, bamboo trees, soft ambient sunbeams, peaceful cinematic nature atmosphere, 8k';
+  }
+
+  // Fallback high-quality cinematic prompt
+  const cleanedName = name.replace(/[0-9.]/g, '').trim() || 'atmospheric setting';
+  return `cinematic interior of ${cleanedName}, dramatic atmospheric lighting, high-end architectural photography, highly detailed, photorealistic, 8k resolution, octane render`;
+}
+
 export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput {
   const displayName = char.fullName || char.nickname || 'ตัวละคร';
   const tagline = extractPunchyHook(char);
@@ -538,7 +606,7 @@ export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput 
   // Locations with English Prompt support for TensorArt/GPT/Gemini
   const locations = char.locations.map(loc => ({
     name: loc.name,
-    prompt: loc.prompt || `cinematic interior of ${loc.name}, atmospheric lighting, photorealistic, 8k, dark aesthetic`,
+    prompt: generateEnglishLocationPrompt(loc.name, loc.prompt),
   }));
 
   const totalCharCount = (displayName + tagline + tags + sysPrompt + (char.fullGreeting || '')).length;
