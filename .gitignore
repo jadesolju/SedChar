@@ -57,3 +57,6 @@ desktop.ini
 .vscode/
 *.swp
 *.swo
+
+.agents/
+.agents

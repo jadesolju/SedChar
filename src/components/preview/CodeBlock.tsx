@@ -3,6 +3,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 
 interface CodeBlockProps {
   label: string;
+  subtitle?: string;
   required?: boolean;
   hint?: string;
   content: string;
@@ -13,6 +14,7 @@ interface CodeBlockProps {
 
 export function CodeBlock({
   label,
+  subtitle,
   required = false,
   hint,
   content,
@@ -25,20 +27,27 @@ export function CodeBlock({
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs transition-shadow hover:shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-muted/40 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-foreground">
-            {label}
-          </span>
-          {required && (
-            <span className="text-rose-500 font-bold text-xs" title="จำเป็นต้องระบุ">*</span>
-          )}
-          {hint && (
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">({hint})</span>
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-muted/40 border-b border-border gap-2">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-bold text-foreground">
+              {label}
+            </span>
+            {required && (
+              <span className="text-rose-500 font-bold text-xs" title="จำเป็นต้องระบุ">*</span>
+            )}
+            {hint && (
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">({hint})</span>
+            )}
+          </div>
+          {subtitle && (
+            <span className="text-[10px] text-muted-foreground mt-0.5">
+              {subtitle}
+            </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {countLabel && (
             <span className={`text-[11px] font-mono px-2 py-0.5 rounded ${
               isOverLimit

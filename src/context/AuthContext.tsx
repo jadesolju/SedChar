@@ -4,6 +4,14 @@ import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/client';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
+export type UserRole = 'admin' | 'premium' | 'free';
+
+export const ROLE_QUOTA_MAP: Record<UserRole, number> = {
+  admin: 999999, // Unlimited / ไม่จำกัด
+  premium: 50,   // 50 ครั้งต่อวัน
+  free: 15,      // 15 ครั้งต่อวัน
+};
+
 export interface SavedCharacterRecord {
   id: string;
   user_id: string;
@@ -16,137 +24,199 @@ export interface SavedCharacterRecord {
   character_data: ThaiMasterCharacter;
   created_at: string;
   updated_at: string;
+  share_id?: string;
+  share_permission?: 'read-only' | 'edit';
+  is_shared?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userRole: UserRole;
   isLoading: boolean;
   quotaRemaining: number;
   quotaMax: number;
+  isUnlimitedQuota: boolean;
   savedCharacters: SavedCharacterRecord[];
   isLibraryLoading: boolean;
   isAuthModalOpen: boolean;
   isLibraryModalOpen: boolean;
+  authModalMode: 'signin' | 'signup' | 'reset';
   openAuthModal: (mode?: 'signin' | 'signup' | 'reset') => void;
   closeAuthModal: () => void;
   openLibraryModal: () => void;
   closeLibraryModal: () => void;
+  setUserRole: (role: UserRole) => void;
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithDiscord: () => Promise<{ error: any }>;
   signInWithEmail: (email: string, pass: string) => Promise<{ error: any }>;
-  signUpWithEmail: (email: string, pass: string) => Promise<{ error: any; data: any }>;
+  signUpWithEmail: (email: string, pass: string) => Promise<{ error: any; data?: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPass: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   consumeQuota: () => boolean;
-  saveToLibrary: (char: ThaiMasterCharacter, title?: string, imageUrl?: string, galleryUrls?: string[]) => Promise<{ success: boolean; error?: string }>;
+  saveToLibrary: (
+    char: ThaiMasterCharacter,
+    title?: string,
+    imageUrl?: string,
+    galleryUrls?: string[]
+  ) => Promise<{ success: boolean; error?: string }>;
   deleteFromLibrary: (id: string) => Promise<boolean>;
   loadLibrary: () => Promise<void>;
+  shareCharacter: (id: string, permission: 'read-only' | 'edit') => { shareUrl: string; shareId: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DAILY_QUOTA_MAX = 15;
-
-export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRoleState] = useState<UserRole>('free');
   const [isLoading, setIsLoading] = useState(true);
-  const [quotaRemaining, setQuotaRemaining] = useState<number>(DAILY_QUOTA_MAX);
+
+  // Daily AI Quota state
+  const [quotaRemaining, setQuotaRemaining] = useState<number>(15);
+  const [quotaMax, setQuotaMax] = useState<number>(15);
+
+  // Character Library state
   const [savedCharacters, setSavedCharacters] = useState<SavedCharacterRecord[]>([]);
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
-
-  const supabase = createClient();
 
   const getTodayKey = useCallback((userId: string) => {
     const today = new Date().toISOString().slice(0, 10);
-    return `sedchar_quota_${userId}_${today}`;
+    return `sedchar_ai_quota_${userId}_${today}`;
   }, []);
 
-  // Update Quota for user
-  const syncQuota = useCallback((currentUser: User | null) => {
+  // Sync and calculate quota when user or role changes
+  const syncQuota = useCallback((currentUser: User | null, role: UserRole) => {
     if (!currentUser) {
       setQuotaRemaining(0);
+      setQuotaMax(ROLE_QUOTA_MAP.free);
       return;
     }
-    try {
-      const key = getTodayKey(currentUser.id);
-      const stored = localStorage.getItem(key);
-      if (stored !== null) {
-        setQuotaRemaining(Math.max(0, parseInt(stored, 10)));
-      } else {
-        localStorage.setItem(key, String(DAILY_QUOTA_MAX));
-        setQuotaRemaining(DAILY_QUOTA_MAX);
-      }
-    } catch {
-      setQuotaRemaining(DAILY_QUOTA_MAX);
+
+    const max = ROLE_QUOTA_MAP[role] || ROLE_QUOTA_MAP.free;
+    setQuotaMax(max);
+
+    if (role === 'admin') {
+      setQuotaRemaining(999999);
+      return;
+    }
+
+    const key = getTodayKey(currentUser.id);
+    const stored = localStorage.getItem(key);
+    if (stored !== null) {
+      const parsed = parseInt(stored, 10);
+      setQuotaRemaining(isNaN(parsed) ? max : Math.min(parsed, max));
+    } else {
+      localStorage.setItem(key, String(max));
+      setQuotaRemaining(max);
     }
   }, [getTodayKey]);
 
-  // Load Library from Supabase and fallback to user local cloud storage
-  const loadLibrary = useCallback(async () => {
-    if (!user) {
-      setSavedCharacters([]);
-      return;
+  // Set User Role & Persist
+  const setUserRole = useCallback((role: UserRole) => {
+    setUserRoleState(role);
+    if (user) {
+      try {
+        localStorage.setItem(`sedchar_user_role_${user.id}`, role);
+      } catch {}
+    } else {
+      try {
+        localStorage.setItem('sedchar_guest_role', role);
+      } catch {}
     }
+    syncQuota(user, role);
+  }, [user, syncQuota]);
+
+  // Load Saved Characters Library
+  const loadLibrary = useCallback(async () => {
+    if (!user) return;
     setIsLibraryLoading(true);
+
     try {
-      // 1. Try fetching from Supabase table 'characters'
+      // 1. Try fetch from Supabase
       const { data, error } = await supabase
         .from('characters')
         .select('*')
         .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
-      if (!error && Array.isArray(data)) {
+      if (!error && data && data.length > 0) {
         setSavedCharacters(data as SavedCharacterRecord[]);
-      } else {
-        // Fallback to local storage persistent library for this user
-        const localKey = `sedchar_library_${user.id}`;
-        const localData = localStorage.getItem(localKey);
-        if (localData) {
-          setSavedCharacters(JSON.parse(localData));
-        } else {
-          setSavedCharacters([]);
-        }
+        // Sync to localStorage
+        localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(data));
+        setIsLibraryLoading(false);
+        return;
       }
-    } catch {
-      const localKey = `sedchar_library_${user.id}`;
-      try {
-        const localData = localStorage.getItem(localKey);
-        if (localData) setSavedCharacters(JSON.parse(localData));
-      } catch {}
-    } finally {
-      setIsLibraryLoading(false);
+    } catch (err) {
+      console.warn('Supabase fetch failed, fallback to local storage:', err);
     }
+
+    // 2. Fallback to localStorage
+    try {
+      const local = localStorage.getItem(`sedchar_library_${user.id}`);
+      if (local) {
+        setSavedCharacters(JSON.parse(local));
+      } else {
+        setSavedCharacters([]);
+      }
+    } catch {}
+
+    setIsLibraryLoading(false);
   }, [user, supabase]);
 
-  // Auth state listener
+  // Initialize Auth & Session
   useEffect(() => {
-    const checkSession = async () => {
+    const initAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        syncQuota(currentSession?.user ?? null);
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        const currentUser = initialSession?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          // Detect Role from Metadata or Local Storage
+          const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) ||
+            (currentUser.user_metadata?.role as UserRole) ||
+            (currentUser.app_metadata?.role as UserRole) ||
+            'free';
+          setUserRoleState(storedRole);
+          syncQuota(currentUser, storedRole);
+        } else {
+          const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
+          setUserRoleState(guestRole);
+          syncQuota(null, guestRole);
+        }
       } catch (err) {
-        console.error('Session check error:', err);
+        console.error('Auth initialization error:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkSession();
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-      setUser(newSession?.user ?? null);
-      syncQuota(newSession?.user ?? null);
+      const currentUser = newSession?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) ||
+          (currentUser.user_metadata?.role as UserRole) ||
+          'free';
+        setUserRoleState(storedRole);
+        syncQuota(currentUser, storedRole);
+      } else {
+        setUserRoleState('free');
+        syncQuota(null, 'free');
+      }
     });
 
     return () => {
@@ -154,7 +224,6 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     };
   }, [supabase, syncQuota]);
 
-  // When user changes, load their library
   useEffect(() => {
     if (user) {
       loadLibrary();
@@ -163,7 +232,11 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     }
   }, [user, loadLibrary]);
 
-  const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
+  const openAuthModal = useCallback((mode: 'signin' | 'signup' | 'reset' = 'signin') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  }, []);
+
   const closeAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
   const openLibraryModal = useCallback(() => setIsLibraryModalOpen(true), []);
   const closeLibraryModal = useCallback(() => setIsLibraryModalOpen(false), []);
@@ -224,13 +297,17 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setUserRoleState('free');
     setSavedCharacters([]);
     setQuotaRemaining(0);
   };
 
   const consumeQuota = useCallback((): boolean => {
+    if (userRole === 'admin') {
+      return true; // Admin has infinite quota
+    }
     if (!user) {
-      openAuthModal();
+      openAuthModal('signin');
       return false;
     }
     if (quotaRemaining <= 0) {
@@ -243,7 +320,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
       localStorage.setItem(key, String(nextVal));
     } catch {}
     return true;
-  }, [user, quotaRemaining, getTodayKey, openAuthModal]);
+  }, [user, userRole, quotaRemaining, getTodayKey, openAuthModal]);
 
   const saveToLibrary = async (
     char: ThaiMasterCharacter,
@@ -252,7 +329,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     galleryUrls?: string[]
   ): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
-      openAuthModal();
+      openAuthModal('signin');
       return { success: false, error: 'กรุณาเข้าสู่ระบบก่อนบันทึกตัวละคร' };
     }
 
@@ -269,20 +346,21 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
       character_data: char,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      share_permission: 'read-only',
+      is_shared: false,
     };
 
     try {
       // 1. Try save to Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('characters')
-        .upsert(newRecord)
-        .select();
+        .upsert(newRecord);
 
       if (error) {
-        console.warn('Supabase DB save fallback to local cloud sync:', error.message);
+        console.warn('Supabase DB save fallback to local storage:', error.message);
       }
 
-      // 2. Always persist to local user library storage for instant sync
+      // 2. Persist to local storage
       const localKey = `sedchar_library_${user.id}`;
       const currentList = [...savedCharacters];
       const existingIdx = currentList.findIndex(c => c.title === charTitle || c.nickname === char.nickname);
@@ -314,22 +392,65 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     return true;
   };
 
+  const shareCharacter = useCallback((id: string, permission: 'read-only' | 'edit'): { shareUrl: string; shareId: string } => {
+    const charRecord = savedCharacters.find(c => c.id === id);
+    const shareId = `share_${id}_${Date.now().toString(36)}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    
+    // Save share metadata to shared storage
+    if (charRecord) {
+      const sharePayload = {
+        shareId,
+        permission,
+        character: charRecord.character_data,
+        title: charRecord.title,
+        nickname: charRecord.nickname,
+        imageUrl: charRecord.image_url,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        localStorage.setItem(`sedchar_share_${shareId}`, JSON.stringify(sharePayload));
+      } catch {}
+
+      // Update record in list
+      const updatedList = savedCharacters.map(c => {
+        if (c.id === id) {
+          return { ...c, share_id: shareId, share_permission: permission, is_shared: true };
+        }
+        return c;
+      });
+      setSavedCharacters(updatedList);
+      if (user) {
+        try {
+          localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(updatedList));
+        } catch {}
+      }
+    }
+
+    const shareUrl = `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
+    return { shareUrl, shareId };
+  }, [savedCharacters, user]);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
+        userRole,
         isLoading,
         quotaRemaining,
-        quotaMax: DAILY_QUOTA_MAX,
+        quotaMax,
+        isUnlimitedQuota: userRole === 'admin',
         savedCharacters,
         isLibraryLoading,
         isAuthModalOpen,
         isLibraryModalOpen,
+        authModalMode,
         openAuthModal,
         closeAuthModal,
         openLibraryModal,
         closeLibraryModal,
+        setUserRole,
         signInWithGoogle,
         signInWithDiscord,
         signInWithEmail,
@@ -341,6 +462,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         saveToLibrary,
         deleteFromLibrary,
         loadLibrary,
+        shareCharacter,
       }}
     >
       {children}

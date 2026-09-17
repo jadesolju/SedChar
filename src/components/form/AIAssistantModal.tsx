@@ -10,6 +10,22 @@ interface AIAssistantModalProps {
   onApplyCharacter: (char: ThaiMasterCharacter, notice: string) => void;
 }
 
+const AVAILABLE_MODELS = [
+  { id: 'auto', name: '⚡ Auto (Google Gemini 3.5 / OpenRouter Smart Cascade)', provider: 'Google / OpenRouter' },
+  { id: 'google/gemini-3.5-flash-lite', name: 'Google Gemini 3.5 Flash Lite (เร็วแรง แม่นยำสูง)', provider: 'Google' },
+  { id: 'openai/gpt-4.1-mini', name: 'OpenAI GPT-4.1 Mini (ฉลาด กระชับ)', provider: 'OpenAI' },
+  { id: 'openai/gpt-4.1-nano', name: 'OpenAI GPT-4.1 Nano (เร็วพิเศษ)', provider: 'OpenAI' },
+  { id: 'x-ai/grok-4.3', name: 'xAI Grok 4.3 (คิดนอกกรอบ สไตล์สมจริง)', provider: 'xAI' },
+  { id: 'x-ai/grok-4.20', name: 'xAI Grok 4.20 (เน้นบทสนทนาเข้มข้น)', provider: 'xAI' },
+  { id: 'qwen/qwen3.8-flash', name: 'Qwen 3.8 Flash (ภาษาเอเชียระดับพรีเมียม)', provider: 'Alibaba Qwen' },
+  { id: 'qwen/qwen3.7-flash', name: 'Qwen 3.7 Flash (สไตล์ตัวละครหลากหลาย)', provider: 'Alibaba Qwen' },
+  { id: 'google/gemma-4-31b-it', name: 'Google Gemma 4 31B IT (Open Weights ทรงพลัง)', provider: 'Google' },
+  { id: 'google/gemma-4-26b-a4b-it', name: 'Google Gemma 4 26B-A4B IT (สถาปัตยกรรมใหม่)', provider: 'Google' },
+  { id: 'google/gemma-3-27b-it', name: 'Google Gemma 3 27B IT (เสถียร สมดุล)', provider: 'Google' },
+  { id: 'z-ai/glm-5.3-flash', name: 'Z-AI GLM 5.3 Flash (วิเคราะห์โครงสร้างภาษาลึก)', provider: 'Z-AI' },
+  { id: 'z-ai/glm-4.7-flash', name: 'Z-AI GLM 4.7 Flash (เร็ว ละเอียด)', provider: 'Z-AI' },
+];
+
 export function AIAssistantModal({
   isOpen,
   onClose,
@@ -19,6 +35,7 @@ export function AIAssistantModal({
   const { user, quotaRemaining, quotaMax, consumeQuota, openAuthModal } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'enhance' | 'parse'>('enhance');
+  const [selectedModel, setSelectedModel] = useState('auto');
   const [instructions, setInstructions] = useState('');
   const [pasteText, setPasteText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,29 +51,22 @@ export function AIAssistantModal({
     }
 
     if (quotaRemaining <= 0) {
-      setErrorMsg('โควตา AI วันนี้ของคุณหมดแล้ว (15/15 ครั้ง) กรุณารอรีเซ็ตวันถัดไป');
+      setErrorMsg(`โควตา AI ของคุณหมดแล้ว (${quotaMax}/${quotaMax} ครั้ง) กรุณาอัปเกรดเป็น Premium หรือติดต่อแอดมิน`);
       return;
     }
 
     setIsLoading(true);
     setErrorMsg(null);
-    setLoadingStep('กำลังส่งข้อมูลให้ Google Gemini 3.6 Flash วิเคราะห์...');
+    setLoadingStep(`กำลังประมวลผลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 3.5 / OpenRouter' : selectedModel}...`);
 
     try {
-      setTimeout(() => {
-        setLoadingStep('กำลังสร้างจิตวิทยา, บุคลิกเชิงลึก และสไตล์บทบาท...');
-      }, 1200);
-
-      setTimeout(() => {
-        setLoadingStep('กำลังแมปข้อมูลเข้าสู่ 10 หมวดหมู่และสร้างบทสนทนาเปิดฉาก...');
-      }, 2500);
-
       const res = await fetch('/api/ai/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           character: currentCharacter,
           instructions: instructions.trim() || undefined,
+          model: selectedModel !== 'auto' ? selectedModel : undefined,
         }),
       });
 
@@ -68,9 +78,10 @@ export function AIAssistantModal({
       const data = await res.json();
       if (data.success && data.character) {
         consumeQuota();
+        const usedModelName = data.model || selectedModel;
         onApplyCharacter(
           data.character,
-          '✨ Gemini AI เติมเต็มข้อมูล 10 หมวดหมู่ให้คุณเรียบร้อยแล้ว!'
+          `✨ AI (${usedModelName}) เติมเต็มข้อมูล 10 หมวดหมู่ให้คุณเรียบร้อยแล้ว!`
         );
         onClose();
       } else {
@@ -94,19 +105,22 @@ export function AIAssistantModal({
     }
 
     if (quotaRemaining <= 0) {
-      setErrorMsg('โควตา AI วันนี้ของคุณหมดแล้ว (15/15 ครั้ง) กรุณารอรีเซ็ตวันถัดไป');
+      setErrorMsg(`โควตา AI ของคุณหมดแล้ว (${quotaMax}/${quotaMax} ครั้ง) กรุณาอัปเกรดเป็น Premium หรือติดต่อแอดมิน`);
       return;
     }
 
     setIsLoading(true);
     setErrorMsg(null);
-    setLoadingStep('กำลังวิเคราะห์โครงสร้างข้อความด้วย Gemini 3.6 Flash...');
+    setLoadingStep(`กำลังแยกวิเคราะห์ข้อมูลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 3.5 / OpenRouter' : selectedModel}...`);
 
     try {
       const res = await fetch('/api/ai/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: pasteText }),
+        body: JSON.stringify({
+          rawText: pasteText,
+          model: selectedModel !== 'auto' ? selectedModel : undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -117,17 +131,18 @@ export function AIAssistantModal({
       const data = await res.json();
       if (data.success && data.character) {
         consumeQuota();
+        const usedModelName = data.model || selectedModel;
         onApplyCharacter(
           data.character,
-          '⚡ Gemini AI แยกและนำเข้าข้อมูลสู่ 10 หมวดหมู่เรียบร้อยแล้ว!'
+          `⚡ AI (${usedModelName}) แยกและนำเข้าข้อมูลสู่ 10 หมวดหมู่เรียบร้อยแล้ว!`
         );
         onClose();
       } else {
-        throw new Error('Parsing failed');
+        throw new Error('No character returned from AI parser');
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการประมวลผลข้อความ');
+      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการแยกข้อมูล');
     } finally {
       setIsLoading(false);
       setLoadingStep('');
@@ -135,77 +150,95 @@ export function AIAssistantModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-700/80 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex-shrink-0 px-5 py-4 border-b border-border bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-transparent flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-neutral-800 bg-neutral-950/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-inner">
               ✨
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-foreground">
-                  AI Character Assistant & Auto-Fill
-                </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
-                  Gemini 3.6 Flash
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                SedChar AI Co-Creator
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-semibold tracking-wider uppercase">
+                  Gemini & OpenRouter Multi-Model
                 </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                ระบบผู้ช่วย AI อัจฉริยะเติมเต็ม 10 หมวดหมู่สำหรับ Thai Roleplay
+              </h2>
+              <p className="text-xs text-neutral-400">
+                ระบบปัญญาประดิษฐ์เติมเต็มและแกะโครงสร้างตัวละครบทบาทสมมุติอัตโนมัติ
               </p>
             </div>
           </div>
-
           <button
-            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 transition-colors"
           >
             ✕
           </button>
         </div>
 
-        {/* Quota & Mode Tabs */}
-        <div className="flex-shrink-0 px-5 pt-3 pb-2 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-1.5 p-1 bg-muted rounded-xl border border-border">
+        {/* Tab & Quota Strip */}
+        <div className="px-6 py-2.5 bg-neutral-900 border-b border-neutral-800/80 flex items-center justify-between text-xs">
+          <div className="flex gap-2">
             <button
-              type="button"
               onClick={() => setActiveTab('enhance')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'enhance'
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
               }`}
             >
-              <span>✨</span> เติมเต็มช่องว่างในฟอร์ม
+              🪄 เติมเต็มข้อมูลที่ขาด (Enhance)
             </button>
             <button
-              type="button"
               onClick={() => setActiveTab('parse')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'parse'
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
               }`}
             >
-              <span>⚡</span> วางข้อความดิบให้ AI แยก
+              ⚡ วางข้อความดิบแยกหมวด (Quick Parse)
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-muted-foreground">โควตาวันนี้:</span>
-            <span className="font-bold text-foreground px-2 py-0.5 rounded-md bg-muted border border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-neutral-400">โควตาวันนี้:</span>
+            <span className={`px-2 py-0.5 rounded-md font-mono font-bold ${
+              quotaRemaining > 3 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+            }`}>
               {quotaRemaining} / {quotaMax} ครั้ง
             </span>
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* Model Selector Strip */}
+        <div className="px-6 py-3 bg-neutral-950/40 border-b border-neutral-800/60 flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="ai-model-select" className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+              <span>🤖 เลือก AI Engine & Model:</span>
+            </label>
+            <span className="text-[11px] text-neutral-500">Google Gemini & OpenRouter Active</span>
+          </div>
+          <select
+            id="ai-model-select"
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-700/80 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-rose-500 transition-colors"
+          >
+            {AVAILABLE_MODELS.map((m) => (
+              <option key={m.id} value={m.id} className="bg-neutral-900 text-neutral-200">
+                {m.name} ({m.provider})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Content Body */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-500 text-xs flex items-center gap-2">
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-center gap-2">
               <span>⚠️</span>
               <span>{errorMsg}</span>
             </div>
@@ -213,108 +246,111 @@ export function AIAssistantModal({
 
           {activeTab === 'enhance' ? (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-1.5">
-                <div className="font-semibold text-foreground flex items-center gap-1.5">
-                  <span>💡</span> การทำงานของระบบเติมเต็มฟอร์ม (Auto-Fill):
+              <div className="p-4 rounded-xl bg-neutral-950/50 border border-neutral-800/80 space-y-2">
+                <div className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                  <span>🎯 สิ่งที่ AI จะดำเนินการ:</span>
                 </div>
-                <ul className="list-disc list-inside space-y-1 text-[11px] leading-relaxed">
-                  <li>รักษาข้อมูลเดิมที่คุณกรอกไว้ทั้งหมด ไม่ลบข้อความที่มีอยู่</li>
-                  <li>วิเคราะห์และสร้างข้อมูลในช่องที่ยังว่าง (จิตวิทยา, นิสัย, NSFW, บนเตียง, กฎ, ฉากเปิด)</li>
-                  <li>คำนวณและสร้างตัวละครเสริม (Sub-characters) และสถานที่ (Locations) ให้กลมกลืน</li>
+                <ul className="text-xs text-neutral-400 space-y-1.5 list-disc list-inside">
+                  <li><strong>คงค่าเดิมที่คุณพิมพ์ไว้ 100%:</strong> ไม่ลบข้อมูลที่คุณตั้งใจเขียนไว้</li>
+                  <li><strong>เติมเต็มจุดที่เว้นว่าง:</strong> ทั้งบุคลิกภาพ จิตวิทยา กลิ่นน้ำหอม สไตล์บทสนทนา</li>
+                  <li><strong>สร้างความลึก:</strong> จุดอ่อน ปมเบื้องหลัง และกิมมิคพิเศษของตัวละคร</li>
                 </ul>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1.5">
-                  คำแนะนำเพิ่มเติมให้ AI (Optional):
+                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  คำสั่งพิเศษเพิ่มเติมให้ AI (Optional):
                 </label>
                 <textarea
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="เช่น: ขอแนวยันเดเระ หวงแรงมาก, บนเตียงชอบควบคุมแต่จบด้วยความอ่อนโยน, มีฉากเปิดในห้องทำงานดึกๆ..."
+                  placeholder="เช่น เน้นแนว Dark Romance มาเฟียขี้หึง, พูดจาสุภาพแต่เด็ดขาด, ชอบแกล้ง user ตอนอยู่สองต่อสอง..."
                   rows={3}
-                  className="w-full p-3 rounded-xl bg-[#1F1F24] border border-border text-xs text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed font-sans"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-rose-500/50 transition-colors"
                 />
-              </div>
-
-              {/* Character Snapshot Summary */}
-              <div className="p-3 rounded-xl bg-muted/20 border border-border text-[11px] space-y-1">
-                <span className="text-muted-foreground">ตัวละครปัจจุบัน:</span>{' '}
-                <strong className="text-foreground">{currentCharacter.nickname || currentCharacter.fullName || 'ยังไม่มีชื่อ'}</strong>
-                {currentCharacter.age ? ` (อายุ ${currentCharacter.age})` : ''}
-                {currentCharacter.occupation ? ` • ${currentCharacter.occupation}` : ''}
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-1.5">
-                <div className="font-semibold text-foreground flex items-center gap-1.5">
-                  <span>⚡</span> การทำงานของระบบ Quick Auto-Parser:
+              <div className="p-4 rounded-xl bg-neutral-950/50 border border-neutral-800/80 space-y-2">
+                <div className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                  <span>⚡ วิธีใช้นำเข้าด่วน:</span>
                 </div>
-                <p className="text-[11px] leading-relaxed">
-                  วางข้อความประวัติตัวละคร ข้อมูลดิบ โน้ต หรือ Markdown/JSON จากที่ไหนก็ได้ AI จะสกัดและแยกเข้าสู่ 10 หมวดหมู่ทันที
+                <p className="text-xs text-neutral-400">
+                  วางข้อความรายละเอียดตัวละครทั้งหมดที่คุณมี (ไม่ว่าจะเป็นฟอร์แมตไหน ข้อความแชท หรือข้อความยาว) AI จะตรวจจับและแยกใส่ 10 หมวดหมู่ให้โดยอัตโนมัติ
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-foreground mb-1.5">
-                  วางข้อความตัวละครของคุณที่นี่:
+                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  วางข้อความดิบที่นี่:
                 </label>
                 <textarea
                   value={pasteText}
                   onChange={(e) => setPasteText(e.target.value)}
-                  placeholder="วางเนื้อหา เช่น: ชื่อ: ฮิคารุ, อายุ: 22, นิสัย: ร่าเริง ขี้อ้อน แต่มีความลับซ่อนอยู่..."
+                  placeholder="วางรายละเอียดตัวละคร เช่น ชื่อ: ส้มจิ๊ด, อายุ: 21, เพศ: หญิง, นิสัย: ปากร้ายใจดี..."
                   rows={6}
-                  className="w-full p-3 rounded-xl bg-[#1F1F24] border border-border text-xs text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed font-mono"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-purple-500/50 transition-colors font-mono"
                 />
               </div>
             </div>
           )}
 
-          {/* Loading Animation */}
           {isLoading && (
-            <div className="p-4 rounded-xl bg-primary/10 border border-primary/25 space-y-2.5 animate-in fade-in">
-              <div className="flex items-center gap-2.5 text-xs font-bold text-primary">
-                <span className="animate-spin text-base">⏳</span>
-                <span>{loadingStep || 'กำลังประมวลผลด้วย AI...'}</span>
-              </div>
-              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-rose-500 to-pink-500 animate-pulse w-3/4 rounded-full" />
+            <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 flex items-center gap-3 animate-pulse">
+              <div className="w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <div className="text-xs text-rose-300 font-medium">
+                {loadingStep || 'กำลังประมวลผล...'}
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex-shrink-0 px-5 py-3.5 border-t border-border bg-muted/30 flex items-center justify-end gap-2.5">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-between">
           <button
-            type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors disabled:opacity-50"
           >
             ยกเลิก
           </button>
 
           {activeTab === 'enhance' ? (
             <button
-              type="button"
               onClick={handleEnhance}
               disabled={isLoading}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-all transform active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
-              <span>{isLoading ? '⏳' : '✨'}</span>
-              <span>{isLoading ? 'กำลังประมวลผล...' : 'เริ่มเติมเต็มฟอร์ม (AI Auto-Fill)'}</span>
+              {isLoading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>กำลังวิเคราะห์...</span>
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  <span>เริ่มเติมเต็มข้อมูลด้วย AI</span>
+                </>
+              )}
             </button>
           ) : (
             <button
-              type="button"
               onClick={handleQuickParse}
-              disabled={!pasteText.trim() || isLoading}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              disabled={isLoading || !pasteText.trim()}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
-              <span>{isLoading ? '⏳' : '⚡'}</span>
-              <span>{isLoading ? 'กำลังวิเคราะห์...' : 'แยกข้อมูลเข้าฟอร์ม (Auto-Parse & Sync)'}</span>
+              {isLoading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>กำลังแยกข้อมูล...</span>
+                </>
+              ) : (
+                <>
+                  <span>⚡</span>
+                  <span>แยกข้อมูลและนำเข้าฟอร์ม</span>
+                </>
+              )}
             </button>
           )}
         </div>

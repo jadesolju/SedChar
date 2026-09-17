@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { useCharacterData } from '@/hooks/useCharacterData';
 import { InputForm } from '@/components/form/InputForm';
@@ -27,6 +27,7 @@ function MainWorkspace() {
     addLocation,
     updateLocation,
     removeLocation,
+    loadDefaultLocations,
     setFlagType,
     autoDetectFlag,
     loadSample,
@@ -36,7 +37,7 @@ function MainWorkspace() {
     syncToMarkdown,
   } = useCharacterData();
 
-  const { user, openAuthModal, openLibraryModal } = useAuth();
+  const { user, openAuthModal, openLibraryModal, saveToLibrary } = useAuth();
 
   // Mobile active screen: 'editor' | 'preview'
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
@@ -44,12 +45,45 @@ function MainWorkspace() {
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Sharing Mode state
+  const [sharedBanner, setSharedBanner] = useState<{
+    title: string;
+    mode: 'read-only' | 'edit';
+  } | null>(null);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 4500);
   };
+
+  // Detect Share Link in URL on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareId = urlParams.get('share');
+    const mode = urlParams.get('mode') as 'read-only' | 'edit' || 'read-only';
+
+    if (shareId) {
+      try {
+        const storedShare = localStorage.getItem(`sedchar_share_${shareId}`);
+        if (storedShare) {
+          const payload = JSON.parse(storedShare);
+          if (payload.character) {
+            applyParsedCharacter(payload.character);
+            setSharedBanner({
+              title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
+              mode: payload.permission || mode,
+            });
+            showToast(`✨ โหลดตัวละครที่แชร์ "${payload.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${payload.permission === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading share payload:', e);
+      }
+    }
+  }, [applyParsedCharacter]);
 
   const handleModeSwitch = (mode: 'structured' | 'single') => {
     if (mode === 'single') {
@@ -59,31 +93,36 @@ function MainWorkspace() {
   };
 
   const handleLoadFromLibrary = (loadedChar: ThaiMasterCharacter) => {
-    // Import character into current state
-    Object.keys(loadedChar).forEach((key) => {
-      updateField(key as keyof ThaiMasterCharacter, (loadedChar as any)[key]);
-    });
-    syncToMarkdown();
-    showToast('📂 โหลดตัวละครจาก Cloud Library เรียบร้อยแล้ว!');
+    applyParsedCharacter(loadedChar);
+    showToast(`✨ โหลดตัวละคร "${loadedChar.fullName || loadedChar.nickname || 'ตัวละคร'}" เข้าสู่ฟอร์มเรียบร้อยแล้ว!`);
+  };
+
+  const handleSingleBoxSuccess = (msg: string) => {
+    showToast(msg);
   };
 
   const handleParsedFromSingleBox = (parsedChar: ThaiMasterCharacter) => {
     applyParsedCharacter(parsedChar);
-    setInputMode('structured');
-    setMobileTab('editor');
   };
 
-  const handleSingleBoxSuccess = (notice: string) => {
-    setInputMode('structured');
-    setMobileTab('editor');
-    showToast(notice);
+  const handleSaveAsNewCopy = async () => {
+    if (!user) {
+      openAuthModal('signin');
+      return;
+    }
+    const copyTitle = `${character.fullName || character.nickname || 'ตัวละคร'} (สำเนาของฉัน)`;
+    const res = await saveToLibrary(character, copyTitle);
+    if (res.success) {
+      showToast(`✓ บันทึกเป็นตัวละครใหม่ของคุณเรียบร้อยแล้ว!`);
+      setSharedBanner(null);
+    }
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Global Toast Notification */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
+      {/* Toast Notification Container */}
       {toastMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+        <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 fade-in duration-200">
           <div className="px-4 py-2.5 rounded-xl bg-card/95 border border-primary/40 shadow-xl backdrop-blur-md flex items-center gap-2.5 text-xs font-bold text-foreground">
             <span className="text-primary text-base">✨</span>
             <span>{toastMessage}</span>
@@ -91,6 +130,38 @@ function MainWorkspace() {
               type="button"
               onClick={() => setToastMessage(null)}
               className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Shared Character Top Banner */}
+      {sharedBanner && (
+        <div className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-b border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-foreground">
+            <span className="text-emerald-500 font-bold">🔗</span>
+            <span>
+              กำลังเปิดดูตัวละครที่แชร์: <strong className="text-emerald-500">{sharedBanner.title}</strong>{' '}
+              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                {sharedBanner.mode === 'edit' ? '✏️ โหมดแก้ไขได้' : '🔒 โหมดอ่านอย่างเดียว'}
+              </span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveAsNewCopy}
+              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+            >
+              + บันทึกเป็นตัวละครใหม่ของฉัน
+            </button>
+            <button
+              type="button"
+              onClick={() => setSharedBanner(null)}
+              className="text-muted-foreground hover:text-foreground text-xs p-1"
             >
               ✕
             </button>
@@ -108,7 +179,7 @@ function MainWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 shadow-xs">
-              Gemini 3.6 AI
+              Gemini AI ⚡
             </span>
           </div>
 
@@ -236,6 +307,7 @@ function MainWorkspace() {
               onAutoDetectFlag={autoDetectFlag}
               onLoadSample={loadSample}
               onReset={resetCharacter}
+              onLoadDefaultLocations={loadDefaultLocations}
               onApplyParsedCharacter={applyParsedCharacter}
               onShowToast={showToast}
             />

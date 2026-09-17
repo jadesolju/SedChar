@@ -4,8 +4,8 @@ import { type NextRequest, NextResponse } from "next/server";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
-// Whitelisted API routes that are accessible publicly (e.g., health checks)
-const PUBLIC_API_ROUTES = ['/api/health', '/api/auth/callback'];
+// Whitelisted API routes that are accessible publicly (e.g., health checks, AI endpoints)
+const PUBLIC_API_ROUTES = ['/api/health', '/api/auth/callback', '/api/ai'];
 
 export const updateSession = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;

@@ -109,7 +109,7 @@ export function SingleBoxInput({
             onApplyParse(rawMarkdown);
           }
           consumeQuota();
-          const modelTag = data.model === 'gemini-3.6-flash' ? 'Gemini 3.6 Flash ⚡' : 'Universal Parser ⚡';
+          const modelTag = data.model === 'gemini-ai' ? 'Gemini AI ⚡ ⚡' : 'Universal Parser ⚡';
           const msg = '✨ แปลงข้อมูลด้วย ' + modelTag + ' เข้าสู่ 10 หมวดหมู่เรียบร้อยแล้ว!';
           setParseNotice(msg);
           if (onParseSuccess) {

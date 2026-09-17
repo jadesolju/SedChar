@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 export function UserMenu() {
   const {
     user,
+    userRole,
     isLoading,
     quotaRemaining,
     quotaMax,
@@ -52,6 +54,12 @@ export function UserMenu() {
   const initial = ((user.email || 'U')[0] ?? 'U').toUpperCase();
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
 
+  const roleLabel = {
+    admin: { name: 'Admin', badge: 'bg-amber-500/20 text-amber-500 border-amber-500/30', icon: '👑' },
+    premium: { name: 'Premium', badge: 'bg-rose-500/20 text-rose-500 border-rose-500/30', icon: '💎' },
+    free: { name: 'Free', badge: 'bg-primary/10 text-primary border-primary/20', icon: '🌱' },
+  }[userRole] || { name: 'Free', badge: 'bg-primary/10 text-primary border-primary/20', icon: '🌱' };
+
   return (
     <div className="relative" ref={menuRef}>
       <div className="flex items-center gap-2">
@@ -73,9 +81,9 @@ export function UserMenu() {
           className="flex items-center gap-2 p-1 pl-2 pr-1.5 rounded-xl border border-border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-xs"
         >
           {/* Daily Quota Pill */}
-          <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
-            <span>⚡</span>
-            <span>AI: {quotaRemaining}/{quotaMax}</span>
+          <span className={`hidden md:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${roleLabel.badge}`}>
+            <span>{roleLabel.icon}</span>
+            <span>{userRole === 'admin' ? 'AI: ∞ ไม่จำกัด' : `AI: ${quotaRemaining}/${quotaMax}`}</span>
           </span>
 
           {/* Avatar / Initial */}
@@ -94,14 +102,21 @@ export function UserMenu() {
         <div className="absolute right-0 mt-2 w-64 p-2 bg-card border border-border rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* User Info Header */}
           <div className="p-2.5 mb-1.5 rounded-xl bg-[#1F1F24] border border-border">
-            <div className="text-[11px] uppercase font-bold text-primary tracking-wider mb-0.5 flex items-center justify-between">
-              <span>SedChar Member</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/20 text-primary">Active</span>
+            <div className="text-[11px] uppercase font-bold tracking-wider mb-0.5 flex items-center justify-between">
+              <span className="text-foreground flex items-center gap-1">
+                <span>{roleLabel.icon}</span>
+                <span>{roleLabel.name} Role</span>
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-bold ${roleLabel.badge}`}>
+                {userRole.toUpperCase()}
+              </span>
             </div>
             <div className="text-xs font-bold text-foreground truncate">{user.email}</div>
             <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>โควตา AI ประจำวัน:</span>
-              <span className="font-bold text-primary">{quotaRemaining} / {quotaMax} ครั้ง</span>
+              <span>โควตา AI วันนี้:</span>
+              <span className="font-bold text-primary">
+                {userRole === 'admin' ? '∞ ไม่จำกัด' : `${quotaRemaining} / ${quotaMax} ครั้ง`}
+              </span>
             </div>
           </div>
 
@@ -118,6 +133,19 @@ export function UserMenu() {
                 <div className="text-[10px] text-muted-foreground">เก็บไว้ {savedCharacters.length} ตัวละคร</div>
               </div>
             </button>
+
+            {/* Secret Control Nexus Link */}
+            <Link
+              href="/sys-nexus-mgmt-99"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer text-left font-semibold"
+            >
+              <span>🛡️</span>
+              <div className="flex-1">
+                <div>Control Nexus Console</div>
+                <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควตาหลังบ้าน</div>
+              </div>
+            </Link>
 
             <button
               type="button"

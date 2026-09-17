@@ -1,5 +1,5 @@
-﻿'use client';
-import { useState, useCallback, useEffect } from 'react';
+'use client';
+import { useState, useCallback } from 'react';
 import type {
   ThaiMasterCharacter,
   CharacterFlagType,
@@ -12,6 +12,7 @@ import {
   parseMarkdownToCharacter,
   characterToFullMarkdown,
   analyzeCharacterFlag,
+  DEFAULT_PURRPAW_LOCATIONS,
 } from '@/shared/thaiTagParser';
 
 type ArrayField =
@@ -128,6 +129,13 @@ export function useCharacterData() {
     }));
   }, []);
 
+  const loadDefaultLocations = useCallback(() => {
+    setCharacter(prev => ({
+      ...prev,
+      locations: [...DEFAULT_PURRPAW_LOCATIONS],
+    }));
+  }, []);
+
   // Flag setter & auto analyzer
   const setFlagType = useCallback((flag: CharacterFlagType) => {
     setCharacter(prev => ({ ...prev, flagType: flag }));
@@ -185,6 +193,7 @@ export function useCharacterData() {
     addLocation,
     updateLocation,
     removeLocation,
+    loadDefaultLocations,
     setFlagType,
     autoDetectFlag,
     loadSample,

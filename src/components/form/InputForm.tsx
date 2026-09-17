@@ -37,6 +37,7 @@ interface InputFormProps {
   onAutoDetectFlag: () => void;
   onLoadSample: () => void;
   onReset: () => void;
+  onLoadDefaultLocations?: () => void;
 }
 
 export function InputForm({
@@ -56,6 +57,7 @@ export function InputForm({
   onAutoDetectFlag,
   onLoadSample,
   onReset,
+  onLoadDefaultLocations,
 }: InputFormProps) {
   const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
 
@@ -701,13 +703,27 @@ export function InputForm({
                 สถานที่ในเรื่อง ({character.locations.length}/10)
               </span>
               {character.locations.length < 10 && (
-                <button
-                  type="button"
-                  onClick={() => onAddLocation()}
-                  className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  + เพิ่มสถานที่
-                </button>
+                <div className="flex items-center gap-2">
+                {onLoadDefaultLocations && (
+                  <button
+                    type="button"
+                    onClick={onLoadDefaultLocations}
+                    className="px-2.5 py-1 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-pink-600 dark:text-pink-400 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                    title="โหลด Template 10 สถานที่มาตรฐานสำหรับ Purrpaw"
+                  >
+                    <span>🐱</span> โหลด Template 10 สถานที่ Purrpaw
+                  </button>
+                )}
+                {character.locations.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={() => onAddLocation()}
+                    className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    + เพิ่มสถานที่ ({character.locations.length}/10)
+                  </button>
+                )}
+              </div>
               )}
             </div>
 

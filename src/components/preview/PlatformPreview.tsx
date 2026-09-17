@@ -1,421 +1,587 @@
 'use client';
-import { useState, useMemo } from 'react';
-import type { ThaiMasterCharacter, Platform } from '@/shared/types';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import type { ThaiMasterCharacter, CharacterFlagType } from '@/shared/types';
+import { CHARACTER_FLAGS } from '@/shared/types';
 import {
   generateRubiiOutput,
   generatePurrpawOutput,
   generateKhuiOutput,
-  characterToFullMarkdown,
   formatCount,
+  characterToFullMarkdown,
 } from '@/shared/thaiTagParser';
-import { CodeBlock } from './CodeBlock';
-import { CopyButton } from '@/components/ui/CopyButton';
+import { CodeBlock } from '@/components/preview/CodeBlock';
+import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface PlatformPreviewProps {
   character: ThaiMasterCharacter;
+  onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
+  onShowToast?: (msg: string) => void;
 }
 
-type TabType = 'rubii' | 'purrpaw' | 'khui' | 'master';
+type TabType = 'purrpaw' | 'rubii' | 'khui' | 'master';
+type ExportFormat = 'txt' | 'xml' | 'md' | 'json' | 'pdf';
 
-export function PlatformPreview({ character }: PlatformPreviewProps) {
+export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast }: PlatformPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('purrpaw');
-  const [exportFormat, setExportFormat] = useState<'md' | 'txt' | 'json'>('md');
+  const [copiedAll, setCopiedAll] = useState(false);
+  const { openLibraryModal } = useAuth();
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const rubiiData = useMemo(() => generateRubiiOutput(character), [character]);
   const purrpawData = useMemo(() => generatePurrpawOutput(character), [character]);
   const khuiData = useMemo(() => generateKhuiOutput(character), [character]);
   const masterMarkdown = useMemo(() => characterToFullMarkdown(character), [character]);
 
-  // Download export files
-  const downloadFile = (format: 'txt' | 'md' | 'json') => {
-    if (format === 'json') {
-      const jsonStr = JSON.stringify(character, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const charName = character.fullName || character.nickname || 'character';
-      link.href = url;
-      link.download = `${charName}_${activeTab}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      return;
-    }
-    let textToExport = '';
-    const charName = character.fullName || character.nickname || 'character';
+  const flagConfig = CHARACTER_FLAGS[character.flagType] || CHARACTER_FLAGS['none'];
 
-    if (activeTab === 'rubii') {
-      textToExport = `=== [Rubii Export: ${rubiiData.name}] ===\n\n` +
-        `[ชื่อตัวละคร]\n${rubiiData.name}\n\n` +
-        `[คำอธิบายสาธารณะ]\n${rubiiData.publicDescription}\n\n` +
-        `[การตั้งค่าตัวละคร (Persona Prompt + System Prompt)]\n${rubiiData.personaSystemPrompt}\n\n` +
-        `[สร้างโมเมนต์]\n${rubiiData.momentIntro}\n\n` +
-        `[เปิดเรื่อง (Open Greeting)]\n${rubiiData.openGreeting}`;
-    } else if (activeTab === 'purrpaw') {
-      textToExport = `=== [Purrpaw Export: ${purrpawData.name}] ===\n\n` +
-        `[ชื่อตัวละคร]\n${purrpawData.name}\n\n` +
-        `[TAGLINE]\n${purrpawData.tagline}\n\n` +
-        `[แท็ก]\n${purrpawData.tags}\n\n` +
-        `[ประวัติ & บุคลิกภาพตัวละคร]\n${purrpawData.historyPersonalityPrompt}\n\n` +
-        `[ตัวละครเสริม]\n` + purrpawData.subCharacters.map((s, i) => `* ตัวละครเสริม #${i+1}: ${s.name}\nคำอธิบาย: ${s.shortDesc}\nบทบาท: ${s.systemPrompt}`).join('\n\n') + '\n\n' +
-        `[สถานที่ในเรื่อง]\n` + purrpawData.locations.map(l => `* ${l.name}: ${l.prompt}`).join('\n') + '\n\n' +
-        `[ความสัมพันธ์แรกเริ่ม]\n${purrpawData.initialRelationship}\n\n` +
-        `[ข้อความแรกทักทาย]\n${purrpawData.openGreeting}`;
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsExportDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (onShowToast) {
+        onShowToast(`คัดลอก ${label} เรียบร้อยแล้ว!`);
+      }
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (onShowToast) {
+        onShowToast(`คัดลอก ${label} เรียบร้อยแล้ว!`);
+      }
+    }
+  };
+
+  const handleCopyAll = async () => {
+    let textToCopy = '';
+    if (activeTab === 'purrpaw') {
+      textToCopy =
+        `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
+        `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
+        `- แท็ก (ตัวละคร)\n${purrpawData.tags}\n\n` +
+        `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${purrpawData.historyPersonalityPrompt}\n\n` +
+        (purrpawData.subCharacters.length > 0
+          ? `👥 - ตัวละครเสริม [สร้างได้ Max 5 ตัว] (${purrpawData.subCharacters.length}/5)\n` +
+            purrpawData.subCharacters
+              .map(
+                (s, i) =>
+                  `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${s.systemPrompt}`
+              )
+              .join('\n\n') +
+            '\n\n'
+          : '') +
+        (purrpawData.locations.length > 0
+          ? `📍 - สถานที่ในเรื่อง (Max สุด 10 สถานที่) (${purrpawData.locations.length}/10)\n` +
+            purrpawData.locations.map(l => `* ${l.name}\nPrompt: ${l.prompt}`).join('\n') +
+            '\n\n'
+          : '') +
+        (purrpawData.initialRelationship ? `- ความสัมพันธ์แรกเริ่ม\n${purrpawData.initialRelationship}\n\n` : '') +
+        `- ข้อความแรกทักทาย (Open Greeting)\n${purrpawData.openGreeting}`;
+    } else if (activeTab === 'rubii') {
+      textToCopy =
+        `ชื่อ (Name)\n${rubiiData.name}\n\n` +
+        `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
+        `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${rubiiData.personaSystemPrompt}\n\n` +
+        `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
+        `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
     } else if (activeTab === 'khui') {
-      textToExport = `=== [Khui AI Export: ${khuiData.name}] ===\n\n` +
-        `[ชื่อ]\n${khuiData.name}\n\n` +
-        `[คำโปรย]\n${khuiData.tagline}\n\n` +
-        `[System / Prompt]\n${khuiData.systemPrompt}\n\n` +
-        `[หน้าคำอธิบายตัวละคร]\n${khuiData.characterDescription}\n\n` +
-        `[Open Greeting]\n${khuiData.openGreeting}\n\n` +
-        `[ตัวละครเสริม]\n` + khuiData.subCharacters.map(s => `* ${s.name}: ${s.description}`).join('\n') + '\n\n' +
-        `[ความสัมพันธ์กับ {{user}} : สถานะการณ์-เนื้อเรื่องย่อ]\n${khuiData.userRelationshipScenario}\n\n` +
-        `[แท็กตัวละคร]\n${khuiData.tags}`;
+      textToCopy =
+        `💬 Khui AI Platform Output\n\n` +
+        `ชื่อ\n${khuiData.name}\n\n` +
+        `คำโปรย\n${khuiData.tagline}\n\n` +
+        `System / Prompt\n${khuiData.systemPrompt}\n\n` +
+        `หน้าคำอธิบายตัวละคร\n${khuiData.characterDescription}\n\n` +
+        `Open Greeting\n${khuiData.openGreeting}\n\n` +
+        (khuiData.subCharacters.length > 0
+          ? `ตัวละครเสริม (Max 3 ตัว) — ${khuiData.subCharacters.length}/3\n` +
+            khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
+            '\n\n'
+          : '') +
+        `ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ\n${khuiData.userRelationshipScenario}\n\n` +
+        `แท็กตัวละคร\n${khuiData.tags}`;
     } else {
-      textToExport = masterMarkdown;
+      textToCopy = masterMarkdown;
     }
 
-    const blob = new Blob([textToExport], { type: format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8' });
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedAll(true);
+      if (onShowToast) onShowToast(`คัดลอกทั้งหมดสำหรับแท็บ ${activeTab.toUpperCase()} สำเร็จ!`);
+      setTimeout(() => setCopiedAll(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = textToCopy;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopiedAll(true);
+      if (onShowToast) onShowToast(`คัดลอกทั้งหมดสำหรับแท็บ ${activeTab.toUpperCase()} สำเร็จ!`);
+      setTimeout(() => setCopiedAll(false), 2000);
+    }
+  };
+
+  const handleExport = async (format: ExportFormat) => {
+    setIsExportDropdownOpen(false);
+    setIsExporting(true);
+    const charName = (character.fullName || character.nickname || 'character').replace(/\s+/g, '_');
+    const filename = `${charName}_${activeTab}_${Date.now()}`;
+
+    try {
+      if (format === 'json') {
+        let exportObj: any = {};
+        if (activeTab === 'purrpaw') exportObj = { platform: 'purrpaw', ...purrpawData, rawCharacter: character };
+        else if (activeTab === 'rubii') exportObj = { platform: 'rubii', ...rubiiData, rawCharacter: character };
+        else if (activeTab === 'khui') exportObj = { platform: 'khui', ...khuiData, rawCharacter: character };
+        else exportObj = character;
+
+        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json;charset=utf-8' });
+        downloadBlob(blob, `${filename}.json`);
+      } else if (format === 'xml') {
+        const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<character platform="${activeTab}">
+  <name>${escapeXml(character.fullName || character.nickname)}</name>
+  <nickname>${escapeXml(character.nickname)}</nickname>
+  <age>${escapeXml(character.age)}</age>
+  <gender>${escapeXml(character.gender)}</gender>
+  <mbti>${escapeXml(character.mbti)}</mbti>
+  <shortIntro>${escapeXml(character.shortIntro)}</shortIntro>
+  <greeting>${escapeXml(character.fullGreeting || character.openGreetingNarrative)}</greeting>
+  <rawMarkdown><![CDATA[${masterMarkdown}]]></rawMarkdown>
+</character>`;
+        const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+        downloadBlob(blob, `${filename}.xml`);
+      } else if (format === 'md') {
+        const blob = new Blob([masterMarkdown], { type: 'text/markdown;charset=utf-8' });
+        downloadBlob(blob, `${filename}.md`);
+      } else if (format === 'txt') {
+        let textToExport = '';
+        if (activeTab === 'purrpaw') {
+          textToExport =
+            `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
+            `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
+            `- แท็ก (ตัวละคร)\n${purrpawData.tags}\n\n` +
+            `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${purrpawData.historyPersonalityPrompt}\n\n` +
+            (purrpawData.subCharacters.length > 0
+              ? `👥 - ตัวละครเสริม [สร้างได้ Max 5 ตัว] (${purrpawData.subCharacters.length}/5)\n` +
+                purrpawData.subCharacters
+                  .map(
+                    (s, i) =>
+                      `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${s.systemPrompt}`
+                  )
+                  .join('\n\n') +
+                '\n\n'
+              : '') +
+            (purrpawData.locations.length > 0
+              ? `📍 - สถานที่ในเรื่อง (Max สุด 10 สถานที่) (${purrpawData.locations.length}/10)\n` +
+                purrpawData.locations.map(l => `* ${l.name}\nPrompt: ${l.prompt}`).join('\n') +
+                '\n\n'
+              : '') +
+            (purrpawData.initialRelationship ? `- ความสัมพันธ์แรกเริ่ม\n${purrpawData.initialRelationship}\n\n` : '') +
+            `- ข้อความแรกทักทาย (Open Greeting)\n${purrpawData.openGreeting}`;
+        } else if (activeTab === 'rubii') {
+          textToExport =
+            `ชื่อ (Name)\n${rubiiData.name}\n\n` +
+            `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
+            `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${rubiiData.personaSystemPrompt}\n\n` +
+            `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
+            `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
+        } else if (activeTab === 'khui') {
+          textToExport =
+            `💬 Khui AI Platform Output\n\n` +
+            `ชื่อ\n${khuiData.name}\n\n` +
+            `คำโปรย\n${khuiData.tagline}\n\n` +
+            `System / Prompt\n${khuiData.systemPrompt}\n\n` +
+            `หน้าคำอธิบายตัวละคร\n${khuiData.characterDescription}\n\n` +
+            `Open Greeting\n${khuiData.openGreeting}\n\n` +
+            (khuiData.subCharacters.length > 0
+              ? `ตัวละครเสริม (Max 3 ตัว) — ${khuiData.subCharacters.length}/3\n` +
+                khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
+                '\n\n'
+              : '') +
+            `ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ\n${khuiData.userRelationshipScenario}\n\n` +
+            `แท็กตัวละคร\n${khuiData.tags}`;
+        } else {
+          textToExport = masterMarkdown;
+        }
+
+        const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
+        downloadBlob(blob, `${filename}.txt`);
+      } else if (format === 'pdf') {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>${escapeXml(character.fullName || character.nickname || 'Character')} - SedChar Export</title>
+                <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 28px; color: #111; }
+                  h1 { color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; font-size: 20px; }
+                  h2 { color: #374151; font-size: 15px; margin-top: 20px; }
+                  pre { background: #f3f4f6; padding: 14px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; font-family: monospace; }
+                </style>
+              </head>
+              <body>
+                <h1>${escapeXml(character.fullName || character.nickname || 'Character')} — [Platform: ${activeTab.toUpperCase()}]</h1>
+                <pre>${escapeXml(masterMarkdown)}</pre>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 400);
+        }
+      }
+
+      if (onShowToast) onShowToast(`ส่งออกไฟล์ .${format.toUpperCase()} สำเร็จ!`);
+    } catch (err: any) {
+      if (onShowToast) onShowToast(`เกิดข้อผิดพลาดในการบันทึก: ${err.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const downloadBlob = (blob: Blob, name: string) => {
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${charName}_${activeTab}.${format}`;
-    link.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  // Get full current tab text for Copy All
-  const currentTabFullText = useMemo(() => {
-    if (activeTab === 'rubii') {
-      return `[ชื่อตัวละคร]\n${rubiiData.name}\n\n[คำอธิบายสาธารณะ]\n${rubiiData.publicDescription}\n\n[การตั้งค่าตัวละคร]\n${rubiiData.personaSystemPrompt}\n\n[สร้างโมเมนต์]\n${rubiiData.momentIntro}\n\n[เปิดเรื่อง]\n${rubiiData.openGreeting}`;
-    }
-    if (activeTab === 'purrpaw') {
-      return `[ชื่อตัวละคร]\n${purrpawData.name}\n\n[TAGLINE]\n${purrpawData.tagline}\n\n[แท็ก]\n${purrpawData.tags}\n\n[ประวัติ & บุคลิกภาพตัวละคร]\n${purrpawData.historyPersonalityPrompt}\n\n[ความสัมพันธ์แรกเริ่ม]\n${purrpawData.initialRelationship}\n\n[ข้อความแรกทักทาย]\n${purrpawData.openGreeting}`;
-    }
-    if (activeTab === 'khui') {
-      return `[ชื่อ]\n${khuiData.name}\n\n[คำโปรย]\n${khuiData.tagline}\n\n[System Prompt]\n${khuiData.systemPrompt}\n\n[หน้าคำอธิบาย]\n${khuiData.characterDescription}\n\n[Open Greeting]\n${khuiData.openGreeting}\n\n[แท็ก]\n${khuiData.tags}`;
-    }
-    return masterMarkdown;
-  }, [activeTab, rubiiData, purrpawData, khuiData, masterMarkdown]);
+  const escapeXml = (str: string = '') => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      {/* Platform Tabs & Export Header */}
-      <div className="flex-shrink-0 border-b border-border bg-card/70 px-4 py-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab('purrpaw')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'purrpaw'
-                ? 'bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/30 shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <span>🐱</span>
-            <span>Purrpaw</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('rubii')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'rubii'
-                ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30 shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <span>🟣</span>
-            <span>Rubii</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('khui')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'khui'
-                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <span>💬</span>
-            <span>Khui AI</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('master')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'master'
-                ? 'bg-primary/15 text-primary border border-primary/30 shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <span>📄</span>
-            <span>Full Markdown</span>
-          </button>
+      {/* Top Header Bar */}
+      <div className="flex-shrink-0 p-3.5 border-b border-border bg-card/60 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {/* Navigation Tabs */}
+          <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border">
+            <button
+              type="button"
+              onClick={() => setActiveTab('purrpaw')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'purrpaw'
+                  ? 'bg-card text-pink-600 dark:text-pink-400 shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>🐱</span>
+              <span>Purrpaw</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('rubii')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'rubii'
+                  ? 'bg-card text-violet-600 dark:text-violet-400 shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>🟣</span>
+              <span>Rubii</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('khui')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'khui'
+                  ? 'bg-card text-amber-600 dark:text-amber-400 shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>💬</span>
+              <span>Khui AI</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('master')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'master'
+                  ? 'bg-card text-primary shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>📑</span>
+              <span>Master MD</span>
+            </button>
+          </div>
         </div>
 
-        {/* Export & Copy Menu */}
-        <div className="flex items-center gap-1.5">
-          <CopyButton text={currentTabFullText} />
+        {/* Action Buttons: Flag, Library, Export Dropdown, Copy All */}
+        <div className="flex items-center gap-2">
+          {/* Flag Indicator */}
+          <div
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium border flex items-center gap-1.5 ${flagConfig.badgeBg}`}
+            title={flagConfig.description}
+          >
+            <span>{flagConfig.emoji}</span>
+            <span className="font-semibold">{flagConfig.label}</span>
+          </div>
+
+          {/* Character Library Modal Trigger */}
           <button
             type="button"
-            onClick={() => downloadFile('md')}
-            className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer"
-            title="Download as Markdown (.md)"
+            onClick={() => openLibraryModal()}
+            className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-foreground text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+            title="เปิดคลังเก็บข้อมูลตัวละคร (Character Vault & Sharing)"
           >
-            <span>📥</span> .md
+            <span>📚</span>
+            <span className="hidden sm:inline">คลังตัวละคร</span>
           </button>
+
+          {/* Unified Export Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsExportDropdownOpen(prev => !prev)}
+              disabled={isExporting}
+              className="px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="เลือกประเภทบันทึก / ส่งออกไฟล์"
+            >
+              <span>💾</span>
+              <span>บันทึกไฟล์</span>
+              <span className="text-[10px] opacity-70">▼</span>
+            </button>
+
+            {isExportDropdownOpen && (
+              <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-card border border-border shadow-xl z-50 py-1 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground border-b border-border uppercase tracking-wider">
+                  เลือกประเภทบันทึก ({activeTab.toUpperCase()})
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleExport('txt')}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/60 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📄</span>
+                    <span className="font-medium text-foreground">TXT (ข้อความล้วน)</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">.txt</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('md')}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/60 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📑</span>
+                    <span className="font-medium text-foreground">MD (Markdown)</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">.md</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('json')}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/60 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📦</span>
+                    <span className="font-medium text-foreground">JSON (โครงสร้างดิบ)</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">.json</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('xml')}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/60 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>🏷️</span>
+                    <span className="font-medium text-foreground">XML Data</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">.xml</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('pdf')}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/60 flex items-center justify-between transition-colors cursor-pointer border-t border-border"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>🖨️</span>
+                    <span className="font-medium text-foreground">PDF / สั่งพิมพ์</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">.pdf</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Copy All Button */}
           <button
             type="button"
-            onClick={() => downloadFile('txt')}
-            className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer"
-            title="Download as Text (.txt)"
+            onClick={handleCopyAll}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+              copiedAll
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gradient-to-r from-pink-600 to-violet-600 text-white hover:opacity-90'
+            }`}
           >
-            <span>📥</span> .txt
+            <span>{copiedAll ? '✓' : '📋'}</span>
+            <span>{copiedAll ? 'คัดลอกทั้งหมดแล้ว!' : 'คัดลอกทั้งหมด'}</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Preview Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* ============================================================ */}
-        {/* RUBII TAB */}
-        {/* ============================================================ */}
-        {activeTab === 'rubii' && (
-          <div className="space-y-3.5">
-            {/* Rubii Stat Banner */}
-            <div className="p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🟣</span>
-                <div>
-                  <h3 className="text-xs font-bold text-violet-700 dark:text-violet-300">
-                    Rubii Platform Output
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    แยก 5 ช่องสำหรับ Rubii พร้อมระบบนับ Token ของโมเดล Gemini
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 font-mono font-semibold border border-violet-500/20">
-                  ≈ {formatCount(rubiiData.tokenEstimate)} Tokens (Gemini)
-                </span>
-              </div>
-            </div>
-
-            <CodeBlock
-              label="ชื่อ (Name)"
-              required={true}
-              content={rubiiData.name}
-            />
-
-            <CodeBlock
-              label="คำอธิบายสาธารณะ (Public Description)"
-              content={rubiiData.publicDescription}
-            />
-
-            <CodeBlock
-              label="การตั้งค่าตัวละคร (Persona Prompt + System Prompt)"
-              required={true}
-              hint="Profile, Appearance, Core Psychology, Boundaries, NSFW & System Constraints"
-              content={rubiiData.personaSystemPrompt}
-              countLabel={`≈ ${formatCount(rubiiData.tokenEstimate)} Tokens`}
-            />
-
-            <CodeBlock
-              label="สร้างโมเมนต์ (Moment Intro)"
-              required={true}
-              hint="คำโปรยสั้นๆ"
-              content={rubiiData.momentIntro}
-              countLabel={`${rubiiData.momentIntro.length} ตัวอักษร`}
-              maxConstraint="100"
-              isOverLimit={rubiiData.momentIntro.length > 100}
-            />
-
-            <CodeBlock
-              label="เปิดเรื่อง (Open Greeting)"
-              required={true}
-              hint="บรรยาย Sensory/Vivid สลับบทพูดตาม Expression"
-              content={rubiiData.openGreeting}
-              countLabel={`${formatCount(rubiiData.openGreeting.length)} ตัวอักษร`}
-            />
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* PURRPAW TAB */}
-        {/* ============================================================ */}
+        {/* ================= PURRPAW TAB ================= */}
         {activeTab === 'purrpaw' && (
-          <div className="space-y-3.5">
-            {/* Purrpaw Stat & Progress Bar */}
-            <div className="p-3 rounded-xl border border-pink-500/20 bg-pink-500/5 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🐱</span>
-                  <div>
-                    <h3 className="text-xs font-bold text-pink-700 dark:text-pink-300">
-                      Purrpaw Platform Output
-                    </h3>
-                    <p className="text-[11px] text-muted-foreground">
-                      เป้าหมายแนะนำ 18,000 - 20,000 ตัวอักษร (สูงสุดไม่เกิน 30,000)
-                    </p>
-                  </div>
-                </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-mono font-bold border ${
-                  purrpawData.charCount > 30000
-                    ? 'bg-rose-500/15 text-rose-600 border-rose-500/30'
-                    : purrpawData.charCount >= 18000 && purrpawData.charCount <= 25000
-                    ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-                    : 'bg-amber-500/15 text-amber-600 border-amber-500/30'
-                }`}>
-                  {formatCount(purrpawData.charCount)} / 30,000 ตัวอักษร
-                </span>
-              </div>
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* - ชื่อตัวละคร */}
+            <CodeBlock label="- ชื่อตัวละคร *" content={purrpawData.name} />
 
-              {/* Progress Bar */}
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-300 ${
-                    purrpawData.charCount > 30000
-                      ? 'bg-rose-500'
-                      : purrpawData.charCount >= 18000
-                      ? 'bg-emerald-500'
-                      : 'bg-amber-500'
-                  }`}
-                  style={{ width: `${Math.min(100, (purrpawData.charCount / 30000) * 100)}%` }}
-                />
-              </div>
-            </div>
+            {/* - TAGLINE (คำโปรยสั้นๆกระชับ) */}
+            <CodeBlock label="- TAGLINE (คำโปรยสั้นๆกระชับ)" content={purrpawData.tagline} />
 
+            {/* - แท็ก (ตัวละคร) */}
+            <CodeBlock label="- แท็ก (ตัวละคร)" content={purrpawData.tags} />
+
+            {/* - ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt) */}
             <CodeBlock
-              label="- ชื่อตัวละคร"
-              required={true}
-              content={purrpawData.name}
-            />
-
-            <CodeBlock
-              label="- TAGLINE (คำโปรยสั้นๆกระชับ)"
-              content={purrpawData.tagline}
-            />
-
-            <CodeBlock
-              label="- แท็ก (ตัวละคร)"
-              content={purrpawData.tags}
-            />
-
-            <CodeBlock
-              label="- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)"
-              required={true}
-              hint="ประวัติ, ลักษณะภายนอก, NSFW, จิตวิทยา 7 มิติ, Logic เด็ดขาด, ความสัมพันธ์"
+              label="- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt) *"
+              subtitle="(ประวัติ, ลักษณะภายนอก, NSFW, จิตวิทยา 7 มิติ, Logic เด็ดขาด, ความสัมพันธ์)"
               content={purrpawData.historyPersonalityPrompt}
-              countLabel={`${formatCount(purrpawData.historyPersonalityPrompt.length)} ตัวอักษร`}
-              maxConstraint="30,000"
-              isOverLimit={purrpawData.historyPersonalityPrompt.length > 30000}
+              countLabel={`${formatCount(purrpawData.charCount)} ตัวอักษร / 30,000`}
             />
 
-            {/* Sub Characters Cards */}
-            <div className="rounded-xl border border-border bg-card p-3.5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <span>👥</span> - ตัวละครเสริม [สร้างได้ Max 5 ตัว] ({purrpawData.subCharacters.length}/5)
-                </span>
-              </div>
-
-              {purrpawData.subCharacters.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">ไม่มีตัวละครเสริมที่ระบุ</p>
-              ) : (
+            {/* 👥 - ตัวละครเสริม [สร้างได้ Max 5 ตัว] */}
+            {purrpawData.subCharacters.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <span>👥</span>
+                  <span>- ตัวละครเสริม [สร้างได้ Max 5 ตัว] ({purrpawData.subCharacters.length}/5)</span>
+                </div>
                 <div className="space-y-3">
                   {purrpawData.subCharacters.map((sub, idx) => (
-                    <div key={idx} className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground">
-                          * ชื่อตัวละครเสริม: <span className="text-primary">{sub.name || '-'}</span>
-                        </span>
-                        <CopyButton text={`[ตัวละครเสริม: ${sub.name}]\nคำอธิบาย: ${sub.shortDesc}\nบทบาท: ${sub.systemPrompt}`} />
-                      </div>
-
-                      <div className="text-xs space-y-1">
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>* คำอธิบายตัวละคร (หน้ารายละเอียด):</span>
-                          <span>{sub.shortDesc.length}/500</span>
-                        </div>
-                        <p className="font-mono bg-card p-2 rounded border border-border text-foreground">
-                          {sub.shortDesc || '-'}
-                        </p>
-                      </div>
-
-                      <div className="text-xs space-y-1">
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>* บทบาทและตัวตน (System Prompt for subchar):</span>
-                          <span>{sub.systemPrompt.length}/750</span>
-                        </div>
-                        <p className="font-mono bg-card p-2 rounded border border-border text-foreground">
-                          {sub.systemPrompt || '-'}
-                        </p>
-                      </div>
+                    <div key={idx} className="p-3.5 rounded-xl border border-border bg-card/60 space-y-2.5">
+                      <CodeBlock label={`* ชื่อตัวละครเสริม: ${sub.name}`} content={sub.name} />
+                      <CodeBlock
+                        label="* คำอธิบายตัวละคร (หน้ารายละเอียด):"
+                        content={sub.shortDesc}
+                        countLabel={`${sub.shortDesc.length}/500`}
+                      />
+                      <CodeBlock
+                        label="* บทบาทและตัวตน (System Prompt for subchar):"
+                        content={sub.systemPrompt}
+                        countLabel={`${sub.systemPrompt.length}/750`}
+                      />
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Locations Cards */}
-            <div className="rounded-xl border border-border bg-card p-3.5 space-y-3">
-              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <span>📍</span> - สถานที่ในเรื่อง (Max สุด 10 สถานที่) ({purrpawData.locations.length}/10)
-              </span>
-
-              {purrpawData.locations.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">ไม่มีสถานที่ที่ระบุ</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* 📍 - สถานที่ในเรื่อง (Max สุด 10 สถานที่) */}
+            {purrpawData.locations.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <span>📍</span>
+                  <span>- สถานที่ในเรื่อง (Max สุด 10 สถานที่) ({purrpawData.locations.length}/10)</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {purrpawData.locations.map((loc, idx) => (
-                    <div key={idx} className="p-2.5 rounded-lg border border-border bg-muted/20 space-y-1">
-                      <div className="text-xs font-semibold text-foreground">
-                        * {loc.name}
-                      </div>
-                      <div className="text-[11px] font-mono text-muted-foreground">
-                        Prompt: {loc.prompt || '-'}
-                      </div>
+                    <div key={idx} className="p-3.5 rounded-xl border border-border bg-card/60 space-y-2">
+                      <CodeBlock label={`* ${loc.name}`} content={loc.name} />
+                      <CodeBlock label={`Prompt: ${loc.prompt}`} content={loc.prompt} />
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <CodeBlock
-              label="- ความสัมพันธ์แรกเริ่ม"
-              content={purrpawData.initialRelationship}
-            />
+            {/* - ความสัมพันธ์แรกเริ่ม */}
+            {purrpawData.initialRelationship && (
+              <CodeBlock label="- ความสัมพันธ์แรกเริ่ม" content={purrpawData.initialRelationship} />
+            )}
 
+            {/* - ข้อความแรกทักทาย (Open Greeting) */}
             <CodeBlock
-              label="- ข้อความแรกทักทาย (Open Greeting)"
-              required={true}
+              label="- ข้อความแรกทักทาย (Open Greeting) *"
               content={purrpawData.openGreeting}
               countLabel={`${formatCount(purrpawData.openGreeting.length)} ตัวอักษร`}
             />
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* KHUI AI TAB */}
-        {/* ============================================================ */}
+        {/* ================= RUBII TAB ================= */}
+        {activeTab === 'rubii' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* ชื่อ (Name) */}
+            <CodeBlock label="ชื่อ (Name) *" content={rubiiData.name} />
+
+            {/* คำอธิบายสาธารณะ (Public Description) */}
+            <CodeBlock label="คำอธิบายสาธารณะ (Public Description)" content={rubiiData.publicDescription} />
+
+            {/* การตั้งค่าตัวละคร (Persona Prompt + System Prompt) */}
+            <CodeBlock
+              label="การตั้งค่าตัวละคร (Persona Prompt + System Prompt) *"
+              subtitle="(Profile, Appearance, Core Psychology, Boundaries, NSFW & System Constraints)"
+              content={rubiiData.personaSystemPrompt}
+              countLabel={`≈ ${rubiiData.tokenEstimate} Tokens`}
+            />
+
+            {/* สร้างโมเมนต์ (Moment Intro) */}
+            <CodeBlock
+              label="สร้างโมเมนต์ (Moment Intro) *"
+              subtitle="(คำโปรยสั้นๆ)"
+              content={rubiiData.momentIntro}
+              countLabel={`${rubiiData.momentIntro.length} ตัวอักษร / 100`}
+            />
+
+            {/* เปิดเรื่อง (Open Greeting) */}
+            <CodeBlock
+              label="เปิดเรื่อง (Open Greeting) *"
+              subtitle="(บรรยาย Sensory/Vivid สลับบทพูดตาม Expression)"
+              content={rubiiData.openGreeting}
+              countLabel={`${rubiiData.openGreeting.length} ตัวอักษร`}
+            />
+          </div>
+        )}
+
+        {/* ================= KHUI AI TAB ================= */}
         {activeTab === 'khui' && (
-          <div className="space-y-3.5">
-            <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-center justify-between">
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-base">💬</span>
                 <div>
-                  <h3 className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                    Khui AI Platform Output
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    รูปแบบสำหรับ Khui AI (รองรับตัวละครเสริมสูงสุด 3 ตัว)
-                  </p>
+                  <h3 className="text-xs font-bold text-amber-600 dark:text-amber-400">Khui AI Platform Output</h3>
+                  <p className="text-[11px] text-muted-foreground">รูปแบบสำหรับ Khui AI (รองรับตัวละครเสริมสูงสุด 3 ตัว)</p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+              <span className="text-xs px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold">
                 {formatCount(khuiData.charCount)} ตัวอักษร
               </span>
             </div>
@@ -426,27 +592,18 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
             <CodeBlock label="หน้าคำอธิบายตัวละคร" content={khuiData.characterDescription} />
             <CodeBlock label="Open Greeting" content={khuiData.openGreeting} />
 
-            {/* Khui Sub Characters (Max 3) */}
-            <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-              <span className="text-xs font-bold text-foreground">
-                ตัวละครเสริม (Max 3 ตัว) — {khuiData.subCharacters.length}/3
-              </span>
-              {khuiData.subCharacters.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">ไม่มีตัวละครเสริม</p>
-              ) : (
+            {khuiData.subCharacters.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <div className="text-xs font-bold text-foreground">
+                  ตัวละครเสริม (Max 3 ตัว) — {khuiData.subCharacters.length}/3
+                </div>
                 <div className="space-y-2">
                   {khuiData.subCharacters.map((sub, idx) => (
-                    <div key={idx} className="p-2 rounded bg-muted/30 border border-border text-xs flex justify-between items-center">
-                      <div>
-                        <span className="font-semibold">{sub.name}</span>
-                        <span className="text-muted-foreground ml-2">— {sub.description}</span>
-                      </div>
-                      <CopyButton text={`${sub.name}: ${sub.description}`} />
-                    </div>
+                    <CodeBlock key={idx} label={`${sub.name}— ${sub.description}`} content={`${sub.name}— ${sub.description}`} />
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <CodeBlock
               label="ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ"
@@ -457,31 +614,30 @@ export function PlatformPreview({ character }: PlatformPreviewProps) {
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* MASTER MARKDOWN TAB */}
-        {/* ============================================================ */}
+        {/* ================= MASTER MD TAB ================= */}
         {activeTab === 'master' && (
-          <div className="space-y-3">
-            <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-primary">Master Character Markdown</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  เอกสาร Markdown ฉบับสมบูรณ์ตาม Template พร้อมโครงสร้างครบทุกหัวข้อ
-                </p>
-              </div>
-              <span className="text-xs font-mono font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
-                {formatCount(masterMarkdown.length)} ตัวอักษร
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-4">
-              <pre className="text-xs font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed overflow-y-auto max-h-[700px]">
-                {masterMarkdown}
-              </pre>
-            </div>
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <CodeBlock
+              label="Master Markdown Specification (Full Archive)"
+              content={masterMarkdown}
+              countLabel={`${formatCount(masterMarkdown.length)} ตัวอักษร`}
+            />
           </div>
         )}
       </div>
+
+      {/* Character Vault & Library Modal */}
+      <CharacterLibraryModal
+        currentCharacter={character}
+        onLoadCharacter={char => {
+          if (onApplyParsedCharacter) {
+            onApplyParsedCharacter(char);
+          }
+          if (onShowToast) {
+            onShowToast(`โหลดตัวละคร ${char.fullName || char.nickname} จากคลังสำเร็จ!`);
+          }
+        }}
+      />
     </div>
   );
 }
