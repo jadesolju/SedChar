@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/client';
 import type { ThaiMasterCharacter } from '@/shared/types';
+import { encodeCharacterToShareUrl } from '@/shared/shareUtils';
 
 export type UserRole = 'admin' | 'premium' | 'free';
 
@@ -63,7 +64,10 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   deleteFromLibrary: (id: string) => Promise<boolean>;
   loadLibrary: () => Promise<void>;
-  shareCharacter: (id: string, permission: 'read-only' | 'edit') => { shareUrl: string; shareId: string };
+  shareCharacter: (
+    id: string,
+    permission: 'read-only' | 'edit'
+  ) => Promise<{ shareUrl: string; instantUrl: string; shareId: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,23 +139,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncQuota(user, role);
   }, [user, syncQuota]);
 
-  // Load Saved Characters Library
+  // Load Saved Characters Library from Supabase
   const loadLibrary = useCallback(async () => {
     if (!user) return;
     setIsLibraryLoading(true);
 
     try {
-      // 1. Try fetch from Supabase
+      // 1. Fetch from Supabase
       const { data, error } = await supabase
         .from('characters')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         setSavedCharacters(data as SavedCharacterRecord[]);
-        // Sync to localStorage
-        localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(data));
+        try {
+          localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(data));
+        } catch {}
         setIsLibraryLoading(false);
         return;
       }
@@ -159,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase fetch failed, fallback to local storage:', err);
     }
 
-    // 2. Fallback to localStorage
+    // 2. Fallback to localStorage if offline
     try {
       const local = localStorage.getItem(`sedchar_library_${user.id}`);
       if (local) {
@@ -182,20 +187,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
 
         if (currentUser) {
-          // Detect Role from Metadata or Local Storage
-          const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) ||
-            (currentUser.user_metadata?.role as UserRole) ||
-            (currentUser.app_metadata?.role as UserRole) ||
-            'free';
+          const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
           setUserRoleState(storedRole);
           syncQuota(currentUser, storedRole);
         } else {
-          const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
-          setUserRoleState(guestRole);
-          syncQuota(null, guestRole);
+          setUserRoleState('free');
+          syncQuota(null, 'free');
         }
-      } catch (err) {
-        console.error('Auth initialization error:', err);
+      } catch (e) {
+        console.error('Error initializing auth:', e);
       } finally {
         setIsLoading(false);
       }
@@ -207,10 +207,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(newSession);
       const currentUser = newSession?.user ?? null;
       setUser(currentUser);
+
       if (currentUser) {
-        const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) ||
-          (currentUser.user_metadata?.role as UserRole) ||
-          'free';
+        const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
         setUserRoleState(storedRole);
         syncQuota(currentUser, storedRole);
       } else {
@@ -351,16 +350,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     try {
-      // 1. Try save to Supabase
+      // 1. Persist to Supabase Database
       const { error } = await supabase
         .from('characters')
         .upsert(newRecord);
 
       if (error) {
-        console.warn('Supabase DB save fallback to local storage:', error.message);
+        console.warn('Supabase DB save note:', error.message);
       }
 
-      // 2. Persist to local storage
+      // 2. Update local state & cache
       const localKey = `sedchar_library_${user.id}`;
       const currentList = [...savedCharacters];
       const existingIdx = currentList.findIndex(c => c.title === charTitle || c.nickname === char.nickname);
@@ -369,7 +368,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         currentList.unshift(newRecord);
       }
-      localStorage.setItem(localKey, JSON.stringify(currentList));
+      try {
+        localStorage.setItem(localKey, JSON.stringify(currentList));
+      } catch {}
       setSavedCharacters(currentList);
       return { success: true };
     } catch (err: any) {
@@ -392,44 +393,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const shareCharacter = useCallback((id: string, permission: 'read-only' | 'edit'): { shareUrl: string; shareId: string } => {
+  const shareCharacter = useCallback(async (
+    id: string,
+    permission: 'read-only' | 'edit'
+  ): Promise<{ shareUrl: string; instantUrl: string; shareId: string }> => {
     const charRecord = savedCharacters.find(c => c.id === id);
-    const shareId = `share_${id}_${Date.now().toString(36)}`;
+    const shareId = `sh_${id.replace(/[^a-zA-Z0-9]/g, '')}_${Date.now().toString(36)}`;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     
-    // Save share metadata to shared storage
-    if (charRecord) {
-      const sharePayload = {
-        shareId,
-        permission,
-        character: charRecord.character_data,
-        title: charRecord.title,
-        nickname: charRecord.nickname,
-        imageUrl: charRecord.image_url,
-        createdAt: new Date().toISOString(),
-      };
-      try {
-        localStorage.setItem(`sedchar_share_${shareId}`, JSON.stringify(sharePayload));
-      } catch {}
+    // 1. Generate Instant Compressed URL (Zero-dependency, works anywhere)
+    const instantUrl = charRecord
+      ? encodeCharacterToShareUrl(charRecord.character_data, charRecord.title, permission)
+      : `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
 
-      // Update record in list
-      const updatedList = savedCharacters.map(c => {
-        if (c.id === id) {
-          return { ...c, share_id: shareId, share_permission: permission, is_shared: true };
-        }
-        return c;
-      });
-      setSavedCharacters(updatedList);
-      if (user) {
+    // 2. Generate Cloud Database Share URL
+    const shareUrl = `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
+
+    // 3. Update Supabase Database
+    if (charRecord && user) {
+      try {
+        await supabase
+          .from('characters')
+          .update({
+            is_shared: true,
+            share_id: shareId,
+            share_permission: permission,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        // Also save share metadata locally for cache
+        const sharePayload = {
+          shareId,
+          permission,
+          character: charRecord.character_data,
+          title: charRecord.title,
+          nickname: charRecord.nickname,
+          imageUrl: charRecord.image_url,
+          createdAt: new Date().toISOString(),
+        };
         try {
-          localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(updatedList));
+          localStorage.setItem(`sedchar_share_${shareId}`, JSON.stringify(sharePayload));
         } catch {}
+
+        const updatedList = savedCharacters.map(c => {
+          if (c.id === id) {
+            return { ...c, share_id: shareId, share_permission: permission, is_shared: true };
+          }
+          return c;
+        });
+        setSavedCharacters(updatedList);
+      } catch (e) {
+        console.warn('Supabase share update note:', e);
       }
     }
 
-    const shareUrl = `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
-    return { shareUrl, shareId };
-  }, [savedCharacters, user]);
+    return { shareUrl, instantUrl, shareId };
+  }, [savedCharacters, user, supabase]);
 
   return (
     <AuthContext.Provider

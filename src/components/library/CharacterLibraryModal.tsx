@@ -4,6 +4,29 @@ import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter, CharacterFlagType } from '@/shared/types';
 import { CHARACTER_FLAGS } from '@/shared/types';
 import { characterToFullMarkdown } from '@/shared/thaiTagParser';
+import { exportCharacterJson } from '@/shared/shareUtils';
+import {
+  FolderOpen,
+  FolderPlus,
+  Search,
+  Share2,
+  Trash2,
+  Copy,
+  Check,
+  Download,
+  Sparkles,
+  Save,
+  X,
+  Lock,
+  Unlock,
+  Globe,
+  FileJson,
+  Zap,
+  Loader2,
+  FileEdit,
+  Eye,
+  ExternalLink,
+} from 'lucide-react';
 
 interface CharacterLibraryModalProps {
   currentCharacter: ThaiMasterCharacter;
@@ -35,7 +58,10 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
   const [sharingCharacterId, setSharingCharacterId] = useState<string | null>(null);
   const [sharePermission, setSharePermission] = useState<'read-only' | 'edit'>('read-only');
   const [generatedShareUrl, setGeneratedShareUrl] = useState<string | null>(null);
-  const [shareCopied, setShareCopied] = useState(false);
+  const [generatedInstantUrl, setGeneratedInstantUrl] = useState<string | null>(null);
+  const [shareCopiedCloud, setShareCopiedCloud] = useState(false);
+  const [shareCopiedInstant, setShareCopiedInstant] = useState(false);
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,32 +104,59 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
     } catch {}
   };
 
-  const handleOpenShare = (id: string) => {
+  const handleOpenShare = async (id: string) => {
     const char = savedCharacters.find(c => c.id === id);
     setSharingCharacterId(id);
     const defaultPerm = char?.share_permission || 'read-only';
     setSharePermission(defaultPerm);
-    const { shareUrl } = shareCharacter(id, defaultPerm);
-    setGeneratedShareUrl(shareUrl);
-    setShareCopied(false);
-  };
-
-  const handleChangePermission = (perm: 'read-only' | 'edit') => {
-    setSharePermission(perm);
-    if (sharingCharacterId) {
-      const { shareUrl } = shareCharacter(sharingCharacterId, perm);
-      setGeneratedShareUrl(shareUrl);
-      setShareCopied(false);
+    setIsSharingLoading(true);
+    try {
+      const res = await shareCharacter(id, defaultPerm);
+      setGeneratedShareUrl(res.shareUrl);
+      setGeneratedInstantUrl(res.instantUrl);
+    } finally {
+      setIsSharingLoading(false);
+      setShareCopiedCloud(false);
+      setShareCopiedInstant(false);
     }
   };
 
-  const handleCopyShareUrl = async () => {
+  const handleChangePermission = async (perm: 'read-only' | 'edit') => {
+    setSharePermission(perm);
+    if (sharingCharacterId) {
+      setIsSharingLoading(true);
+      try {
+        const res = await shareCharacter(sharingCharacterId, perm);
+        setGeneratedShareUrl(res.shareUrl);
+        setGeneratedInstantUrl(res.instantUrl);
+      } finally {
+        setIsSharingLoading(false);
+        setShareCopiedCloud(false);
+        setShareCopiedInstant(false);
+      }
+    }
+  };
+
+  const handleCopyCloudUrl = async () => {
     if (!generatedShareUrl) return;
     try {
       await navigator.clipboard.writeText(generatedShareUrl);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+      setShareCopiedCloud(true);
+      setTimeout(() => setShareCopiedCloud(false), 2000);
     } catch {}
+  };
+
+  const handleCopyInstantUrl = async () => {
+    if (!generatedInstantUrl) return;
+    try {
+      await navigator.clipboard.writeText(generatedInstantUrl);
+      setShareCopiedInstant(true);
+      setTimeout(() => setShareCopiedInstant(false), 2000);
+    } catch {}
+  };
+
+  const handleExportSingleJson = (char: ThaiMasterCharacter, title: string) => {
+    exportCharacterJson(char, title);
   };
 
   const filteredCharacters = savedCharacters.filter((c) => {
@@ -122,14 +175,14 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
-              📚
+              <FolderOpen className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground">
-                คลังตัวละครของฉัน (Character Library)
+                คลังตัวละคร Cloud Library
               </h2>
               <p className="text-xs text-muted-foreground">
-                บันทึก, จัดการ, แชร์ลิงก์ (Read-only / Edit) และนำกลับมาใช้งานได้ทันที
+                บันทึก, จัดการ, แชร์ลิงก์ และนำกลับมาแก้ไขได้ทันที
               </p>
             </div>
           </div>
@@ -139,24 +192,26 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
               <button
                 type="button"
                 onClick={() => setActiveTab('list')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'list'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                รายการตัวละคร ({savedCharacters.length})
+                <FolderOpen className="w-3.5 h-3.5 text-primary" />
+                <span>รายการตัวละคร ({savedCharacters.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('save')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'save'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                + บันทึกตัวละครปัจจุบัน
+                <FolderPlus className="w-3.5 h-3.5 text-emerald-500" />
+                <span>บันทึกตัวละครปัจจุบัน</span>
               </button>
             </div>
 
@@ -165,7 +220,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
               onClick={closeLibraryModal}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -178,13 +233,13 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
               {/* Search & Filter Bar */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-2.5 text-xs text-muted-foreground">🔍</span>
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-muted-foreground" />
                   <input
                     type="text"
                     value={filterQuery}
                     onChange={(e) => setFilterQuery(e.target.value)}
                     placeholder="ค้นหาชื่อตัวละคร, ฉายา, หรือรายละเอียด..."
-                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
@@ -195,7 +250,7 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                       key={f}
                       type="button"
                       onClick={() => setSelectedFlagFilter(f)}
-                      className={`text-[11px] px-2 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${
+                      className={`text-[11px] px-2.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap font-medium ${
                         selectedFlagFilter === f
                           ? 'bg-primary/20 text-primary font-bold border border-primary/30'
                           : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -210,12 +265,12 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
               {/* Character Cards Grid */}
               {isLibraryLoading ? (
                 <div className="py-20 text-center text-muted-foreground space-y-2">
-                  <div className="text-3xl animate-spin">⏳</div>
-                  <div className="text-xs">กำลังโหลดคลังตัวละคร...</div>
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <div className="text-xs">กำลังโหลดคลังตัวละครจาก Cloud...</div>
                 </div>
               ) : filteredCharacters.length === 0 ? (
                 <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl space-y-3">
-                  <div className="text-4xl">📁</div>
+                  <FolderOpen className="w-12 h-12 mx-auto text-muted-foreground/50" />
                   <div className="text-sm font-bold text-foreground">ยังไม่มีตัวละครในคลัง</div>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                     คุณสามารถบันทึกตัวละครที่สร้างไว้ลงคลัง เพื่อเปิดใช้งานภายหลัง หรือแชร์ให้เพื่อนๆ ได้
@@ -223,121 +278,120 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                   <button
                     type="button"
                     onClick={() => setActiveTab('save')}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white font-bold text-xs shadow-xs hover:from-rose-600 hover:to-pink-700 transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white font-bold text-xs shadow-xs hover:from-rose-600 hover:to-pink-700 transition-all cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    + บันทึกตัวละครปัจจุบัน
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    <span>บันทึกตัวละครปัจจุบัน</span>
                   </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredCharacters.map((charRecord) => {
-                    const charData = charRecord.character_data;
-                    const flagInfo = CHARACTER_FLAGS[charRecord.flag_type as CharacterFlagType] || CHARACTER_FLAGS.none;
-
+                    const flag = CHARACTER_FLAGS[charRecord.flag_type as CharacterFlagType] || CHARACTER_FLAGS.none;
                     return (
                       <div
                         key={charRecord.id}
-                        className="group flex flex-col justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/50 shadow-xs hover:shadow-md transition-all space-y-3"
+                        className="p-4 rounded-xl border border-border bg-card/60 hover:border-primary/40 transition-all shadow-xs flex flex-col justify-between gap-3 group"
                       >
                         <div className="flex items-start gap-3">
                           {/* Avatar */}
-                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted flex-shrink-0 border border-border flex items-center justify-center relative">
+                          <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center flex-shrink-0 overflow-hidden relative">
                             {charRecord.image_url ? (
-                              <img
-                                src={charRecord.image_url}
-                                alt={charRecord.title}
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={charRecord.image_url} alt={charRecord.title} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-2xl">👤</span>
+                              <span className="text-base font-bold text-muted-foreground">
+                                {(charRecord.nickname || charRecord.title || 'C')[0]?.toUpperCase()}
+                              </span>
                             )}
                             {charRecord.is_shared && (
-                              <span className="absolute bottom-0 right-0 text-[10px] bg-primary text-white px-1 rounded-tl font-bold" title="แชร์แล้ว">
-                                🔗
+                              <span className="absolute bottom-0 right-0 text-[9px] bg-primary text-white px-1 rounded-tl font-bold" title="แชร์แล้ว">
+                                SHARED
                               </span>
                             )}
                           </div>
 
+                          {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <h3 className="text-sm font-bold text-foreground truncate">
+                              <h3 className="text-xs font-bold text-foreground truncate">
                                 {charRecord.title}
                               </h3>
-                              <span
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold border ${flagInfo.badgeBg}`}
-                                title={flagInfo.description}
-                              >
-                                {flagInfo.emoji} {flagInfo.label}
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${flag.badgeBg}`}>
+                                {flag.label}
                               </span>
                             </div>
 
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                              {charRecord.tagline || charData.occupation || charData.appearanceDesc || 'ไม่มีคำโปรย'}
+                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                              {charRecord.tagline || charRecord.nickname || '-'}
                             </p>
 
-                            <div className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-2">
-                              <span>📅 {new Date(charRecord.updated_at).toLocaleDateString('th-TH')}</span>
+                            <div className="text-[10px] text-muted-foreground/80 mt-1 flex items-center gap-2">
+                              <span>บันทึกเมื่อ: {new Date(charRecord.created_at).toLocaleDateString('th-TH')}</span>
                               {charRecord.is_shared && (
                                 <span className="text-emerald-500 font-semibold">
-                                  • สิทธิ์: {charRecord.share_permission === 'edit' ? '✏️ Edit' : '🔒 Read-only'}
+                                  • สิทธิ์: {charRecord.share_permission === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="pt-2 border-t border-border flex items-center justify-between gap-1.5">
+                        {/* Card Actions Toolbar */}
+                        <div className="pt-2 border-t border-border flex items-center justify-between gap-1 text-xs">
                           <button
                             type="button"
                             onClick={() => {
-                              onLoadCharacter(charData);
+                              onLoadCharacter(charRecord.character_data);
                               closeLibraryModal();
                             }}
-                            className="flex-1 py-1.5 px-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 shadow-xs"
                           >
-                            <span>📥</span> โหลดเข้าฟอร์ม
+                            <FileEdit className="w-3 h-3" />
+                            <span>โหลดใช้งาน</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenShare(charRecord.id)}
-                            className="py-1.5 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
-                            title="แชร์ตัวละครนี้ (เลือก Read-only หรือ Edit)"
-                          >
-                            <span>🔗</span> แชร์
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenShare(charRecord.id)}
+                              className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-[11px] transition-all cursor-pointer flex items-center gap-1"
+                              title="แชร์ตัวละครนี้"
+                            >
+                              <Share2 className="w-3.5 h-3.5 text-primary" />
+                              <span className="hidden sm:inline">แชร์</span>
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleCopyMarkdown(charData, charRecord.id)}
-                            className="py-1.5 px-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs transition-colors cursor-pointer"
-                            title="คัดลอก Master Markdown"
-                          >
-                            {copiedId === charRecord.id ? '✓' : '📋'}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleExportSingleJson(charRecord.character_data, charRecord.title)}
+                              className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-[11px] transition-all cursor-pointer"
+                              title="ดาวน์โหลด JSON สำรอง"
+                            >
+                              <Download className="w-3.5 h-3.5 text-amber-500" />
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => setInspectingCharacter(charData)}
-                            className="py-1.5 px-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs transition-colors cursor-pointer"
-                            title="ดูรายละเอียดฉบับเต็ม"
-                          >
-                            👁️
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMarkdown(charRecord.character_data, charRecord.id)}
+                              className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-[11px] transition-all cursor-pointer"
+                              title="คัดลอก Master Markdown"
+                            >
+                              {copiedId === charRecord.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                              )}
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`คุณต้องการลบ "${charRecord.title}" ออกจากคลังใช่หรือไม่?`)) {
-                                deleteFromLibrary(charRecord.id);
-                              }
-                            }}
-                            className="py-1.5 px-2 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-xs transition-colors cursor-pointer"
-                            title="ลบตัวละคร"
-                          >
-                            🗑️
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteFromLibrary(charRecord.id)}
+                              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-[11px] transition-all cursor-pointer"
+                              title="ลบตัวละครนี้ออกจากคลัง"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -349,167 +403,241 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
 
           {/* TAB 2: SAVE CURRENT CHARACTER */}
           {activeTab === 'save' && (
-            <form onSubmit={handleSaveCurrent} className="max-w-xl mx-auto space-y-5">
-              <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <span>💾</span> บันทึกตัวละครปัจจุบันลงในคลังของคุณ
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+            <form onSubmit={handleSaveCurrent} className="max-w-xl mx-auto space-y-4 py-4">
+              <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold text-foreground">
+                    บันทึกตัวละครปัจจุบันลงใน Cloud Library
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
                   ข้อมูลทั้งหมดใน 10 หมวดหมู่จะถูกจัดเก็บลงฐานข้อมูล พร้อมให้คุณดึงกลับมาแก้ไข หรือแชร์ต่อได้ทันที
                 </p>
               </div>
 
-              {/* Character Snapshot */}
-              <div className="p-3.5 rounded-xl bg-card border border-border flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-muted border border-border flex items-center justify-center flex-shrink-0 text-xl overflow-hidden">
-                  {imageUrl ? <img src={imageUrl} alt="preview" className="w-full h-full object-cover" /> : '👤'}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-foreground">
-                    {currentCharacter.fullName || currentCharacter.nickname || 'ตัวละครใหม่'}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {currentCharacter.occupation || 'ไม่ได้ระบุอาชีพ'} • อายุ {currentCharacter.age || '-'}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-foreground mb-1.5">
-                  ชื่อบันทึกในคลัง (Title):
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">
+                  ชื่อบันทึก / หัวข้อตัวละคร (Title)
                 </label>
                 <input
                   type="text"
-                  required
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
-                  placeholder="เช่น: ฮิคารุ (CEO ซึนเดเระ ver.1)"
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder={currentCharacter.fullName || currentCharacter.nickname || 'เช่น มณีพราย (Ver.ไสยเวท)'}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
 
-              {/* Image URL or File Upload */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-foreground">
-                  รูปภาพตัวละคร (Image URL หรือ อัปโหลด):
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">
+                  รูปโปรไฟล์ตัวละคร (Image URL หรืออัปโหลด)
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://... หรือวาง Data URL"
-                    className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
+                    placeholder="https://example.com/avatar.jpg"
+                    className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-medium border border-border transition-colors cursor-pointer whitespace-nowrap"
+                    className="px-3 py-2 text-xs rounded-xl border border-border bg-muted hover:bg-muted/80 text-foreground font-semibold cursor-pointer whitespace-nowrap flex items-center gap-1.5"
                   >
-                    📁 อัปโหลดรูป
+                    <Download className="w-3.5 h-3.5" />
+                    <span>เลือกรูป</span>
                   </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
                 </div>
               </div>
 
-              {saveSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-xs font-bold text-center">
-                  ✓ บันทึกลงคลังเรียบร้อยแล้ว!
+              {/* Preview Box */}
+              <div className="p-3 rounded-xl border border-border bg-card flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-base font-bold text-muted-foreground">
+                      {(saveTitle || currentCharacter.nickname || 'C')[0]?.toUpperCase()}
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-foreground truncate">
+                    {saveTitle || currentCharacter.fullName || currentCharacter.nickname || 'ตัวละครไม่มีชื่อ'}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                    {currentCharacter.punchline || currentCharacter.shortIntro || '-'}
+                  </div>
+                </div>
+              </div>
 
-              <div className="pt-3 flex justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab('list')}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md transition-all active:scale-98 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <span>{isSaving ? '⏳' : '💾'}</span>
-                  <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกเข้าคลัง (Save)'}</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-white" />
+                      <span>บันทึกสำเร็จ!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>บันทึกตัวละครลงคลัง</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
-          {/* POPUP: SHARING MODAL WITH PERMISSION DROPDOWN */}
+          {/* =========================================================================
+              SHARING MODAL DIALOG (Cloud Link + Instant Link + JSON)
+          ========================================================================= */}
           {sharingCharacterId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-              <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-5 space-y-4 animate-in zoom-in-95">
-                <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="absolute inset-0 z-20 bg-background/95 backdrop-blur-md p-6 flex flex-col justify-center max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-150">
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🔗</span>
+                    <Share2 className="w-4 h-4 text-primary" />
                     <h3 className="text-sm font-bold text-foreground">แชร์ตัวละคร (Share Character)</h3>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSharingCharacterId(null)}
-                    className="text-xs text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                    className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  {/* Permission Dropdown Selector */}
-                  <div>
-                    <label className="block text-xs font-bold text-foreground mb-1">
-                      เลือกระดับสิทธิ์การเข้าถึง (Access Permission):
-                    </label>
-                    <select
-                      value={sharePermission}
-                      onChange={(e) => handleChangePermission(e.target.value as 'read-only' | 'edit')}
-                      className="w-full p-2.5 rounded-xl bg-muted/50 border border-border text-foreground font-medium text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+                {/* Permission Toggle */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">
+                    กำหนดสิทธิ์สำหรับผู้ที่เปิดลิงก์:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleChangePermission('read-only')}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        sharePermission === 'read-only'
+                          ? 'bg-primary/10 border-primary text-primary shadow-xs'
+                          : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
+                      }`}
                     >
-                      <option value="read-only">🔒 Read-only — ดู, คัดลอก และ Export ได้อย่างเดียว (ห้ามแก้ไข)</option>
-                      <option value="edit">✏️ Edit — อนุญาตให้ผู้รับแก้ไขและบันทึกข้อมูลได้</option>
-                    </select>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>อ่านอย่างเดียว (Read-only)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChangePermission('edit')}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        sharePermission === 'edit'
+                          ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                          : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Unlock className="w-3.5 h-3.5" />
+                      <span>อนุญาตให้แก้ไขได้ (Editable)</span>
+                    </button>
                   </div>
+                </div>
 
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border text-[11px] text-muted-foreground">
-                    {sharePermission === 'read-only' ? (
-                      <p>
-                        💡 <strong>โหมดอ่านอย่างเดียว:</strong> ผู้รับลิงก์สามารถดูรายละเอียด สลับแท็บแพลตฟอร์ม และคัดลอกไปเป็นตัวละครใหม่ของตนเองได้ แต่จะไม่สามารถเขียนทับข้อมูลของคุณ
-                      </p>
-                    ) : (
-                      <p>
-                        ⚠️ <strong>โหมดแก้ไข:</strong> ผู้รับลิงก์สามารถแก้ไขข้อมูลฟอร์ม และบันทึกซิงค์กลับเข้าสู่ระบบได้
-                      </p>
-                    )}
+                {/* Link Option 1: Permanent Cloud Link */}
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-primary" />
+                      ลิงก์คลาวด์ถาวร (Cloud Share Link):
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">เปิดดูได้ทุกอุปกรณ์</span>
                   </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedShareUrl || 'กำลังสร้างลิงก์...'}
+                      className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/60 border border-border text-foreground font-mono select-all focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyCloudUrl}
+                      disabled={!generatedShareUrl}
+                      className="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    >
+                      {shareCopiedCloud ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-white" />
+                          <span>คัดลอกแล้ว</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-white" />
+                          <span>คัดลอก</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-                  {/* Share URL Box */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-muted-foreground mb-1">
-                      ลิงก์แชร์ตัวละคร (Shareable URL):
-                    </label>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        readOnly
-                        value={generatedShareUrl || ''}
-                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/50 border border-border text-foreground font-mono focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCopyShareUrl}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap"
-                      >
-                        {shareCopied ? '✓ คัดลอกแล้ว' : '📋 คัดลอก'}
-                      </button>
-                    </div>
+                {/* Link Option 2: Universal Instant Compressed Link */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      ลิงก์ด่วนแชร์ได้ทันที (Instant Compressed Link):
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">บรรจุข้อมูลครบในลิงก์</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedInstantUrl || 'กำลังสร้างลิงก์...'}
+                      className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/60 border border-border text-foreground font-mono select-all focus:outline-none truncate"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyInstantUrl}
+                      disabled={!generatedInstantUrl}
+                      className="px-3.5 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    >
+                      {shareCopiedInstant ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-white" />
+                          <span>คัดลอกแล้ว</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-white" />
+                          <span>คัดลอก</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -517,35 +645,10 @@ export function CharacterLibraryModal({ currentCharacter, onLoadCharacter }: Cha
                   <button
                     type="button"
                     onClick={() => setSharingCharacterId(null)}
-                    className="px-4 py-1.5 rounded-xl bg-muted text-foreground text-xs font-semibold hover:bg-muted/80 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-medium cursor-pointer"
                   >
-                    ปิด
+                    ปิดหน้าต่าง
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* POPUP: INSPECT CHARACTER MODAL */}
-          {inspectingCharacter && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-              <div className="w-full max-w-2xl max-h-[85vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/40">
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <span>👁️</span> ดูข้อมูลตัวละคร: {inspectingCharacter.fullName || inspectingCharacter.nickname}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setInspectingCharacter(null)}
-                    className="text-xs text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-5">
-                  <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed bg-muted/50 p-4 rounded-xl border border-border text-foreground">
-                    {characterToFullMarkdown(inspectingCharacter)}
-                  </pre>
                 </div>
               </div>
             </div>

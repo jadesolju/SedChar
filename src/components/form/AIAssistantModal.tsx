@@ -1,4 +1,5 @@
 'use client';
+import { Sparkles, Wand2, Loader2, AlertCircle, X, Check } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter } from '@/shared/types';
@@ -207,7 +208,7 @@ export function AIAssistantModal({
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm">
           {errorMsg && (
             <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-center gap-2">
-              <span>⚠️</span>
+              <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}

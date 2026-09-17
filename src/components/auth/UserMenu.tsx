@@ -2,6 +2,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import {
+  FolderOpen,
+  ShieldCheck,
+  KeyRound,
+  LogOut,
+  Crown,
+  Gem,
+  Sparkles,
+  User as UserIcon,
+  ChevronDown,
+  Coins,
+} from 'lucide-react';
 
 export function UserMenu() {
   const {
@@ -44,7 +56,7 @@ export function UserMenu() {
           text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95
         "
       >
-        <span>✨</span>
+        <Sparkles className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">เข้าสู่ระบบ / สมัครสมาชิก</span>
         <span className="sm:hidden">เข้าสู่ระบบ</span>
       </button>
@@ -54,11 +66,27 @@ export function UserMenu() {
   const initial = ((user.email || 'U')[0] ?? 'U').toUpperCase();
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
 
-  const roleLabel = {
-    admin: { name: 'Admin', badge: 'bg-amber-500/20 text-amber-500 border-amber-500/30', icon: '👑' },
-    premium: { name: 'Premium', badge: 'bg-rose-500/20 text-rose-500 border-rose-500/30', icon: '💎' },
-    free: { name: 'Free', badge: 'bg-primary/10 text-primary border-primary/20', icon: '🌱' },
-  }[userRole] || { name: 'Free', badge: 'bg-primary/10 text-primary border-primary/20', icon: '🌱' };
+  const roleConfig = {
+    admin: {
+      name: 'Admin',
+      badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      icon: <Crown className="w-3.5 h-3.5 text-amber-500" />,
+    },
+    premium: {
+      name: 'Premium',
+      badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      icon: <Gem className="w-3.5 h-3.5 text-rose-500" />,
+    },
+    free: {
+      name: 'Free',
+      badge: 'bg-primary/10 text-primary border-primary/20',
+      icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
+    },
+  }[userRole] || {
+    name: 'Free',
+    badge: 'bg-primary/10 text-primary border-primary/20',
+    icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
+  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -70,7 +98,7 @@ export function UserMenu() {
           title="คลังตัวละคร Cloud Library"
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
         >
-          <span>📁</span>
+          <FolderOpen className="w-3.5 h-3.5 text-primary" />
           <span>คลัง ({savedCharacters.length})</span>
         </button>
 
@@ -81,8 +109,8 @@ export function UserMenu() {
           className="flex items-center gap-2 p-1 pl-2 pr-1.5 rounded-xl border border-border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-xs"
         >
           {/* Daily Quota Pill */}
-          <span className={`hidden md:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${roleLabel.badge}`}>
-            <span>{roleLabel.icon}</span>
+          <span className={`hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md border ${roleConfig.badge}`}>
+            {roleConfig.icon}
             <span>{userRole === 'admin' ? 'AI: ∞ ไม่จำกัด' : `AI: ${quotaRemaining}/${quotaMax}`}</span>
           </span>
 
@@ -94,6 +122,7 @@ export function UserMenu() {
               initial
             )}
           </div>
+          <ChevronDown className="w-3 h-3 text-muted-foreground" />
         </button>
       </div>
 
@@ -103,17 +132,20 @@ export function UserMenu() {
           {/* User Info Header */}
           <div className="p-2.5 mb-1.5 rounded-xl bg-muted/50 border border-border">
             <div className="text-[11px] uppercase font-bold tracking-wider mb-0.5 flex items-center justify-between">
-              <span className="text-foreground flex items-center gap-1">
-                <span>{roleLabel.icon}</span>
-                <span>{roleLabel.name} Role</span>
+              <span className="text-foreground flex items-center gap-1.5">
+                {roleConfig.icon}
+                <span>{roleConfig.name} Role</span>
               </span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-bold ${roleLabel.badge}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-bold ${roleConfig.badge}`}>
                 {userRole.toUpperCase()}
               </span>
             </div>
             <div className="text-xs font-bold text-foreground truncate">{user.email}</div>
             <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>โควตา AI วันนี้:</span>
+              <span className="flex items-center gap-1">
+                <Coins className="w-3 h-3 text-primary" />
+                โควตา AI วันนี้:
+              </span>
               <span className="font-bold text-primary">
                 {userRole === 'admin' ? '∞ ไม่จำกัด' : `${quotaRemaining} / ${quotaMax} ครั้ง`}
               </span>
@@ -127,32 +159,34 @@ export function UserMenu() {
               onClick={() => { setIsOpen(false); openLibraryModal(); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
             >
-              <span>📁</span>
+              <FolderOpen className="w-4 h-4 text-primary" />
               <div className="flex-1">
                 <div className="font-semibold">คลังตัวละคร Cloud Library</div>
                 <div className="text-[10px] text-muted-foreground">เก็บไว้ {savedCharacters.length} ตัวละคร</div>
               </div>
             </button>
 
-            {/* Secret Control Nexus Link */}
-            <Link
-              href="/sys-nexus-mgmt-99"
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer text-left font-semibold"
-            >
-              <span>🛡️</span>
-              <div className="flex-1">
-                <div>Control Nexus Console</div>
-                <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควตาหลังบ้าน</div>
-              </div>
-            </Link>
+            {/* Secret Control Nexus Link - ONLY FOR ADMIN ROLE */}
+            {userRole === 'admin' && (
+              <Link
+                href="/sys-nexus-mgmt-99"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer text-left font-semibold"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-500" />
+                <div className="flex-1">
+                  <div>Control Nexus Console</div>
+                  <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควตาหลังบ้าน</div>
+                </div>
+              </Link>
+            )}
 
             <button
               type="button"
               onClick={() => { setIsOpen(false); openAuthModal('reset'); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
             >
-              <span>🔑</span>
+              <KeyRound className="w-4 h-4 text-muted-foreground" />
               <span>รีเซ็ต / เปลี่ยนรหัสผ่าน</span>
             </button>
 
@@ -163,7 +197,7 @@ export function UserMenu() {
               onClick={() => { setIsOpen(false); signOut(); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer text-left font-semibold"
             >
-              <span>🚪</span>
+              <LogOut className="w-4 h-4 text-rose-500" />
               <span>ออกจากระบบ</span>
             </button>
           </div>

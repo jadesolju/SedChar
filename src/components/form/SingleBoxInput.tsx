@@ -1,4 +1,5 @@
 'use client';
+import { Wand2, Sparkles, RotateCcw, Trash2, FileUp, Check } from 'lucide-react';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter } from '@/shared/types';

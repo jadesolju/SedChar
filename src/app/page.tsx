@@ -10,6 +10,22 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
 import type { ThaiMasterCharacter } from '@/shared/types';
+import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
+import {
+  Layers,
+  Zap,
+  Bookmark,
+  Share2,
+  FileEdit,
+  Eye,
+  Check,
+  X,
+  Lock,
+  Unlock,
+  Save,
+  Globe,
+  Sparkles,
+} from 'lucide-react';
 
 function MainWorkspace() {
   const {
@@ -62,29 +78,71 @@ function MainWorkspace() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlParams = new URLSearchParams(window.location.search);
+    const dataParam = urlParams.get('data');
     const shareId = urlParams.get('share');
-    const mode = urlParams.get('mode') as 'read-only' | 'edit' || 'read-only';
+    const mode = (urlParams.get('mode') as 'read-only' | 'edit') || 'read-only';
 
-    if (shareId) {
-      try {
-        const storedShare = localStorage.getItem(`sedchar_share_${shareId}`);
-        if (storedShare) {
-          const payload = JSON.parse(storedShare);
-          if (payload.character) {
-            applyParsedCharacter(payload.character);
-            setSharedBanner({
-              title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
-              mode: payload.permission || mode,
-            });
-            showToast(`✨ โหลดตัวละครที่แชร์ "${payload.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${payload.permission === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
-          }
-        }
-      } catch (e) {
-        console.warn('Error reading share payload:', e);
+    // 1. Check Instant URL Payload
+    if (dataParam) {
+      const decoded = decodeCharacterFromShareUrl(dataParam);
+      if (decoded && decoded.character) {
+        applyParsedCharacter(decoded.character);
+        setSharedBanner({
+          title: decoded.title || 'ตัวละครที่แชร์',
+          mode: decoded.mode || mode,
+        });
+        showToast(`โหลดตัวละคร "${decoded.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${decoded.mode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
+        return;
       }
+    }
+
+    // 2. Check Cloud Database Share ID
+    if (shareId) {
+      fetch(`/api/characters/share?id=${encodeURIComponent(shareId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.character) {
+            applyParsedCharacter(data.character);
+            setSharedBanner({
+              title: data.title || data.nickname || 'ตัวละครที่แชร์',
+              mode: data.permission || mode,
+            });
+            showToast(`โหลดตัวละครจาก Cloud "${data.title || 'ตัวละคร'}" เรียบร้อย`);
+          } else {
+            // Fallback to local cache if offline
+            const storedShare = localStorage.getItem(`sedchar_share_${shareId}`);
+            if (storedShare) {
+              const payload = JSON.parse(storedShare);
+              if (payload.character) {
+                applyParsedCharacter(payload.character);
+                setSharedBanner({
+                  title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
+                  mode: payload.permission || mode,
+                });
+                showToast(`โหลดตัวละคร "${payload.title || 'ตัวละคร'}" เรียบร้อย`);
+              }
+            }
+          }
+        })
+        .catch(() => {
+          const storedShare = localStorage.getItem(`sedchar_share_${shareId}`);
+          if (storedShare) {
+            try {
+              const payload = JSON.parse(storedShare);
+              if (payload.character) {
+                applyParsedCharacter(payload.character);
+                setSharedBanner({
+                  title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
+                  mode: payload.permission || mode,
+                });
+              }
+            } catch {}
+          }
+        });
     }
   }, [applyParsedCharacter]);
 
+  // Synchronize Markdown when toggling between tabs
   const handleModeSwitch = (mode: 'structured' | 'single') => {
     if (mode === 'single') {
       syncToMarkdown();
@@ -92,17 +150,18 @@ function MainWorkspace() {
     setInputMode(mode);
   };
 
-  const handleLoadFromLibrary = (loadedChar: ThaiMasterCharacter) => {
-    applyParsedCharacter(loadedChar);
-    showToast(`✨ โหลดตัวละคร "${loadedChar.fullName || loadedChar.nickname || 'ตัวละคร'}" เข้าสู่ฟอร์มเรียบร้อยแล้ว!`);
-  };
-
-  const handleSingleBoxSuccess = (msg: string) => {
-    showToast(msg);
-  };
-
   const handleParsedFromSingleBox = (parsedChar: ThaiMasterCharacter) => {
     applyParsedCharacter(parsedChar);
+  };
+
+  const handleSingleBoxSuccess = () => {
+    showToast('แปลงข้อมูลสำเร็จ! ข้อมูลถูกนำไปจัดโครงสร้างใน 10 หมวดหมู่แล้ว');
+  };
+
+  const handleLoadFromLibrary = (char: ThaiMasterCharacter) => {
+    applyParsedCharacter(char);
+    setSharedBanner(null);
+    showToast(`โหลดตัวละคร "${char.fullName || char.nickname || 'ตัวละคร'}" เรียบร้อย`);
   };
 
   const handleSaveAsNewCopy = async () => {
@@ -110,60 +169,52 @@ function MainWorkspace() {
       openAuthModal('signin');
       return;
     }
-    const copyTitle = `${character.fullName || character.nickname || 'ตัวละคร'} (สำเนาของฉัน)`;
-    const res = await saveToLibrary(character, copyTitle);
+    const res = await saveToLibrary(character, `${character.fullName || character.nickname || 'ตัวละคร'} (สำเนา)`);
     if (res.success) {
-      showToast(`✓ บันทึกเป็นตัวละครใหม่ของคุณเรียบร้อยแล้ว!`);
       setSharedBanner(null);
+      showToast('บันทึกตัวละครลงในคลังของคุณเรียบร้อยแล้ว!');
     }
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
-      {/* Toast Notification Container */}
+    <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden font-sans antialiased">
+      {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 fade-in duration-200">
-          <div className="px-4 py-2.5 rounded-xl bg-card/95 border border-primary/40 shadow-xl backdrop-blur-md flex items-center gap-2.5 text-xs font-bold text-foreground">
-            <span className="text-primary text-base">✨</span>
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="px-4 py-2.5 rounded-xl bg-card border border-primary/40 text-foreground text-xs font-semibold shadow-2xl flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>{toastMessage}</span>
-            <button
-              type="button"
-              onClick={() => setToastMessage(null)}
-              className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer text-xs"
-            >
-              ✕
-            </button>
           </div>
         </div>
       )}
 
       {/* Shared Character Top Banner */}
       {sharedBanner && (
-        <div className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-b border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-foreground">
-            <span className="text-emerald-500 font-bold">🔗</span>
+        <div className="flex-shrink-0 bg-primary/10 border-b border-primary/25 px-4 py-2 flex items-center justify-between text-xs z-20">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-primary" />
             <span>
-              กำลังเปิดดูตัวละครที่แชร์: <strong className="text-emerald-500">{sharedBanner.title}</strong>{' '}
-              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
-                {sharedBanner.mode === 'edit' ? '✏️ โหมดแก้ไขได้' : '🔒 โหมดอ่านอย่างเดียว'}
+              กำลังเปิดดูตัวละครที่แชร์: <strong className="text-primary">{sharedBanner.title}</strong>{' '}
+              <span className="text-muted-foreground">
+                ({sharedBanner.mode === 'edit' ? 'โหมดแก้ไขได้' : 'โหมดอ่านอย่างเดียว'})
               </span>
             </span>
           </div>
-
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSaveAsNewCopy}
-              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer shadow-xs flex items-center gap-1"
             >
-              + บันทึกเป็นตัวละครใหม่ของฉัน
+              <Save className="w-3 h-3" />
+              <span>บันทึกเป็นตัวละครใหม่ของฉัน</span>
             </button>
             <button
               type="button"
               onClick={() => setSharedBanner(null)}
-              className="text-muted-foreground hover:text-foreground text-xs p-1"
+              className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -179,7 +230,7 @@ function MainWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 shadow-xs">
-              Demo
+              PRO
             </span>
           </div>
 
@@ -188,22 +239,26 @@ function MainWorkspace() {
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'structured'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                inputMode === 'structured'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-                }`}
+              }`}
             >
-              <span>📋</span> ช่องแยกตามหัวข้อ (10 หมวดหมู่)
+              <Layers className="w-3.5 h-3.5 text-primary" />
+              <span>ช่องแยกตามหัวข้อ (10 หมวดหมู่)</span>
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'single'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                inputMode === 'single'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-                }`}
+              }`}
             >
-              <span>⚡</span> ช่องเดียวรวด (Auto-Parser)
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>ช่องเดียวรวด (Auto-Parser)</span>
             </button>
           </div>
         </div>
@@ -217,11 +272,11 @@ function MainWorkspace() {
             title="บันทึกตัวละครลง Cloud Library"
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:border-primary/50 text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
           >
-            <span>💾</span>
+            <Bookmark className="w-3.5 h-3.5 text-primary" />
             <span>บันทึกลงคลัง</span>
           </button>
 
-                    <UserMenu />
+          <UserMenu />
           <ThemeToggle />
         </div>
       </header>
@@ -232,22 +287,26 @@ function MainWorkspace() {
           <button
             type="button"
             onClick={() => setMobileTab('editor')}
-            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${mobileTab === 'editor'
+            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'editor'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
-              }`}
+            }`}
           >
-            <span>✏️</span> โหมดแก้ไข (Editor)
+            <FileEdit className="w-3.5 h-3.5" />
+            <span>โหมดแก้ไข (Editor)</span>
           </button>
           <button
             type="button"
             onClick={() => setMobileTab('preview')}
-            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${mobileTab === 'preview'
+            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'preview'
                 ? 'bg-primary text-white shadow-xs font-bold'
                 : 'text-muted-foreground hover:text-foreground'
-              }`}
+            }`}
           >
-            <span>👀</span> ดูผลลัพธ์ (Preview)
+            <Eye className="w-3.5 h-3.5" />
+            <span>ดูผลลัพธ์ (Preview)</span>
           </button>
         </div>
 
@@ -256,22 +315,26 @@ function MainWorkspace() {
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`py-1 text-[11px] font-medium rounded transition-all ${inputMode === 'structured'
+              className={`py-1 text-[11px] font-medium rounded transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                inputMode === 'structured'
                   ? 'bg-card text-foreground font-bold shadow-xs'
                   : 'text-muted-foreground'
-                }`}
+              }`}
             >
-              📋 ช่องแยก 10 หัวข้อ
+              <Layers className="w-3 h-3 text-primary" />
+              <span>ช่องแยก 10 หัวข้อ</span>
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`py-1 text-[11px] font-medium rounded transition-all ${inputMode === 'single'
+              className={`py-1 text-[11px] font-medium rounded transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                inputMode === 'single'
                   ? 'bg-card text-foreground font-bold shadow-xs'
                   : 'text-muted-foreground'
-                }`}
+              }`}
             >
-              ⚡ ช่องเดียวรวด (Auto-Parser)
+              <Zap className="w-3 h-3 text-amber-500" />
+              <span>ช่องเดียวรวด</span>
             </button>
           </div>
         )}
@@ -281,8 +344,9 @@ function MainWorkspace() {
       <main className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
         {/* Left Column: Form Editor */}
         <div
-          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-background ${mobileTab === 'preview' ? 'hidden md:flex' : 'flex'
-            }`}
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-background ${
+            mobileTab === 'preview' ? 'hidden md:flex' : 'flex'
+          }`}
         >
           {inputMode === 'structured' ? (
             <InputForm
@@ -319,8 +383,9 @@ function MainWorkspace() {
 
         {/* Right Column: Platform Preview & Smart Export */}
         <div
-          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-muted/20 ${mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
-            }`}
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-muted/20 ${
+            mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
+          }`}
         >
           <PlatformPreview character={character} />
         </div>

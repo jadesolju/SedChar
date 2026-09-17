@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CopyButton } from '@/components/ui/CopyButton';
+import { Edit3, Eye, Check } from 'lucide-react';
 
 interface CodeBlockProps {
   label: string;
@@ -79,13 +80,23 @@ export function CodeBlock({
               type="button"
               onClick={() => setIsEditing(!isEditing)}
               title={isEditing ? 'สลับไปโหมดดูตัวอย่าง' : 'แก้ไขข้อความในช่องนี้โดยตรง'}
-              className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+              className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                 isEditing
                   ? 'bg-primary text-white shadow-xs font-bold'
                   : 'bg-muted hover:bg-muted/80 text-foreground border border-border/60'
               }`}
             >
-              <span>{isEditing ? '👁️ ดูผลลัพธ์' : '✏️ แก้ไข'}</span>
+              {isEditing ? (
+                <>
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>ดูผลลัพธ์</span>
+                </>
+              ) : (
+                <>
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>แก้ไข</span>
+                </>
+              )}
             </button>
           )}
 
@@ -105,13 +116,14 @@ export function CodeBlock({
               className="w-full min-h-[140px] max-h-[480px] p-3 rounded-lg bg-background border border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/30 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 resize-y leading-relaxed outline-none transition-all"
             />
             <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground">
-              <span>💡 กำลังแก้ไขในโหมด Preview — ข้อความที่แก้ไขจะถูกคัดลอกและนำไปใช้ทันที</span>
+              <span>กำลังแก้ไขในโหมด Preview — ข้อความที่แก้ไขจะถูกคัดลอกและนำไปใช้ทันที</span>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="text-primary hover:underline font-semibold cursor-pointer"
+                className="flex items-center gap-1 text-primary hover:underline font-semibold cursor-pointer"
               >
-                บันทึกการแก้ไข ✓
+                <Check className="w-3.5 h-3.5" />
+                <span>เสร็จสิ้น</span>
               </button>
             </div>
           </div>

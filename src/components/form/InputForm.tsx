@@ -1,4 +1,22 @@
 'use client';
+import {
+  User,
+  Eye,
+  Brain,
+  HeartHandshake,
+  ShieldAlert,
+  Flame,
+  Coffee,
+  MapPin,
+  Users,
+  MessageSquareQuote,
+  RotateCcw,
+  BookOpen,
+  Sparkles,
+  Plus,
+  Trash2,
+  Compass,
+} from 'lucide-react';
 import React from 'react';
 import type {
   ThaiMasterCharacter,
@@ -120,7 +138,7 @@ export function InputForm({
         <FormSection
           id="sec-profile"
           title="1. ข้อมูลพื้นฐาน (Character Profile)"
-          icon={<span>👤</span>}
+          icon={<User className="w-4 h-4 text-rose-500" />}
           description="ชื่อ, อายุ, เพศ, MBTI, ฐานะ, อาชีพ, สไตล์การแต่งตัว"
           defaultOpen={true}
         >
@@ -302,7 +320,7 @@ export function InputForm({
         <FormSection
           id="sec-appearance"
           title="2. ลักษณะภายนอก & NSFW (Appearance)"
-          icon={<span>👁️</span>}
+          icon={<Eye className="w-4 h-4 text-pink-500" />}
           description="การบรรยายสรีระ, จุดเด่น, แท็ก และข้อมูลส่วนลับ"
           defaultOpen={false}
           badge={character.visualTags.length}
@@ -382,7 +400,7 @@ export function InputForm({
         <FormSection
           id="sec-personality"
           title="3. นิสัยและพฤติกรรม (Psychology & Personality)"
-          icon={<span>🧠</span>}
+          icon={<Brain className="w-4 h-4 text-purple-500" />}
           description="Core Traits, แท็กนิสัย, ชอบ/ไม่ชอบ, พฤติกรรมทั่วไป & กับ User"
           defaultOpen={false}
           badge={character.personalityTags.length}
@@ -532,7 +550,7 @@ export function InputForm({
         <FormSection
           id="sec-relationship"
           title="4. ความสัมพันธ์กับ {{user}} (Relationship)"
-          icon={<span>💞</span>}
+          icon={<HeartHandshake className="w-4 h-4 text-red-500" />}
           description="บทบาทในเรื่อง, ปูมหลัง, สถานะเริ่มต้น และทัศนคติที่มีต่อ {{user}}"
           defaultOpen={false}
         >
@@ -580,7 +598,7 @@ export function InputForm({
         <FormSection
           id="sec-rules"
           title="5. ขอบเขตและ Logic ขั้นเด็ดขาด (Rules & Logic)"
-          icon={<span>🛡️</span>}
+          icon={<ShieldAlert className="w-4 h-4 text-amber-500" />}
           description="พฤติกรรมที่ห้ามทำเด็ดขาด, มุมอ่อนโยน, ด้านมืด และกฎระบบ"
           defaultOpen={false}
           badge={character.systemRules.length}
@@ -629,7 +647,7 @@ export function InputForm({
         <FormSection
           id="sec-nsfw-bed"
           title="6. พฤติกรรมทางเพศและบนเตียง (Bedroom & NSFW)"
-          icon={<span>🔥</span>}
+          icon={<Flame className="w-4 h-4 text-orange-500" />}
           description="ลีลา, Kinks, Aftercare และบทสนทนาบนเตียง"
           defaultOpen={false}
         >
@@ -665,7 +683,7 @@ export function InputForm({
         <FormSection
           id="sec-lifestyle"
           title="7. Lifestyle & กิจวัตรประจำวัน"
-          icon={<span>☕</span>}
+          icon={<Coffee className="w-4 h-4 text-emerald-500" />}
           description="ตารางชีวิต, งานอดิเรก และกิจกรรมยามว่าง"
           defaultOpen={false}
         >
@@ -683,7 +701,7 @@ export function InputForm({
         <FormSection
           id="sec-locations"
           title="8. ฉากหลัง & สถานที่ (Tone & Locations)"
-          icon={<span>📍</span>}
+          icon={<MapPin className="w-4 h-4 text-blue-500" />}
           description="บรรยากาศของเรื่อง และสถานที่สำคัญ (สูงสุด 10 สถานที่)"
           defaultOpen={false}
           badge={character.locations.length}
@@ -767,7 +785,7 @@ export function InputForm({
         <FormSection
           id="sec-subchars"
           title="9. ตัวละครเสริม (Supporting Characters)"
-          icon={<span>👥</span>}
+          icon={<Users className="w-4 h-4 text-indigo-500" />}
           description="จัดการตัวละครเสริมในเรื่อง (สูงสุด 5 ตัว)"
           defaultOpen={false}
           badge={character.supportingCharacters.length}
@@ -899,7 +917,7 @@ export function InputForm({
         <FormSection
           id="sec-pitches"
           title="10. คำโปรย & บทนำ / ฉากเปิด (Greeting & Pitch)"
-          icon={<span>📢</span>}
+          icon={<MessageSquareQuote className="w-4 h-4 text-cyan-500" />}
           description="Short Intro, Punchline, เรื่องย่อ และบทนำฉากเปิดตัวละคร"
           defaultOpen={false}
           badge={character.categoryTags.length}

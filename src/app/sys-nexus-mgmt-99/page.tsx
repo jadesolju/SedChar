@@ -36,7 +36,7 @@ function AdminNexusDashboardContent() {
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (masterPasscode.trim() === 'admin67x' || masterPasscode.trim() === 'sedchar-master-2026' || masterPasscode.trim() === 'admin') {
+    if (masterPasscode.trim() === '••••••' || masterPasscode.trim() === 'sedchar-master-2026' || masterPasscode.trim() === 'admin') {
       setIsUnlocked(true);
       setUserRole('admin');
       setUnlockError(false);

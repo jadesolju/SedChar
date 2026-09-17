@@ -1,4 +1,5 @@
 'use client';
+import { AlertCircle, CheckCircle2, Sparkles, X, Lock } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -167,14 +168,14 @@ export function AuthModal() {
         {/* Error & Success Alerts */}
         {errorMsg && (
           <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-500 text-xs flex items-center gap-2">
-            <span>⚠️</span>
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
           <div className="p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-xs flex items-center gap-2">
-            <span>✅</span>
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
