@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://grcpgzmqrzfdhethqgsa.supabase.co";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_PDYNR2FQUditnuDLGYZAdQ_AadTBRft";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,13 +12,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing share ID' }, { status: 400 });
   }
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json({ error: 'Database service not configured' }, { status: 503 });
-  }
-
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    // Find character where share_id matches or id matches and is_shared = true
     const { data, error } = await supabase
       .from('characters')
       .select('id, title, nickname, tagline, flag_type, image_url, character_data, share_id, share_permission, is_shared, created_at')
@@ -55,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     const shareId = `sh_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
 
-    if (supabaseUrl && supabaseAnonKey && id) {
+    if (id) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       await supabase
         .from('characters')

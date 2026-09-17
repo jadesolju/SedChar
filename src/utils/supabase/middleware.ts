@@ -1,11 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://grcpgzmqrzfdhethqgsa.supabase.co";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_PDYNR2FQUditnuDLGYZAdQ_AadTBRft";
 
-// Whitelisted API routes that are accessible publicly (e.g., health checks, AI endpoints)
-const PUBLIC_API_ROUTES = ['/api/health', '/api/auth/callback', '/api/ai'];
+// Whitelisted API routes that are accessible publicly
+const PUBLIC_API_ROUTES = ['/api/health', '/api/auth/callback', '/api/ai', '/api/characters/share'];
 
 export const updateSession = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
@@ -40,7 +40,7 @@ export const updateSession = async (request: NextRequest) => {
   // Refresh user session token
   const { data: { user } } = await supabase.auth.getUser();
 
-  // API Path Protection: Prevent unauthorized inspection/access to /api endpoints
+  // API Path Protection
   if (pathname.startsWith('/api')) {
     const isPublic = PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route));
     const authHeader = request.headers.get('authorization');
@@ -52,7 +52,7 @@ export const updateSession = async (request: NextRequest) => {
       return NextResponse.json(
         {
           error: 'Unauthorized',
-          message: 'Access to /api is protected. Authentication session or valid API token required.',
+          message: 'Access to /api is protected.',
         },
         { status: 401 }
       );
