@@ -2,50 +2,176 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { DEFAULT_CHARACTER } from '@/shared/types';
 
-// Helper to reliably extract and parse JSON from LLM output
 function safeExtractJson(raw: string): any {
   let text = raw.trim();
-  
-  if (text.startsWith('```json')) {
-    text = text.slice(7);
-  } else if (text.startsWith('```')) {
-    text = text.slice(3);
+  text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+  try { return JSON.parse(text); } catch {}
+  const s = text.indexOf('{');
+  const e = text.lastIndexOf('}');
+  if (s !== -1 && e > s) {
+    try { return JSON.parse(text.slice(s, e + 1)); } catch {}
   }
-  if (text.endsWith('```')) {
-    text = text.slice(0, -3);
-  }
-  text = text.trim();
-
-  try {
-    return JSON.parse(text);
-  } catch {}
-
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    try {
-      const sub = text.slice(firstBrace, lastBrace + 1);
-      return JSON.parse(sub);
-    } catch {}
-  }
-
-  throw new Error('Could not parse JSON response from LLM');
+  throw new Error('Cannot parse LLM JSON output');
 }
 
-// Normalizer for arrays/strings
 function normalizeString(val: any): string {
   if (!val) return '';
-  if (Array.isArray(val)) return val.join(', ');
-  return String(val);
+  if (Array.isArray(val)) return val.filter(Boolean).join('\n');
+  return String(val).trim();
 }
 
 function normalizeArray(val: any): string[] {
   if (!val) return [];
-  if (Array.isArray(val)) return val.map(String).filter(Boolean);
+  if (Array.isArray(val)) return val.map(String).map(s => s.trim()).filter(Boolean);
   if (typeof val === 'string') {
-    return val.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    try {
+      const arr = JSON.parse(val);
+      if (Array.isArray(arr)) return arr.map(String).filter(Boolean);
+    } catch {}
+    return val.split(/[,\n|;]/).map(s => s.trim()).filter(Boolean);
   }
   return [];
+}
+
+function isEmpty(val: any): boolean {
+  if (val === null || val === undefined) return true;
+  if (typeof val === 'string') return val.trim() === '';
+  if (Array.isArray(val)) return val.length === 0;
+  return false;
+}
+
+async function callGemini(apiKey: string, prompt: string, retries = 2): Promise<any> {
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 2000 * attempt));
+    }
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.3,
+          topP: 0.92,
+          topK: 40,
+        },
+      }),
+    });
+
+    if (response.status === 503 || response.status === 429) {
+      if (attempt < retries) continue;
+    }
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Gemini ${response.status}: ${errText}`);
+    }
+
+    return await response.json();
+  }
+  throw new Error('Gemini unavailable after retries');
+}
+
+const STRING_FIELDS = [
+  'nickname', 'fullName', 'age', 'gender', 'occupation', 'mbti', 'wealthStatus', 'fashionStyle',
+  'car', 'perfume', 'address', 'birthdate', 'weightHeight', 'sexualOrientation', 'status',
+  'appearanceDesc', 'visualFeatures', 'nsfwMaleSize', 'nsfwFemaleChest', 'nsfwFemaleVagina',
+  'coreTraits', 'mindset', 'coreBelief', 'perception', 'expression', 'behaviorUnderEmotion',
+  'emotionalTriggers', 'flawsWeaknesses', 'userStoryRole', 'initialRelationship',
+  'relationshipBackstory', 'userAttitude', 'generalBehaviors', 'userExclusiveBehaviors',
+  'hiddenSoftSide', 'darkSide', 'absoluteAntiBehaviors', 'sexualStyle', 'kinksPreferences',
+  'aftercareStyle', 'dailyRoutine', 'toneSetting', 'shortIntro', 'punchline', 'plotSummary',
+  'publicInfo', 'momentIntro', 'openGreetingNarrative', 'openGreetingDialogue', 'fullGreeting',
+  'subCharRules', 'subCharAllowed',
+] as const;
+
+const ARRAY_FIELDS = ['visualTags', 'personalityTags', 'likes', 'dislikes', 'systemRules', 'categoryTags'] as const;
+
+function buildEnhancePrompt(character: Partial<ThaiMasterCharacter>, instructions?: string): string {
+  const filled: string[] = [];
+  const missing: string[] = [];
+
+  for (const f of STRING_FIELDS) {
+    if (!isEmpty(character[f])) filled.push(f);
+    else missing.push(f);
+  }
+  for (const f of ARRAY_FIELDS) {
+    if (!isEmpty(character[f])) filled.push(f);
+    else missing.push(f);
+  }
+  if (!isEmpty(character.supportingCharacters)) filled.push('supportingCharacters');
+  else missing.push('supportingCharacters');
+  if (!isEmpty(character.locations)) filled.push('locations');
+  else missing.push('locations');
+
+  const characterJson = JSON.stringify(character, null, 2);
+  const filledList = filled.join(', ');
+  const missingList = missing.join(', ');
+  const instructionsText = instructions?.trim() || "Use the character's archetype, occupation, and personality to guide all creative decisions. Stay true to the established tone.";
+
+  return `You are SedChar-Enhancer v3, an elite Thai Character Completion Engine for Thai AI roleplay platforms (Rubii, Purrpaw, Khui AI).
+
+## YOUR MISSION
+Complete a partially-filled character. Preserve everything already written by the user. Only generate content for empty fields.
+
+## GOLDEN RULE
+The fields listed under "ALREADY FILLED" are sacred — DO NOT modify, rephrase, or overwrite them under any circumstance.
+
+## HOW TO COMPLETE EMPTY FIELDS
+
+Psychology — write as if you know this person's soul:
+- mindset: How they see the world internally, 2-3 vivid Thai sentences
+- coreBelief: Their one absolute truth — possibly warped or painful
+- perception: How they read people — analytical, intuitive, or emotionally blind?
+- expression: How they show or hide emotion day-to-day
+- behaviorUnderEmotion: What they physically DO when angry, scared, or in love
+- emotionalTriggers: 2-4 precise specific triggers (not vague)
+- flawsWeaknesses: Real humanizing flaws — avoid generic answers
+
+Relationship to user — specific and layered:
+- generalBehaviors: Day-to-day behavior around user — subtle and observational
+- userExclusiveBehaviors: What they ONLY do for the user
+- hiddenSoftSide: The rare crack in their armor
+- darkSide: What surfaces in intense or unguarded moments
+
+NSFW — infer from gender and personality:
+- nsfwMaleSize: if male, describe appropriately and specifically
+- nsfwFemaleChest and nsfwFemaleVagina: if female, describe appropriately
+- sexualStyle: Dominant/submissive/switch? Passionate or controlled? Detail the dynamic.
+- kinksPreferences: 2-3 specific preferences fitting their personality
+- aftercareStyle: How they behave after intimacy — cold? Tender? Quiet?
+
+Opening Greeting — cinematic quality:
+- openGreetingNarrative: Set the scene with sensory detail — time, location, mood, what they are doing
+- openGreetingDialogue: ONE perfect opening line in their exact voice. Make it land emotionally.
+- fullGreeting: Narrative and dialogue merged into 200-350 Thai characters — cinematic, immersive
+
+Supporting Cast and World:
+- supportingCharacters: 1-2 side characters fitting the world. Each: { id, name, gender, age, personality, relationship, mainRole, appearWhen, shortDesc, systemPrompt }
+- locations: 2-3 locations. Each: { id, name, prompt }
+
+System and Tags:
+- systemRules: 4-6 clear behavioral rules for AI consistency
+- categoryTags: Thai genre tags (เย็นชา, ซึนเดเระ, CEO, นักสืบ, ดอมซับ, etc.)
+- flagType: one of: none, white, green, yellow, red, black, watermelon, reverse-watermelon
+
+## ALREADY FILLED — DO NOT TOUCH:
+${filledList}
+
+## FIELDS TO COMPLETE — generate rich content for these:
+${missingList}
+
+## CHARACTER DRAFT
+${characterJson}
+
+## CREATIVE INSTRUCTIONS FROM USER
+${instructionsText}
+
+Return the COMPLETE ThaiMasterCharacter JSON with ALL fields populated. Return ONLY JSON — no markdown, no explanation.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -57,111 +183,62 @@ export async function POST(req: NextRequest) {
     };
 
     if (!character) {
-      return NextResponse.json(
-        { error: 'Missing character object in request body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing character object' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Gemini API key is not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
-    const systemPrompt = `You are an expert Thai Bot Character Analyst and Master Prompt Engineer for Thai roleplay AI platforms (Rubii, Purrpaw, Khui AI).
-Your task is to take the user's current character draft (which may have partial fields filled) and intelligently ENHANCE and COMPLETE all missing/empty fields across all 10 pillars.
+    const prompt = buildEnhancePrompt(character, instructions);
+    const geminiData = await callGemini(apiKey, prompt);
 
-Rules:
-1. PRESERVE all existing non-empty fields provided by the user. Do not overwrite or contradict what the user has already specified unless explicitly requested in the instructions.
-2. For all empty/sparse fields, creatively generate rich, immersive, psychological, and high-quality Thai content matching the character archetype and tone.
-3. If instructions are provided, incorporate them seamlessly into the character's personality, backstory, kinks, sub-characters, and opening greeting dialogue.
-4. Ensure all 10 pillars are filled:
-   - 1. ข้อมูลพื้นฐาน (nickname, fullName, age, gender, occupation, mbti, wealthStatus, fashionStyle, car, perfume, address, birthdate, weightHeight)
-   - 2. รูปลักษณ์ (appearanceDesc, visualFeatures, visualTags)
-   - 3. ส่วนลับ NSFW (nsfwMaleSize, nsfwFemaleChest, nsfwFemaleVagina)
-   - 4. จิตวิทยา & นิสัย (coreTraits, personalityTags, mindset, perception, expression, behaviorUnderEmotion, emotionalTriggers, flawsWeaknesses, coreBelief)
-   - 5. สิ่งที่ชอบ & เกลียด (likes, dislikes)
-   - 6. ความสัมพันธ์ {{user}} (userStoryRole, initialRelationship, relationshipBackstory, userAttitude, generalBehaviors, userExclusiveBehaviors, hiddenSoftSide, darkSide)
-   - 7. กฎระบบ & ข้อห้าม (systemRules, absoluteAntiBehaviors)
-   - 8. สไตล์บนเตียง (sexualStyle, kinksPreferences, aftercareStyle)
-   - 9. ตัวละครเสริม & สถานที่ (supportingCharacters, subCharRules, subCharAllowed, locations, dailyRoutine, toneSetting)
-   - 10. คำโปรย & ฉากเปิด (shortIntro, punchline, plotSummary, publicInfo, categoryTags, momentIntro, openGreetingNarrative, openGreetingDialogue, fullGreeting, flagType)
-5. Return ONLY a valid JSON object matching the full ThaiMasterCharacter schema.`;
-
-    const userPrompt = `Current Character Draft:
-${JSON.stringify(character, null, 2)}
-
-User Additional Instructions/Preferences:
-${instructions || 'Complete all empty fields with high-quality Thai roleplay depth.'}
-
-Return the complete JSON object now.`;
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: systemPrompt + '\n\n' + userPrompt }],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.3,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Error (${response.status}): ${errText}`);
-    }
-
-    const geminiData = await response.json();
     const candidateText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) {
-      throw new Error('Empty response received from Gemini');
-    }
+    if (!candidateText) throw new Error('Empty response from Gemini');
 
     const parsedJson = safeExtractJson(candidateText);
 
-    // Merge carefully, preserving non-empty existing fields if new parsed is empty
-    const enhancedCharacter: ThaiMasterCharacter = {
+    // Start with defaults + AI output
+    const enhanced: ThaiMasterCharacter = {
       ...DEFAULT_CHARACTER,
       ...parsedJson,
-      coreTraits: normalizeString(parsedJson.coreTraits || character.coreTraits),
-      appearanceDesc: normalizeString(parsedJson.appearanceDesc || character.appearanceDesc),
-      visualFeatures: normalizeString(parsedJson.visualFeatures || character.visualFeatures),
-      visualTags: normalizeArray(parsedJson.visualTags && parsedJson.visualTags.length ? parsedJson.visualTags : character.visualTags),
-      personalityTags: normalizeArray(parsedJson.personalityTags && parsedJson.personalityTags.length ? parsedJson.personalityTags : character.personalityTags),
-      likes: normalizeArray(parsedJson.likes && parsedJson.likes.length ? parsedJson.likes : character.likes),
-      dislikes: normalizeArray(parsedJson.dislikes && parsedJson.dislikes.length ? parsedJson.dislikes : character.dislikes),
-      systemRules: normalizeArray(parsedJson.systemRules && parsedJson.systemRules.length ? parsedJson.systemRules : character.systemRules),
-      categoryTags: normalizeArray(parsedJson.categoryTags && parsedJson.categoryTags.length ? parsedJson.categoryTags : character.categoryTags),
-      supportingCharacters: Array.isArray(parsedJson.supportingCharacters) && parsedJson.supportingCharacters.length > 0
-        ? parsedJson.supportingCharacters
-        : (character.supportingCharacters || []),
-      locations: Array.isArray(parsedJson.locations) && parsedJson.locations.length > 0
-        ? parsedJson.locations
-        : (character.locations || []),
     };
 
-    return NextResponse.json({
-      success: true,
-      character: enhancedCharacter,
-      model: 'gemini-3.6-flash',
-    });
+    // Restore all user's original non-empty string fields (user always wins)
+    for (const f of STRING_FIELDS) {
+      if (!isEmpty(character[f])) {
+        (enhanced as any)[f] = character[f];
+      } else if (parsedJson[f] !== undefined) {
+        (enhanced as any)[f] = normalizeString(parsedJson[f]);
+      }
+    }
+
+    // Restore all user's original non-empty array fields
+    for (const f of ARRAY_FIELDS) {
+      if (!isEmpty(character[f])) {
+        (enhanced as any)[f] = character[f];
+      } else {
+        (enhanced as any)[f] = normalizeArray(parsedJson[f]);
+      }
+    }
+
+    // Handle sub-object arrays
+    if (!isEmpty(character.supportingCharacters)) {
+      enhanced.supportingCharacters = character.supportingCharacters as any;
+    } else {
+      enhanced.supportingCharacters = Array.isArray(parsedJson.supportingCharacters) ? parsedJson.supportingCharacters : [];
+    }
+    if (!isEmpty(character.locations)) {
+      enhanced.locations = character.locations as any;
+    } else {
+      enhanced.locations = Array.isArray(parsedJson.locations) ? parsedJson.locations : [];
+    }
+
+    return NextResponse.json({ success: true, character: enhanced, model: 'gemini-3.6-flash' });
+
   } catch (err: any) {
     console.error('Error in /api/ai/enhance:', err);
-    return NextResponse.json(
-      { error: err.message || 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
 }
