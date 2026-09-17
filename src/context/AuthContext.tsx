@@ -72,6 +72,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getStorageKey(userId?: string | null): string {
+  return userId ? `sedchar_library_${userId}` : 'sedchar_library_guest';
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
@@ -84,7 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [quotaMax, setQuotaMax] = useState<number>(15);
 
   // Character Library state
-  const [savedCharacters, setSavedCharacters] = useState<SavedCharacterRecord[]>([]);
+  const [savedCharacters, setSavedCharacters] = useState<SavedCharacterRecord[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const guestKey = getStorageKey(null);
+      const cached = localStorage.getItem(guestKey);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
 
   // Modals state
@@ -100,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sync and calculate quota when user or role changes
   const syncQuota = useCallback((currentUser: User | null, role: UserRole) => {
     if (!currentUser) {
-      setQuotaRemaining(0);
+      setQuotaRemaining(ROLE_QUOTA_MAP.free);
       setQuotaMax(ROLE_QUOTA_MAP.free);
       return;
     }
@@ -139,42 +152,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncQuota(user, role);
   }, [user, syncQuota]);
 
-  // Load Saved Characters Library from Supabase
+  // Load Saved Characters Library (Local First + Cloud Sync + Robust Merge)
   const loadLibrary = useCallback(async () => {
-    if (!user) return;
+    const key = getStorageKey(user?.id);
     setIsLibraryLoading(true);
 
+    // 1. Immediately load from LocalStorage so UI is instantaneous and never empty
+    let localList: SavedCharacterRecord[] = [];
     try {
-      // 1. Fetch from Supabase
+      const local = localStorage.getItem(key);
+      if (local) {
+        localList = JSON.parse(local);
+        if (Array.isArray(localList)) {
+          setSavedCharacters(localList);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading local library cache:', e);
+    }
+
+    // If not logged in, stop here (guest uses local storage)
+    if (!user) {
+      setIsLibraryLoading(false);
+      return;
+    }
+
+    // 2. If logged in, check for any un-migrated guest characters
+    try {
+      const guestKey = getStorageKey(null);
+      const guestRaw = localStorage.getItem(guestKey);
+      if (guestRaw) {
+        const guestItems: SavedCharacterRecord[] = JSON.parse(guestRaw);
+        if (Array.isArray(guestItems) && guestItems.length > 0) {
+          const migrated = guestItems.map(item => ({ ...item, user_id: user.id }));
+          const existingIds = new Set(localList.map(c => c.id));
+          migrated.forEach(m => {
+            if (!existingIds.has(m.id)) {
+              localList.unshift(m);
+            }
+          });
+          localStorage.setItem(key, JSON.stringify(localList));
+          localStorage.removeItem(guestKey);
+          setSavedCharacters([...localList]);
+        }
+      }
+    } catch {}
+
+    // 3. Sync with Supabase Database
+    try {
       const { data, error } = await supabase
         .from('characters')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setSavedCharacters(data as SavedCharacterRecord[]);
+      if (!error && Array.isArray(data)) {
+        const map = new Map<string, SavedCharacterRecord>();
+
+        // Cloud items
+        data.forEach((item) => {
+          map.set(item.id, item as SavedCharacterRecord);
+        });
+
+        // Add local items that might not have reached cloud yet
+        localList.forEach((localItem) => {
+          if (!map.has(localItem.id)) {
+            map.set(localItem.id, localItem);
+            // Background sync unsynced item to Supabase
+            supabase.from('characters').upsert(localItem).then(() => {}, () => {});
+          }
+        });
+
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setSavedCharacters(merged);
         try {
-          localStorage.setItem(`sedchar_library_${user.id}`, JSON.stringify(data));
+          localStorage.setItem(key, JSON.stringify(merged));
         } catch {}
-        setIsLibraryLoading(false);
-        return;
       }
     } catch (err) {
-      console.warn('Supabase fetch failed, fallback to local storage:', err);
+      console.warn('Supabase fetch note:', err);
+    } finally {
+      setIsLibraryLoading(false);
     }
-
-    // 2. Fallback to localStorage if offline
-    try {
-      const local = localStorage.getItem(`sedchar_library_${user.id}`);
-      if (local) {
-        setSavedCharacters(JSON.parse(local));
-      } else {
-        setSavedCharacters([]);
-      }
-    } catch {}
-
-    setIsLibraryLoading(false);
   }, [user, supabase]);
 
   // Initialize Auth & Session
@@ -191,8 +253,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRoleState(storedRole);
           syncQuota(currentUser, storedRole);
         } else {
-          setUserRoleState('free');
-          syncQuota(null, 'free');
+          const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
+          setUserRoleState(guestRole);
+          syncQuota(null, guestRole);
         }
       } catch (e) {
         console.error('Error initializing auth:', e);
@@ -213,8 +276,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserRoleState(storedRole);
         syncQuota(currentUser, storedRole);
       } else {
-        setUserRoleState('free');
-        syncQuota(null, 'free');
+        const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
+        setUserRoleState(guestRole);
+        syncQuota(null, guestRole);
       }
     });
 
@@ -223,12 +287,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase, syncQuota]);
 
+  // Load library when user changes or on initial mount
   useEffect(() => {
-    if (user) {
-      loadLibrary();
-    } else {
-      setSavedCharacters([]);
-    }
+    loadLibrary();
   }, [user, loadLibrary]);
 
   const openAuthModal = useCallback((mode: 'signin' | 'signup' | 'reset' = 'signin') => {
@@ -297,17 +358,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setUserRoleState('free');
-    setSavedCharacters([]);
-    setQuotaRemaining(0);
+    setQuotaRemaining(ROLE_QUOTA_MAP.free);
+    const guestKey = getStorageKey(null);
+    try {
+      const guestRaw = localStorage.getItem(guestKey);
+      setSavedCharacters(guestRaw ? JSON.parse(guestRaw) : []);
+    } catch {
+      setSavedCharacters([]);
+    }
   };
 
   const consumeQuota = useCallback((): boolean => {
     if (userRole === 'admin') {
       return true; // Admin has infinite quota
-    }
-    if (!user) {
-      openAuthModal('signin');
-      return false;
     }
     if (quotaRemaining <= 0) {
       return false;
@@ -315,11 +378,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const nextVal = quotaRemaining - 1;
     setQuotaRemaining(nextVal);
     try {
-      const key = getTodayKey(user.id);
+      const key = getTodayKey(user?.id || 'guest');
       localStorage.setItem(key, String(nextVal));
     } catch {}
     return true;
-  }, [user, userRole, quotaRemaining, getTodayKey, openAuthModal]);
+  }, [user, userRole, quotaRemaining, getTodayKey]);
 
   const saveToLibrary = async (
     char: ThaiMasterCharacter,
@@ -327,15 +390,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     imageUrl?: string,
     galleryUrls?: string[]
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!user) {
-      openAuthModal('signin');
-      return { success: false, error: 'กรุณาเข้าสู่ระบบก่อนบันทึกตัวละคร' };
-    }
-
+    const effectiveUserId = user?.id || 'guest';
     const charTitle = title || char.fullName || char.nickname || 'ตัวละครไม่มีชื่อ';
+    
     const newRecord: SavedCharacterRecord = {
-      id: `char-${Date.now()}`,
-      user_id: user.id,
+      id: `char-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      user_id: effectiveUserId,
       title: charTitle,
       nickname: char.nickname || char.fullName || 'ตัวละคร',
       tagline: char.punchline || char.shortIntro || char.occupation || '',
@@ -350,28 +410,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     try {
-      // 1. Persist to Supabase Database
-      const { error } = await supabase
-        .from('characters')
-        .upsert(newRecord);
-
-      if (error) {
-        console.warn('Supabase DB save note:', error.message);
-      }
-
-      // 2. Update local state & cache
-      const localKey = `sedchar_library_${user.id}`;
+      // 1. Immediately save to LocalStorage so it is never lost
+      const key = getStorageKey(user?.id);
       const currentList = [...savedCharacters];
-      const existingIdx = currentList.findIndex(c => c.title === charTitle || c.nickname === char.nickname);
+      const existingIdx = currentList.findIndex(c => c.title === charTitle || (c.nickname === char.nickname && char.nickname !== ''));
       if (existingIdx !== -1) {
         currentList[existingIdx] = { ...newRecord, id: currentList[existingIdx]?.id ?? newRecord.id };
       } else {
         currentList.unshift(newRecord);
       }
-      try {
-        localStorage.setItem(localKey, JSON.stringify(currentList));
-      } catch {}
       setSavedCharacters(currentList);
+      try {
+        localStorage.setItem(key, JSON.stringify(currentList));
+      } catch (storageErr) {
+        console.warn('LocalStorage quota or write error:', storageErr);
+      }
+
+      // 2. If logged in, persist to Supabase Database
+      if (user) {
+        supabase
+          .from('characters')
+          .upsert(newRecord)
+          .then(({ error }) => {
+            if (error) console.warn('Supabase DB save note:', error.message);
+          }, (e) => console.warn('Supabase DB save error:', e));
+      }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'บันทึกไม่สำเร็จ' };
@@ -379,17 +443,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteFromLibrary = async (id: string): Promise<boolean> => {
-    if (!user) return false;
-    try {
-      await supabase.from('characters').delete().eq('id', id).eq('user_id', user.id);
-    } catch {}
-
-    const localKey = `sedchar_library_${user.id}`;
+    const key = getStorageKey(user?.id);
     const updated = savedCharacters.filter(c => c.id !== id);
     setSavedCharacters(updated);
     try {
-      localStorage.setItem(localKey, JSON.stringify(updated));
+      localStorage.setItem(key, JSON.stringify(updated));
     } catch {}
+
+    if (user) {
+      try {
+        await supabase.from('characters').delete().eq('id', id).eq('user_id', user.id);
+      } catch (e) {
+        console.warn('Supabase delete note:', e);
+      }
+    }
     return true;
   };
 
@@ -409,7 +476,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Generate Cloud Database Share URL
     const shareUrl = `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
 
-    // 3. Update Supabase Database
+    // 3. Update Supabase Database if logged in
     if (charRecord && user) {
       try {
         await supabase
@@ -422,31 +489,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           .eq('id', id)
           .eq('user_id', user.id);
-
-        // Also save share metadata locally for cache
-        const sharePayload = {
-          shareId,
-          permission,
-          character: charRecord.character_data,
-          title: charRecord.title,
-          nickname: charRecord.nickname,
-          imageUrl: charRecord.image_url,
-          createdAt: new Date().toISOString(),
-        };
-        try {
-          localStorage.setItem(`sedchar_share_${shareId}`, JSON.stringify(sharePayload));
-        } catch {}
-
-        const updatedList = savedCharacters.map(c => {
-          if (c.id === id) {
-            return { ...c, share_id: shareId, share_permission: permission, is_shared: true };
-          }
-          return c;
-        });
-        setSavedCharacters(updatedList);
       } catch (e) {
         console.warn('Supabase share update note:', e);
       }
+    }
+
+    // Save share metadata locally for instant lookup
+    if (charRecord) {
+      const sharePayload = {
+        shareId,
+        permission,
+        character: charRecord.character_data,
+        title: charRecord.title,
+        nickname: charRecord.nickname,
+        imageUrl: charRecord.image_url,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        localStorage.setItem(`sedchar_share_${shareId}`, JSON.stringify(sharePayload));
+      } catch {}
+
+      const updatedList = savedCharacters.map(c => {
+        if (c.id === id) {
+          return { ...c, share_id: shareId, share_permission: permission, is_shared: true };
+        }
+        return c;
+      });
+      setSavedCharacters(updatedList);
+      try {
+        localStorage.setItem(getStorageKey(user?.id), JSON.stringify(updatedList));
+      } catch {}
     }
 
     return { shareUrl, instantUrl, shareId };

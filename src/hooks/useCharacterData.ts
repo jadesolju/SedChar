@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type {
   ThaiMasterCharacter,
   CharacterFlagType,
@@ -23,10 +23,40 @@ type ArrayField =
   | 'systemRules'
   | 'categoryTags';
 
+const DRAFT_STORAGE_KEY = 'sedchar_active_draft';
+
 export function useCharacterData() {
-  const [character, setCharacter] = useState<ThaiMasterCharacter>(SAMPLE_CHARACTER);
+  const [character, setCharacter] = useState<ThaiMasterCharacter>(() => {
+    if (typeof window === 'undefined') return SAMPLE_CHARACTER;
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return { ...SAMPLE_CHARACTER, ...parsed };
+        }
+      }
+    } catch {}
+    return SAMPLE_CHARACTER;
+  });
+
   const [inputMode, setInputMode] = useState<'structured' | 'single'>('structured');
-  const [rawMarkdown, setRawMarkdown] = useState<string>(() => characterToFullMarkdown(SAMPLE_CHARACTER));
+  const [rawMarkdown, setRawMarkdown] = useState<string>(() => characterToFullMarkdown(character));
+  const isInitialMount = useRef(true);
+
+  // Auto-save draft on character change (debounced)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(character));
+      } catch {}
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [character]);
 
   // Update a single string field
   const updateField = useCallback(<K extends keyof ThaiMasterCharacter>(
@@ -152,12 +182,18 @@ export function useCharacterData() {
   const loadSample = useCallback(() => {
     setCharacter(SAMPLE_CHARACTER);
     setRawMarkdown(characterToFullMarkdown(SAMPLE_CHARACTER));
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(SAMPLE_CHARACTER));
+    } catch {}
   }, []);
 
   // Reset to default empty character
   const resetCharacter = useCallback(() => {
     setCharacter(DEFAULT_CHARACTER);
     setRawMarkdown(characterToFullMarkdown(DEFAULT_CHARACTER));
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {}
   }, []);
 
   // Parse raw markdown input
@@ -165,12 +201,18 @@ export function useCharacterData() {
     const parsed = parseMarkdownToCharacter(text);
     setCharacter(parsed);
     setRawMarkdown(text);
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsed));
+    } catch {}
   }, []);
 
-  // Direct parsed character setter from Gemini AI
+  // Direct parsed character setter from Gemini AI or Share Link
   const applyParsedCharacter = useCallback((parsedChar: ThaiMasterCharacter) => {
     setCharacter(parsedChar);
     setRawMarkdown(characterToFullMarkdown(parsedChar));
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsedChar));
+    } catch {}
   }, []);
 
   // Keep rawMarkdown in sync when switching to single mode
