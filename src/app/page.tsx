@@ -219,7 +219,7 @@ function MainWorkspace() {
           {/* Logo */}
           <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border border-border/40">
             <img
-              src="/logo.png"
+              src="/shedchar_logo.png"
               alt="SedChar Logo"
               className="w-full h-full object-cover"
             />
@@ -227,7 +227,7 @@ function MainWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 shadow-xs">
-              PRO
+              Beta
             </span>
           </div>
 

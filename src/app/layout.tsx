@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   authors: [{ name: 'SedChar.AI' }],
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icons/apple-touch-icon.svg',
+    icon: '/shedchar_logo.png',
+    shortcut: '/shedchar_logo.png',
+    apple: '/shedchar_logo.png',
   },
   appleWebApp: {
     capable: true,
@@ -36,8 +36,8 @@ export default function RootLayout({ children }: { readonly children: React.Reac
     <html lang="th" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.svg" />
+        <link rel="icon" href="/shedchar_logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/shedchar_logo.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
