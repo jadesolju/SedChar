@@ -27,6 +27,13 @@ function AdminNexusDashboardContent() {
     }
   }, [userRole]);
 
+  // Auto-unlock if authenticated as admin
+  useEffect(() => {
+    if (user && userRole === 'admin') {
+      setIsUnlocked(true);
+    }
+  }, [user, userRole]);
+
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     if (masterPasscode.trim() === 'admin67x' || masterPasscode.trim() === 'sedchar-master-2026' || masterPasscode.trim() === 'admin') {
@@ -133,9 +140,7 @@ function AdminNexusDashboardContent() {
               </button>
             </form>
 
-            <div className="text-[11px] text-muted-foreground/60 border-t border-border pt-4">
-              Master Key เริ่มต้น: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">admin67x</code>
-            </div>
+            
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in">
