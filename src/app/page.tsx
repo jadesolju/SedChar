@@ -223,9 +223,13 @@ function MainWorkspace() {
       {/* Global Navbar */}
       <header className="flex-shrink-0 h-13 flex items-center justify-between px-3.5 sm:px-5 border-b border-border bg-card/85 backdrop-blur-md z-10">
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Logo mark - Pink */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 flex items-center justify-center flex-shrink-0 shadow-sm text-white">
-            <span className="text-base font-black">S</span>
+          {/* Logo */}
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border border-border/40">
+            <img
+              src="/logo.png"
+              alt="SedChar Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
