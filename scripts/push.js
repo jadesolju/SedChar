@@ -20,15 +20,20 @@ async function askQuestion(query) {
   );
 }
 
-async function main() {
-  console.log('\n🚀 === SedChar.AI GitHub Push Utility ===\n');
-
-  let token = process.argv[2];
+async function getToken(askQuestionFn = askQuestion) {
+  let token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (!token) {
     console.log('💡 คุณสามารถสร้าง GitHub Token (Personal Access Token - Classic หรือ Fine-grained) ได้ที่:');
     console.log('   https://github.com/settings/tokens (ติ๊กเลือกสิทธิ์ "repo")\n');
-    token = await askQuestion('🔑 กรุณากรอก GitHub Personal Access Token (PAT): ');
+    token = await askQuestionFn('🔑 กรุณากรอก GitHub Personal Access Token (PAT): ');
   }
+  return token;
+}
+
+async function main() {
+  console.log('\n🚀 === SedChar.AI GitHub Push Utility ===\n');
+
+  let token = await getToken();
 
   if (!token) {
     console.error('❌ ไม่พบ Token ยกเลิกการ Push');
@@ -67,4 +72,8 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { getToken, askQuestion, main };
