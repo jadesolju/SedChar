@@ -5,9 +5,10 @@ interface FlagSelectorProps {
   currentFlag: CharacterFlagType;
   onSelectFlag: (flag: CharacterFlagType) => void;
   onAutoDetect: () => void;
+  readOnly?: boolean;
 }
 
-export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect }: FlagSelectorProps) {
+export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect, readOnly = false }: FlagSelectorProps) {
   const flags = Object.values(CHARACTER_FLAGS).filter(f => f.type !== 'none');
   const selectedInfo = CHARACTER_FLAGS[currentFlag] || CHARACTER_FLAGS.none;
 
@@ -25,7 +26,8 @@ export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect }: FlagSe
         </div>
         <button
           type="button"
-          onClick={onAutoDetect}
+          onClick={() => !readOnly && onAutoDetect()}
+            disabled={readOnly}
           className="text-xs text-primary hover:text-primary/80 font-medium px-2.5 py-1 rounded-md border border-primary/20 hover:bg-primary/5 transition-colors"
         >
           ✨ วิเคราะห์อัตโนมัติ
@@ -40,7 +42,8 @@ export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect }: FlagSe
             <button
               key={f.type}
               type="button"
-              onClick={() => onSelectFlag(f.type)}
+              onClick={() => !readOnly && onSelectFlag(f.type)}
+              disabled={readOnly}
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all text-left ${
                 isSelected
                   ? `${f.badgeBg} ring-2 ring-primary ring-offset-1 dark:ring-offset-zinc-900 font-semibold shadow-sm`
