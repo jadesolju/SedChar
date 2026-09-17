@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter } from '@/shared/types';
+import { CompactModelLayer } from '@/components/ui/CompactModelLayer';
 
 interface AIAssistantModalProps {
   isOpen: boolean;
@@ -9,22 +10,6 @@ interface AIAssistantModalProps {
   currentCharacter: ThaiMasterCharacter;
   onApplyCharacter: (char: ThaiMasterCharacter, notice: string) => void;
 }
-
-const AVAILABLE_MODELS = [
-  { id: 'auto', name: '⚡ Auto (Google Gemini 3.5 / OpenRouter Smart Cascade)', provider: 'Google / OpenRouter' },
-  { id: 'google/gemini-3.5-flash-lite', name: 'Google Gemini 3.5 Flash Lite (เร็วแรง แม่นยำสูง)', provider: 'Google' },
-  { id: 'openai/gpt-4.1-mini', name: 'OpenAI GPT-4.1 Mini (ฉลาด กระชับ)', provider: 'OpenAI' },
-  { id: 'openai/gpt-4.1-nano', name: 'OpenAI GPT-4.1 Nano (เร็วพิเศษ)', provider: 'OpenAI' },
-  { id: 'x-ai/grok-4.3', name: 'xAI Grok 4.3 (คิดนอกกรอบ สไตล์สมจริง)', provider: 'xAI' },
-  { id: 'x-ai/grok-4.20', name: 'xAI Grok 4.20 (เน้นบทสนทนาเข้มข้น)', provider: 'xAI' },
-  { id: 'qwen/qwen3.8-flash', name: 'Qwen 3.8 Flash (ภาษาเอเชียระดับพรีเมียม)', provider: 'Alibaba Qwen' },
-  { id: 'qwen/qwen3.7-flash', name: 'Qwen 3.7 Flash (สไตล์ตัวละครหลากหลาย)', provider: 'Alibaba Qwen' },
-  { id: 'google/gemma-4-31b-it', name: 'Google Gemma 4 31B IT (Open Weights ทรงพลัง)', provider: 'Google' },
-  { id: 'google/gemma-4-26b-a4b-it', name: 'Google Gemma 4 26B-A4B IT (สถาปัตยกรรมใหม่)', provider: 'Google' },
-  { id: 'google/gemma-3-27b-it', name: 'Google Gemma 3 27B IT (เสถียร สมดุล)', provider: 'Google' },
-  { id: 'z-ai/glm-5.3-flash', name: 'Z-AI GLM 5.3 Flash (วิเคราะห์โครงสร้างภาษาลึก)', provider: 'Z-AI' },
-  { id: 'z-ai/glm-4.7-flash', name: 'Z-AI GLM 4.7 Flash (เร็ว ละเอียด)', provider: 'Z-AI' },
-];
 
 export function AIAssistantModal({
   isOpen,
@@ -152,7 +137,7 @@ export function AIAssistantModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-700/80 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
+        {/* Header with Compact Model Layer */}
         <div className="px-6 py-4 border-b border-neutral-800 bg-neutral-950/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-inner">
@@ -161,21 +146,26 @@ export function AIAssistantModal({
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 SedChar AI Co-Creator
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-semibold tracking-wider uppercase">
-                  Gemini & OpenRouter Multi-Model
-                </span>
               </h2>
               <p className="text-xs text-neutral-400">
                 ระบบปัญญาประดิษฐ์เติมเต็มและแกะโครงสร้างตัวละครบทบาทสมมุติอัตโนมัติ
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 transition-colors"
-          >
-            ✕
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Ultra Compact Model Layer Dropdown */}
+            <CompactModelLayer
+              selectedModelId={selectedModel}
+              onSelectModel={setSelectedModel}
+            />
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Tab & Quota Strip */}
@@ -211,28 +201,6 @@ export function AIAssistantModal({
               {quotaRemaining} / {quotaMax} ครั้ง
             </span>
           </div>
-        </div>
-
-        {/* Model Selector Strip */}
-        <div className="px-6 py-3 bg-neutral-950/40 border-b border-neutral-800/60 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="ai-model-select" className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-              <span>🤖 เลือก AI Engine & Model:</span>
-            </label>
-            <span className="text-[11px] text-neutral-500">Google Gemini & OpenRouter Active</span>
-          </div>
-          <select
-            id="ai-model-select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-700/80 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-rose-500 transition-colors"
-          >
-            {AVAILABLE_MODELS.map((m) => (
-              <option key={m.id} value={m.id} className="bg-neutral-900 text-neutral-200">
-                {m.name} ({m.provider})
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Content Body */}

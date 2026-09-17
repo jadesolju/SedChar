@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
+import { CompactModelLayer } from '@/components/ui/CompactModelLayer';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
 function MainWorkspace() {
@@ -40,6 +41,7 @@ function MainWorkspace() {
   const { user, openAuthModal, openLibraryModal, saveToLibrary } = useAuth();
 
   // Mobile active screen: 'editor' | 'preview'
+  const [activeModel, setActiveModel] = useState<string>('auto');
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
   
   // Toast notification state
@@ -223,6 +225,7 @@ function MainWorkspace() {
             <span>บันทึกลงคลัง</span>
           </button>
 
+          <CompactModelLayer selectedModelId={activeModel} onSelectModel={setActiveModel} />
           <UserMenu />
           <ThemeToggle />
         </div>
