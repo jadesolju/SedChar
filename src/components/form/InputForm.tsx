@@ -875,9 +875,8 @@ export function InputForm({
 
                 <ExpandableTextarea
                   id={'sub-shortDesc-' + idx}
-                  label="คำบรรยายตัวละครเสริม (สั้นกระชับ 0/500)"
+                  label="คำบรรยายตัวละครเสริม (หน้ารายละเอียด)"
                   rows={3}
-                  charLimit={500}
                   value={sub.shortDesc}
                   onChange={v => onUpdateSubCharacter(idx, { shortDesc: v })}
                   placeholder="ชายหนุ่มร่างสูง สวมสูทดำ นิ่งขรึม ภักดีต่อคิงสูงสุด..."
@@ -885,9 +884,8 @@ export function InputForm({
 
                 <ExpandableTextarea
                   id={'sub-sysPrompt-' + idx}
-                  label="System Prompt สำหรับควบคุมตัวละครเสริม (0/750)"
+                  label="System Prompt สำหรับควบคุมตัวละครเสริม (บทบาทและตัวตน)"
                   rows={4}
-                  charLimit={750}
                   value={sub.systemPrompt}
                   onChange={v => onUpdateSubCharacter(idx, { systemPrompt: v })}
                   placeholder="[Character: ธันวา] หน้าที่: มือขวา จงปฏิบัติตามคำสั่งของคิงอย่างเคร่งครัด..."
@@ -908,9 +906,8 @@ export function InputForm({
         >
           <ExpandableTextarea
             id="shortIntro"
-            label="คำโปรยสั้น (Short Intro - 0/500)"
+            label="คำโปรยสั้น (Short Intro)"
             rows={3}
-            charLimit={500}
             value={character.shortIntro}
             onChange={v => onUpdateField('shortIntro', v)}
             placeholder="เมื่อลูกหนี้ตัวน้อยต้องมาชดใช้หนี้ด้วยการเป็นเลขาข้างกายมาเฟียหนุ่มสุดเย็นชา..."
@@ -956,9 +953,8 @@ export function InputForm({
 
           <ExpandableTextarea
             id="momentIntro"
-            label="คำแนะนำตัวสั้น (Moment Intro - 0/100)"
+            label="คำแนะนำตัวสั้น / สร้างโมเมนต์ (Moment Intro)"
             rows={2}
-            charLimit={100}
             value={character.momentIntro}
             onChange={v => onUpdateField('momentIntro', v)}
             placeholder={"คชา - 'อย่าคิดจะหนีไปจากฉัน... เพราะเธอไม่มีวันทำสำเร็จ'"}

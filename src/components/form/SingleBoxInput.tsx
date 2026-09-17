@@ -73,7 +73,7 @@ export function SingleBoxInput({
       await navigator.clipboard.writeText(rawMarkdown);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {}
+    } catch { }
   };
 
   const handleApply = async () => {
@@ -143,7 +143,7 @@ export function SingleBoxInput({
         <div className="flex items-center gap-2">
           <span className="text-sm">⚡</span>
           <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-            Auto-Parser ช่องเดียวรวด (Gemini AI)
+            Auto-Parser ช่องเดียวรวด
           </h2>
           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
             Plaintext / MD / JSON / YAML
@@ -276,11 +276,10 @@ export function SingleBoxInput({
           {detectedSections.map((s) => (
             <span
               key={s.name}
-              className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${
-                s.detected
+              className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${s.detected
                   ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
                   : 'bg-muted/60 text-muted-foreground/50 border border-border/40'
-              }`}
+                }`}
             >
               {s.detected ? '✓ ' : '○ '}
               {s.name}
@@ -364,9 +363,8 @@ export function SingleBoxInput({
                 {detectedSections.map((s) => (
                   <span
                     key={s.name}
-                    className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                      s.detected ? 'bg-emerald-500/15 text-emerald-500 font-bold' : 'text-muted-foreground/40'
-                    }`}
+                    className={`text-[10px] px-2 py-0.5 rounded font-medium ${s.detected ? 'bg-emerald-500/15 text-emerald-500 font-bold' : 'text-muted-foreground/40'
+                      }`}
                   >
                     {s.detected ? '✓ ' : '○ '}{s.name}
                   </span>

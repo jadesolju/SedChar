@@ -81,7 +81,7 @@ export function ExpandableTextarea({
                 ? 'bg-rose-500/15 text-rose-500 font-bold'
                 : 'text-muted-foreground/80'
             }`}>
-              {charCount.toLocaleString()}{charLimit ? `/${charLimit.toLocaleString()}` : ''} ตัวอักษร
+              {charCount.toLocaleString('th-TH')} ตัวอักษร
             </span>
 
             {/* Expand / Collapse Height Toggle */}
@@ -186,7 +186,7 @@ export function ExpandableTextarea({
 
               <div className="flex items-center gap-2">
                 <span className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground font-mono">
-                  {charCount.toLocaleString()}{charLimit ? ` / ${charLimit.toLocaleString()}` : ''} ตัวอักษร
+                  {charCount.toLocaleString('th-TH')} ตัวอักษร
                 </span>
 
                 <button
