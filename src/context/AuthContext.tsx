@@ -219,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!map.has(localItem.id)) {
             map.set(localItem.id, localItem);
             // Background sync unsynced item to Supabase
-            supabase.from('characters').upsert(localItem).then(() => {}, () => {});
+            if (user) { supabase.from('characters').upsert({ ...localItem, user_id: user.id }).then(() => {}, () => {}); }
           }
         });
 
