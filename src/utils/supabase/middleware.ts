@@ -40,6 +40,11 @@ export const updateSession = async (request: NextRequest) => {
   // Refresh user session token
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Cache-Control HTTP Headers for Non-Static Requests
+  supabaseResponse.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  supabaseResponse.headers.set("Pragma", "no-cache");
+  supabaseResponse.headers.set("Expires", "0");
+
   // API Path Protection
   if (pathname.startsWith('/api')) {
     const isPublic = PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route));
