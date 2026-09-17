@@ -73,7 +73,8 @@ export const DEFAULT_PURRPAW_LOCATIONS: LocationItem[] = [
 function cleanString(val: any): string {
   if (!val) return '';
   if (Array.isArray(val)) return val.filter(Boolean).join('\n');
-  const str = String(val).trim();
+  let str = String(val).trim();
+  str = str.replace(/^\*\*|\*\*$/g, '').replace(/^__|\_\_$/g, '').trim();
   if (
     str === '-' ||
     str === '—' ||
@@ -90,6 +91,11 @@ function cleanString(val: any): string {
     return '';
   }
   return str;
+}
+
+export function estimateTokens(text: string): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / 3);
 }
 
 function cleanArray(val: any): string[] {
@@ -132,7 +138,7 @@ export function autoDetectCharacterFlag(char: ThaiMasterCharacter): CharacterFla
   if (text.includes('ซึนเดเระ') || text.includes('ปากร้าย') || text.includes('เจ้าเล่ห์')) {
     return 'yellow';
   }
-  if (text.includes('อบอุ่น') || text.includes('ใจดี') || text.includes('สุภาพ') || text.includes('ปกป้อง')) {
+  if (text.includes('ร่าเริง') || text.includes('แสนดี') || text.includes('อบอุ่น') || text.includes('ใจดี') || text.includes('สุภาพ') || text.includes('ปกป้อง')) {
     return 'green';
   }
   return 'none';
@@ -146,6 +152,36 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   }
 
   const char: ThaiMasterCharacter = { ...DEFAULT_CHARACTER };
+  const trimmed = raw.trim();
+
+  // Handle JSON input
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const obj = JSON.parse(trimmed);
+      if (obj && typeof obj === 'object') {
+        if (obj.fullName || obj.name) char.fullName = obj.fullName || obj.name;
+        if (obj.nickname) char.nickname = obj.nickname;
+        if (obj.age) char.age = String(obj.age);
+        if (obj.gender) char.gender = obj.gender;
+        if (obj.mbti) char.mbti = obj.mbti;
+        if (obj.occupation) char.occupation = obj.occupation;
+        if (obj.status) char.status = obj.status;
+        if (obj.personality) char.coreTraits = obj.personality;
+        if (Array.isArray(obj.likes)) char.likes = obj.likes;
+        if (Array.isArray(obj.dislikes)) char.dislikes = obj.dislikes;
+        if (obj.greeting) char.fullGreeting = obj.greeting;
+        if (obj.personality) {
+          const pTags = String(obj.personality).split(/\s+/).filter(Boolean);
+          char.personalityTags = pTags;
+        }
+        if (!char.nickname && char.fullName) {
+          char.nickname = char.fullName.split(/\s+/)[0] || '';
+        }
+        char.flagType = autoDetectCharacterFlag(char);
+        return char;
+      }
+    } catch {}
+  }
 
   const matchFirst = (patterns: RegExp[]): string => {
     for (const p of patterns) {
@@ -160,12 +196,13 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
 
   // 1. General Profile
   char.nickname = matchFirst([
-    /(?:ชื่อเล่น|Nickname)\s*[:：=]\s*([^\n\r]+)/i,
-    /\[(?:CHARACTER|ชื่อตัวละคร)\]\s*[:：=]\s*([^\n\r(]+)/i,
+    /(?:ชื่อเล่น|Nickname)\s*\*?\*?\s*[:：=]\s*([^\n\r]+)/i,
+    /\[(?:CHARACTER|ชื่อตัวละคร)\]\s*\*?\*?\s*[:：=]\s*([^\n\r(]+)/i,
   ]);
   char.fullName = matchFirst([
-    /(?:ชื่อเต็ม|Full\s*Name|ชื่อจริง)\s*[:：=]\s*([^\n\r]+)/i,
-    /\[(?:CHARACTER)\]\s*[:：=]\s*([^\n\r]+)/i,
+    /(?:ชื่อเต็ม|Full\s*Name|ชื่อจริง)\s*\*?\*?\s*[:：=]\s*([^\n\r]+)/i,
+    /^(?:name|ชื่อ)\s*\*?\*?\s*[:：=]\s*([^\n\r]+)/im,
+    /\[(?:CHARACTER)\]\s*\*?\*?\s*[:：=]\s*([^\n\r]+)/i,
   ]);
   if (!char.nickname && char.fullName) {
     char.nickname = char.fullName.split(/[\s(]/)[0] || '';
@@ -175,8 +212,8 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   }
 
   char.age = matchFirst([
-    /(?:อายุ|Age)\s*[:：=]\s*([^\n\r]+)/i,
-    /\[(?:AGE|อายุ)\]\s*[:：=]\s*([^\n\r]+)/i,
+    /(?:อายุ|Age)\s*\*?\*?\s*[:：=]\s*([^\n\r|]+)/i,
+    /\[(?:AGE|อายุ)\]\s*\*?\*?\s*[:：=]\s*([^\n\r|]+)/i,
   ]);
 
   char.gender = matchFirst([
@@ -198,8 +235,8 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
 
   char.mbti = matchFirst([
-    /(?:MBTI)\s*[:：=]\s*([A-Za-z]{4}[^\n\r]*)/i,
-    /\[(?:MBTI)\]\s*[:：=]\s*([A-Za-z]{4}[^\n\r]*)/i,
+    /(?:MBTI)\s*\*?\*?\s*[:：=]\s*([A-Za-z]{4}[^\n\r]*)/i,
+    /\[(?:MBTI)\]\s*\*?\*?\s*[:：=]\s*([A-Za-z]{4}[^\n\r]*)/i,
     /#(INFP|INFJ|INTP|INTJ|ISFP|ISFJ|ISTP|ISTJ|ENFP|ENFJ|ENTP|ENTJ|ESFP|ESFJ|ESTP|ESTJ)\b/i,
   ]);
 
@@ -233,6 +270,13 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
 
   // 2. Appearance & Visual Tags
+  // YAML / Key-value fallback for single line fields
+  if (!char.coreTraits) {
+    char.coreTraits = matchFirst([
+      /(?:นิสัย|CoreTraits|Personality)\s*\*?\*?\s*[:：=]\s*([^\n\r]+)/i,
+    ]);
+  }
+
   const appMatch = raw.match(/(?:ลักษณะภายนอก|Appearance|รูปลักษณ์)(?:\s*\([^)]*\))?\s*[:：\n]\s*([\s\S]*?)(?=\n\s*(?:#|\[|\d+\.|\bสิ่งที่ชอบ|\bนิสัย|\bCore))/i);
   if (appMatch && appMatch[1]) {
     char.appearanceDesc = cleanString(appMatch[1].replace(/#[^\n\r]+/g, '').trim());
@@ -404,9 +448,9 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
 
   // Open Greeting
-  const greetingMatch = raw.match(/(?:ฉากเปิด|Open\s*Greeting)\s*(?:\([^)]*\))?\s*[:：\n]\s*([\s\S]*?)(?=\n\s*(?:วิเคราะห์เนื้อหา|\[CHARACTER|\n\s*---|\n\s*#|$))/i);
+  const greetingMatch = raw.match(/(?:ฉากเปิด|Open\s*Greeting|greeting)\s*(?:\([^)]*\))?\s*[:：\n]\s*["'“]?([\s\S]*?)["'”]?\s*(?=\n\s*(?:วิเคราะห์เนื้อหา|\[CHARACTER|\n\s*---|\n\s*#|$)|$)/i);
   if (greetingMatch && greetingMatch[1]) {
-    const fullGreetingText = greetingMatch[1].trim();
+    const fullGreetingText = greetingMatch[1].trim().replace(/^["'“]|["'”]$/g, '');
     char.fullGreeting = fullGreetingText;
 
     const dialogues = fullGreetingText.match(/"([^"]+)"/g);
@@ -415,6 +459,8 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
     }
     char.openGreetingNarrative = fullGreetingText.replace(/>\s*/g, '').trim();
   }
+
+  char.flagType = autoDetectCharacterFlag(char);
 
   return char;
 }

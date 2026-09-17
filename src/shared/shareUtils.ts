@@ -5,6 +5,7 @@ export interface SharedCharacterPayload {
   title: string;
   nickname: string;
   mode: 'read-only' | 'edit';
+  ownerId?: string;
   character: ThaiMasterCharacter;
   createdAt: string;
 }
@@ -15,13 +16,15 @@ export interface SharedCharacterPayload {
 export function encodeCharacterToShareUrl(
   character: ThaiMasterCharacter,
   title?: string,
-  mode: 'read-only' | 'edit' = 'read-only'
+  mode: 'read-only' | 'edit' = 'read-only',
+  ownerId?: string
 ): string {
   const payload: SharedCharacterPayload = {
     version: 1,
     title: title || character.fullName || character.nickname || 'ตัวละคร',
     nickname: character.nickname || character.fullName || 'ตัวละคร',
     mode,
+    ownerId,
     character,
     createdAt: new Date().toISOString(),
   };

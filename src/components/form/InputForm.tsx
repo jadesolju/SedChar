@@ -380,7 +380,8 @@ export function InputForm({
                   value={character.nsfwMaleSize}
                   onChange={e => onUpdateField('nsfwMaleSize', e.target.value)}
                   placeholder="ขนาด 8 นิ้ว, ไร้ขน"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
               <FieldRow label="ส่วนลับหญิง (ขนาดหน้าอก)" htmlFor="nsfwFemaleChest">
@@ -390,7 +391,8 @@ export function InputForm({
                   value={character.nsfwFemaleChest}
                   onChange={e => onUpdateField('nsfwFemaleChest', e.target.value)}
                   placeholder="คัพ D, 36 นิ้ว"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
               <FieldRow label="ส่วนลับหญิง (จิ๊มิ/สี/ขน)" htmlFor="nsfwFemaleVagina">
@@ -400,7 +402,8 @@ export function InputForm({
                   value={character.nsfwFemaleVagina}
                   onChange={e => onUpdateField('nsfwFemaleVagina', e.target.value)}
                   placeholder="กลีบชมพู, ไร้ขน"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
             </div>
@@ -758,13 +761,15 @@ export function InputForm({
 
             {character.locations.map((loc, idx) => (
               <div key={loc.id || idx} className="p-3 rounded-xl border border-border bg-muted/20 space-y-2 relative">
-                <button
-                  type="button"
-                  onClick={() => onRemoveLocation(idx)}
-                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
-                >
-                  ✕
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLocation(idx)}
+                    className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pr-6">
                   <FieldRow label={'ชื่อสถานที่ #' + (idx + 1)} htmlFor={'loc-name-' + idx}>
                     <input
@@ -773,7 +778,8 @@ export function InputForm({
                       value={loc.name}
                       onChange={e => onUpdateLocation(idx, { name: e.target.value })}
                       placeholder="เช่น Penthouse หรู"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                   <FieldRow label="Prompt บรรยายสถานที่ (สั้น กระชับ)" htmlFor={'loc-prompt-' + idx}>
@@ -783,7 +789,8 @@ export function InputForm({
                       value={loc.prompt}
                       onChange={e => onUpdateLocation(idx, { prompt: e.target.value })}
                       placeholder="ห้องกว้าง วิวเมืองกระจกบานใหญ่ เฟอร์นิเจอร์สีดำ แสงสลัว"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                 </div>
@@ -838,13 +845,15 @@ export function InputForm({
 
             {character.supportingCharacters.map((sub, idx) => (
               <div key={sub.id || idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3 relative">
-                <button
-                  type="button"
-                  onClick={() => onRemoveSubCharacter(idx)}
-                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
-                >
-                  ✕
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveSubCharacter(idx)}
+                    className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
 
                 <div className="grid grid-cols-3 gap-2 pr-6">
                   <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
@@ -854,7 +863,8 @@ export function InputForm({
                       value={sub.name}
                       onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
                       placeholder="เช่น ธันวา"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                   <FieldRow label="เพศ" htmlFor={'sub-gender-' + idx}>
@@ -864,7 +874,8 @@ export function InputForm({
                       value={sub.gender}
                       onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
                       placeholder="ชาย"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                   <FieldRow label="อายุ" htmlFor={'sub-age-' + idx}>
@@ -874,7 +885,8 @@ export function InputForm({
                       value={sub.age}
                       onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
                       placeholder="30 ปี"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                 </div>
@@ -887,7 +899,8 @@ export function InputForm({
                       value={sub.relationship}
                       onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
                       placeholder="มือขวาคนสนิท"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                   <FieldRow label="บทบาทหลักในเรื่อง" htmlFor={'sub-role-' + idx}>
@@ -897,7 +910,8 @@ export function InputForm({
                       value={sub.mainRole}
                       onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
                       placeholder="คอยรับคำสั่งและรายงานสถานการณ์"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                 </div>

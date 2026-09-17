@@ -67,6 +67,7 @@ function MainWorkspace() {
   const [sharedBanner, setSharedBanner] = useState<{
     title: string;
     mode: 'read-only' | 'edit';
+    ownerId?: string;
   } | null>(null);
 
   const showToast = (msg: string) => {
@@ -92,6 +93,7 @@ function MainWorkspace() {
         setSharedBanner({
           title: decoded.title || 'ตัวละครที่แชร์',
           mode: decoded.mode || mode,
+          ownerId: decoded.ownerId,
         });
         showToast(`โหลดตัวละคร "${decoded.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${decoded.mode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
         return;
@@ -108,6 +110,7 @@ function MainWorkspace() {
             setSharedBanner({
               title: data.title || data.nickname || 'ตัวละครที่แชร์',
               mode: data.permission || mode,
+              ownerId: data.ownerId || data.user_id,
             });
             showToast(`โหลดตัวละครจาก Cloud "${data.title || 'ตัวละคร'}" เรียบร้อย`);
           } else {
@@ -120,6 +123,7 @@ function MainWorkspace() {
                 setSharedBanner({
                   title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
                   mode: payload.permission || mode,
+                  ownerId: payload.ownerId,
                 });
                 showToast(`โหลดตัวละคร "${payload.title || 'ตัวละคร'}" เรียบร้อย`);
               }
@@ -136,6 +140,7 @@ function MainWorkspace() {
                 setSharedBanner({
                   title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
                   mode: payload.permission || mode,
+                  ownerId: payload.ownerId,
                 });
               }
             } catch {}
@@ -177,6 +182,9 @@ function MainWorkspace() {
       showToast('บันทึกตัวละครลงในคลังของคุณเรียบร้อยแล้ว!');
     }
   };
+
+  const isOwner = Boolean(sharedBanner?.ownerId && user?.id && user.id === sharedBanner.ownerId);
+  const isReadOnly = Boolean(sharedBanner && sharedBanner.mode === 'read-only' && !isOwner);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden font-sans antialiased">
@@ -349,6 +357,7 @@ function MainWorkspace() {
         >
           {inputMode === 'structured' ? (
             <InputForm
+              isReadOnly={isReadOnly}
               character={character}
               onUpdateField={updateField}
               onAddTag={addTag}
@@ -369,6 +378,7 @@ function MainWorkspace() {
             />
           ) : (
             <SingleBoxInput
+              isReadOnly={isReadOnly}
               rawMarkdown={rawMarkdown}
               onChangeRaw={setRawMarkdown}
               onApplyParse={importRawMarkdown}

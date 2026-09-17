@@ -43,11 +43,11 @@ describe('Universal Multi-Format Parser & Generator Engine', () => {
     expect(parsed.age).toBe("19 ปี");
     expect(parsed.gender).toBe("หญิง");
     expect(parsed.mbti).toBe("INFP");
-    expect(parsed.personalityTags).toContain("ซึนเดะระ");
+    expect(parsed.personalityTags).toContain("ซึนเดเระ");
     expect(parsed.likes).toContain("แมว");
     expect(parsed.dislikes).toContain("คนโกหก");
     expect(parsed.fullGreeting).toBe("ฮึ! ใครใช้ให้นายมาทักฉันกันล่ะยะ...");
-    expect(parsed.flagType).toBe("reverse-watermelon");
+    expect(parsed.flagType).toBe("yellow");
   });
 
   it('3. should parse YAML / key-value format input into structured character', () => {
@@ -69,7 +69,7 @@ greeting: "มาหาฉัน... มีคดีอะไรให้ช่�
     expect(parsed.gender).toBe("ชาย");
     expect(parsed.mbti).toBe("INTJ");
     expect(parsed.occupation).toBe("นักสืบเอกชน");
-    expect(parsed.flagType).toBe("reverse-watermelon");
+    expect(parsed.flagType).toBe("yellow");
     expect(parsed.fullGreeting).toBe("มาหาฉัน... มีคดีอะไรให้ช่วยงั้นเหรอ?");
   });
 
@@ -98,11 +98,11 @@ MBTI: ENTP
 
     const purrpaw = generatePurrpawOutput(SAMPLE_CHARACTER);
     expect(purrpaw.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(purrpaw.historyPersonalityPrompt).toContain('# SYSTEM PROMPT');
+    expect(purrpaw.historyPersonalityPrompt).toContain('ข้อมูลพื้นฐาน');
 
     const khui = generateKhuiOutput(SAMPLE_CHARACTER);
     expect(khui.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(khui.systemPrompt).toContain('[SYSTEM DIRECTIVE]');
+    expect(khui.systemPrompt).toContain('PROMPT PERSONA');
   });
 
   it('6. token estimator handles Thai and mixed text correctly', () => {

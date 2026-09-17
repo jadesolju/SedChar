@@ -470,7 +470,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // 1. Generate Instant Compressed URL (Zero-dependency, works anywhere)
     const instantUrl = charRecord
-      ? encodeCharacterToShareUrl(charRecord.character_data, charRecord.title, permission)
+      ? encodeCharacterToShareUrl(charRecord.character_data, charRecord.title, permission, user?.id)
       : `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
 
     // 2. Generate Cloud Database Share URL

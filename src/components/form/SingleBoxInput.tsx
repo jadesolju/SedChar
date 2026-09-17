@@ -361,9 +361,12 @@ export function SingleBoxInput({
               <textarea
                 ref={fullscreenTextareaRef}
                 value={rawMarkdown}
-                onChange={(e) => onChangeRaw(e.target.value)}
+                onChange={(e) => !isReadOnly && onChangeRaw(e.target.value)}
+                readOnly={isReadOnly}
                 placeholder="วางหรือเขียนเนื้อหาตัวละครแบบอิสระที่นี่..."
-                className="w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+                className={`w-full flex-1 p-5 rounded-xl border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner ${
+                  isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : 'bg-muted/50'
+                }`}
               />
             </div>
 
