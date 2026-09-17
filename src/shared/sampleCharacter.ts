@@ -1,8 +1,62 @@
+import type { ThaiMasterCharacter, SubCharacter, LocationItem } from './types';
+
+export const DEFAULT_PURRPAW_LOCATIONS: LocationItem[] = [
+  {
+    id: 'loc-1',
+    name: 'Penthouse ชั้น 52 (Luxury Penthouse)',
+    prompt: 'interior of ultra luxury modern penthouse living room, 52nd floor, panoramic floor-to-ceiling glass windows, dramatic night skyline of bangkok, neon red and deep blue atmospheric ambient glow, dark leather designer furniture, marble flooring with subtle reflections, cinematic lighting, 8k resolution, photorealistic, octane render'
+  },
+  {
+    id: 'loc-2',
+    name: 'ห้องนอนใหญ่ (Master Bedroom)',
+    prompt: 'modern luxury master bedroom, dark moody noir aesthetic, king size platform bed with satin charcoal black sheets, warm ambient recessed backlighting, expansive city view at midnight, sheer curtains blowing softly, ultra realistic, highly detailed, 8k'
+  },
+  {
+    id: 'loc-3',
+    name: 'ห้องทำงานส่วนตัว (Executive Office)',
+    prompt: 'luxurious executive private office, dark mahogany desk, multiple high-tech computer monitors displaying dark analytical charts, warm brass desk lamp, crystal whiskey decanter with glasses, shelves of leather-bound dossiers, dramatic moody shadows'
+  },
+  {
+    id: 'loc-4',
+    name: 'เซฟเฮาส์ลับริมน้ำ (Waterfront Safehouse)',
+    prompt: 'underground secret warehouse safehouse near river dock, exposed raw concrete walls, dim hanging industrial incandescent lights, tactical surveillance monitors, black weapon cases, damp gritty noir atmosphere, cinematic composition'
+  },
+  {
+    id: 'loc-5',
+    name: 'สนามยิงปืนใต้ดิน (Underground Firing Range)',
+    prompt: 'underground modern tactical firing range, soundproof padded walls, brass bullet casings scattered on concrete floor, human silhouette paper targets, stark directional strip lighting, smoke haze, realistic lighting'
+  },
+  {
+    id: 'loc-6',
+    name: 'The Velvet Club VIP Lounge',
+    prompt: 'exclusive VIP lounge in high-end private nightclub, plush crimson red velvet curved sofas, polished gold brass accents, dim ruby ambient lighting, gentle cigar smoke haze, crystal champagne flute on dark marble table, atmospheric noir'
+  },
+  {
+    id: 'loc-7',
+    name: 'ระเบียงชมวิวพาโนรามา (Skyline Terrace)',
+    prompt: 'expansive open-air penthouse terrace balcony at midnight, frameless glass railing, breezy night atmosphere, illuminated city skyline with neon light trails in background, dramatic rain reflection on dark tiles, cinematic'
+  },
+  {
+    id: 'loc-8',
+    name: 'ห้องเก็บไวน์และบาร์ลับ (Private Bar & Wine Cellar)',
+    prompt: 'modern luxury home bar and illuminated glass wine cellar, warm amber backlit glass shelves holding premium dark liquor bottles, black marble countertop, two heavy crystal tumblers, moody elegant speakeasy interior'
+  },
+  {
+    id: 'loc-9',
+    name: 'โรงจอดรถใต้ดินส่วนตัว (Private Underground Garage)',
+    prompt: 'ultra-modern private subterranean garage, glossy dark epoxy floor, fleet of matte black exotic supercars, minimalist white LED strip ceiling lighting, high security steel shutter doors, sleek masculine aesthetic'
+  },
+  {
+    id: 'loc-10',
+    name: 'ห้องอาบน้ำกระจก (Luxury Marble Bathroom)',
+    prompt: 'spacious luxury dark marble master bathroom, large freestanding matte black bathtub, glass rain shower enclosure with rising steam mist, soft warm ambient strip lighting, 5-star hotel luxury aesthetic'
+  }
+];
+
 ﻿// ============================================================
 // SedChar.AI — Sample Character Template Data
 // ============================================================
 
-import type { ThaiMasterCharacter } from './types';
 
 export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
   // ข้อมูลพื้นฐาน

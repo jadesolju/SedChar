@@ -30,6 +30,13 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // URL to redirect to after sign in process completes
+  // Handle preview & production deployments behind Vercel edge reverse proxy
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  
+  if (forwardedHost) {
+    return NextResponse.redirect(`${forwardedProto}://${forwardedHost}${next}`);
+  }
+
   return NextResponse.redirect(new URL(next, request.url));
 }

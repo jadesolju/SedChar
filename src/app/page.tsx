@@ -9,7 +9,6 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
-import { CompactModelLayer } from '@/components/ui/CompactModelLayer';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
 function MainWorkspace() {
@@ -41,9 +40,8 @@ function MainWorkspace() {
   const { user, openAuthModal, openLibraryModal, saveToLibrary } = useAuth();
 
   // Mobile active screen: 'editor' | 'preview'
-  const [activeModel, setActiveModel] = useState<string>('auto');
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
-  
+
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -181,7 +179,7 @@ function MainWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground">SedChar.AI</h1>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 shadow-xs">
-              Gemini AI ⚡
+              Demo
             </span>
           </div>
 
@@ -190,22 +188,20 @@ function MainWorkspace() {
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                inputMode === 'structured'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'structured'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <span>📋</span> ช่องแยกตามหัวข้อ (10 หมวดหมู่)
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                inputMode === 'single'
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${inputMode === 'single'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <span>⚡</span> ช่องเดียวรวด (Auto-Parser)
             </button>
@@ -225,8 +221,7 @@ function MainWorkspace() {
             <span>บันทึกลงคลัง</span>
           </button>
 
-          <CompactModelLayer selectedModelId={activeModel} onSelectModel={setActiveModel} />
-          <UserMenu />
+                    <UserMenu />
           <ThemeToggle />
         </div>
       </header>
@@ -237,22 +232,20 @@ function MainWorkspace() {
           <button
             type="button"
             onClick={() => setMobileTab('editor')}
-            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${
-              mobileTab === 'editor'
+            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${mobileTab === 'editor'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             <span>✏️</span> โหมดแก้ไข (Editor)
           </button>
           <button
             type="button"
             onClick={() => setMobileTab('preview')}
-            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${
-              mobileTab === 'preview'
+            className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1 ${mobileTab === 'preview'
                 ? 'bg-primary text-white shadow-xs font-bold'
                 : 'text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             <span>👀</span> ดูผลลัพธ์ (Preview)
           </button>
@@ -263,22 +256,20 @@ function MainWorkspace() {
             <button
               type="button"
               onClick={() => handleModeSwitch('structured')}
-              className={`py-1 text-[11px] font-medium rounded transition-all ${
-                inputMode === 'structured'
+              className={`py-1 text-[11px] font-medium rounded transition-all ${inputMode === 'structured'
                   ? 'bg-card text-foreground font-bold shadow-xs'
                   : 'text-muted-foreground'
-              }`}
+                }`}
             >
               📋 ช่องแยก 10 หัวข้อ
             </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
-              className={`py-1 text-[11px] font-medium rounded transition-all ${
-                inputMode === 'single'
+              className={`py-1 text-[11px] font-medium rounded transition-all ${inputMode === 'single'
                   ? 'bg-card text-foreground font-bold shadow-xs'
                   : 'text-muted-foreground'
-              }`}
+                }`}
             >
               ⚡ ช่องเดียวรวด (Auto-Parser)
             </button>
@@ -290,9 +281,8 @@ function MainWorkspace() {
       <main className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
         {/* Left Column: Form Editor */}
         <div
-          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-background ${
-            mobileTab === 'preview' ? 'hidden md:flex' : 'flex'
-          }`}
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-background ${mobileTab === 'preview' ? 'hidden md:flex' : 'flex'
+            }`}
         >
           {inputMode === 'structured' ? (
             <InputForm
@@ -329,9 +319,8 @@ function MainWorkspace() {
 
         {/* Right Column: Platform Preview & Smart Export */}
         <div
-          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-muted/20 ${
-            mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
-          }`}
+          className={`h-full overflow-hidden flex flex-col p-2.5 sm:p-3.5 bg-muted/20 ${mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
+            }`}
         >
           <PlatformPreview character={character} />
         </div>
