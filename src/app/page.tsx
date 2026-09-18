@@ -36,7 +36,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       if (data) {
         const charName = data.title || data.nickname || data.character_data?.fullName || data.character_data?.nickname || 'ตัวละคร AI Roleplay';
         const charDesc = data.tagline || data.character_data?.shortIntro || 'ตัวละคร AI Roleplay สร้างจาก SedChar.AI รองรับ Purrpaw, Rubii และ Khui AI';
-        const ogImageUrl = `${baseUrl}/api/characters/share/og?id=${encodeURIComponent(shareId)}`;
+        const charImage = data.image_url || data.character_data?.imageUrl || data.character_data?.image || '';
+        const ogImageUrl = `${baseUrl}/api/characters/share/og?id=${encodeURIComponent(shareId)}${charImage ? `&image=${encodeURIComponent(charImage)}` : ''}`;
         const shareUrl = `${baseUrl}/?share=${encodeURIComponent(shareId)}${searchParams.mode ? `&mode=${searchParams.mode}` : ''}`;
 
         return {
@@ -78,7 +79,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
         const char = decoded.character;
         const charName = decoded.title || char.fullName || char.nickname || 'ตัวละคร AI Roleplay';
         const charDesc = char.shortIntro || 'ตัวละคร AI Roleplay สร้างจาก SedChar.AI';
-        const ogImageUrl = `${baseUrl}/api/characters/share/og?title=${encodeURIComponent(charName)}&nickname=${encodeURIComponent(char.nickname || '')}&tagline=${encodeURIComponent(charDesc)}&flag=${encodeURIComponent(char.flagType || 'none')}`;
+        const charImage = decoded.imageUrl || (char as any).imageUrl || (char as any).image || '';
+        const ogImageUrl = `${baseUrl}/api/characters/share/og?title=${encodeURIComponent(charName)}&nickname=${encodeURIComponent(char.nickname || '')}&tagline=${encodeURIComponent(charDesc)}&flag=${encodeURIComponent(char.flagType || 'none')}${charImage ? `&image=${encodeURIComponent(charImage)}` : ''}`;
 
         return {
           title: `${charName} | SedChar.AI`,

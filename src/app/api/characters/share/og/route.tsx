@@ -9,34 +9,38 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || proc
 
 interface FlagEntry {
   label: string;
-  emoji: string;
   color: string;
+  emoji: string;
 }
 
-const defaultFlag: FlagEntry = { label: 'SedChar Studio', emoji: '✨', color: '#f43f5e' };
-
 const flagLabels: Record<string, FlagEntry> = {
-  green: { label: 'ธงเขียว (Green Flag)', emoji: '🟢', color: '#10b981' },
-  red: { label: 'ธงแดง (Red Flag)', emoji: '🔴', color: '#ef4444' },
-  black: { label: 'ธงดำ (Black Flag)', emoji: '⚫', color: '#71717a' },
-  white: { label: 'ธงขาว (White Flag)', emoji: '🏳️', color: '#e4e4e7' },
-  yellow: { label: 'ธงเหลือง (Yellow Flag)', emoji: '🟡', color: '#f59e0b' },
-  watermelon: { label: 'แตงโม (Watermelon)', emoji: '🍉', color: '#f43f5e' },
-  'reverse-watermelon': { label: 'แตงโมกลับด้าน', emoji: '🍉', color: '#14b8a6' },
-  none: defaultFlag,
+  green: { label: 'ธงเขียว (ปลอดภัย)', color: '#10b981', emoji: '🟢' },
+  yellow: { label: 'ธงเหลือง (เฝ้าระวัง)', color: '#f59e0b', emoji: '🟡' },
+  red: { label: 'ธงแดง (อันตราย)', color: '#ef4444', emoji: '🔴' },
+  black: { label: 'ธงดำ (วิกฤต/มืดมน)', color: '#71717a', emoji: '⚫' },
+  watermelon: { label: 'แตงโม (เขียวนอกแดงใน)', color: '#f43f5e', emoji: '🍉' },
+  'reverse-watermelon': { label: 'แตงโมกลับด้าน (แดงนอกเขียวใน)', color: '#10b981', emoji: '🍉' },
 };
+
+const defaultFlag: FlagEntry = { label: 'ตัวละครบทบาท', color: '#f43f5e', emoji: '🎭' };
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const shareId = searchParams.get('id');
 
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')
+    ).replace(/\/+$/, '');
+
     let title = searchParams.get('title') || 'ตัวละคร AI Roleplay';
     let nickname = searchParams.get('nickname') || '';
     let tagline = searchParams.get('tagline') || 'โมเดลและโครงสร้างบทบาทสำหรับ Purrpaw, Rubii และ Khui AI';
-    let imageUrl = searchParams.get('image') || '';
     let flagType = searchParams.get('flag') || 'none';
+    let imageUrl = searchParams.get('image') || searchParams.get('imageUrl') || searchParams.get('img') || '';
 
+    // If shareId is provided, attempt to fetch from Supabase
     if (shareId) {
       try {
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -50,9 +54,13 @@ export async function GET(req: NextRequest) {
         if (data) {
           title = data.title || data.nickname || data.character_data?.fullName || data.character_data?.nickname || title;
           nickname = data.nickname || data.character_data?.nickname || nickname;
-          tagline = data.tagline || data.character_data?.tagline || data.character_data?.shortIntro || tagline;
+          tagline = data.tagline || data.character_data?.shortIntro || tagline;
           if (data.image_url) {
             imageUrl = data.image_url;
+          } else if (data.character_data?.imageUrl) {
+            imageUrl = data.character_data.imageUrl;
+          } else if (data.character_data?.image) {
+            imageUrl = data.character_data.image;
           }
           if (data.flag_type || data.character_data?.flagType) {
             flagType = data.flag_type || data.character_data?.flagType || 'none';
@@ -64,6 +72,11 @@ export async function GET(req: NextRequest) {
     }
 
     const flagInfo: FlagEntry = flagLabels[flagType] || defaultFlag;
+    const isCustomImage = Boolean(
+      imageUrl &&
+      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:image/'))
+    );
+    const finalArtworkUrl = isCustomImage ? imageUrl : `${baseUrl}/shedchar_logo.png`;
 
     return new ImageResponse(
       (
@@ -90,7 +103,7 @@ export async function GET(req: NextRequest) {
               flexDirection: 'column',
               justifyContent: 'space-between',
               height: '100%',
-              maxWidth: imageUrl ? '620px' : '1000px',
+              maxWidth: '620px',
               flex: 1,
             }}
           >
@@ -240,34 +253,33 @@ export async function GET(req: NextRequest) {
             </div>
           </div>
 
-          {/* Right Column: Full Character Artwork */}
-          {imageUrl && (
-            <div
+          {/* Right Column: Character Artwork Layer or Logo Layer */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '440px',
+              height: '520px',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              border: '2px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              backgroundColor: 'rgba(24, 24, 27, 0.7)',
+              marginLeft: '30px',
+              padding: isCustomImage ? '0px' : '30px',
+            }}
+          >
+            <img
+              src={finalArtworkUrl}
+              alt={title}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '420px',
-                height: '520px',
-                borderRadius: '24px',
-                overflow: 'hidden',
-                border: '2px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                backgroundColor: 'rgba(24, 24, 27, 0.6)',
-                marginLeft: '30px',
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
               }}
-            >
-              <img
-                src={imageUrl}
-                alt={title}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
-              />
-            </div>
-          )}
+            />
+          </div>
         </div>
       ),
       {
