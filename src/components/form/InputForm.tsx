@@ -171,6 +171,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
           currentFlag={character.flagType}
           onSelectFlag={onSelectFlag}
           onAutoDetect={onAutoDetectFlag}
+          readOnly={isReadOnly}
         />
 
         {/* 1. ข้อมูลพื้นฐาน */}
@@ -408,7 +409,8 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                   value={character.nsfwMaleSize}
                   onChange={e => onUpdateField('nsfwMaleSize', e.target.value)}
                   placeholder="ขนาด 8 นิ้ว, ไร้ขน"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
               <FieldRow label="ส่วนลับหญิง (ขนาดหน้าอก)" htmlFor="nsfwFemaleChest">
@@ -418,7 +420,8 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                   value={character.nsfwFemaleChest}
                   onChange={e => onUpdateField('nsfwFemaleChest', e.target.value)}
                   placeholder="คัพ D, 36 นิ้ว"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
               <FieldRow label="ส่วนลับหญิง (จิ๊มิ/สี/ขน)" htmlFor="nsfwFemaleVagina">
@@ -428,7 +431,8 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                   value={character.nsfwFemaleVagina}
                   onChange={e => onUpdateField('nsfwFemaleVagina', e.target.value)}
                   placeholder="กลีบชมพู, ไร้ขน"
-                  className="form-input text-xs"
+                  className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                  readOnly={isReadOnly}
                 />
               </FieldRow>
             </div>
@@ -786,14 +790,16 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
 
             {character.locations.map((loc, idx) => (
               <div key={loc.id || idx} className="p-3 rounded-xl border border-border bg-muted/20 space-y-2 relative">
-                <button
-                  type="button"
-                  onClick={() => onRemoveLocation(idx)}
-                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
-                >
-                  ✕
-                </button>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pr-6">
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLocation(idx)}
+                    className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${isReadOnly ? '' : 'pr-6'}`}>
                   <FieldRow label={'ชื่อสถานที่ #' + (idx + 1)} htmlFor={'loc-name-' + idx}>
                     <input
                       id={'loc-name-' + idx}
@@ -801,7 +807,8 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                       value={loc.name}
                       onChange={e => onUpdateLocation(idx, { name: e.target.value })}
                       placeholder="เช่น Penthouse หรู"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                   <FieldRow label="Prompt บรรยายสถานที่ (สั้น กระชับ)" htmlFor={'loc-prompt-' + idx}>
@@ -811,7 +818,8 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                       value={loc.prompt}
                       onChange={e => onUpdateLocation(idx, { prompt: e.target.value })}
                       placeholder="ห้องกว้าง วิวเมืองกระจกบานใหญ่ เฟอร์นิเจอร์สีดำ แสงสลัว"
-                      className="form-input text-xs"
+                      className={`form-input text-xs ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
+                      readOnly={isReadOnly}
                     />
                   </FieldRow>
                 </div>

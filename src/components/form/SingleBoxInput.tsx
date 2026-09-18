@@ -246,7 +246,7 @@ export function SingleBoxInput({
 4. Plaintext: ชื่อ: คชา, อายุ: 28, นิสัย: เย็นชาแต่รักเดียวใจเดียว...
 
 กดปุ่ม "แปลงข้อมูลสู่ฟอร์ม" ด้านล่างเพื่อซิงค์ข้อมูลเข้าสู่ 10 หมวดหมู่แบบ 100%`}
-          className="w-full h-full p-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed"
+          className={`w-full h-full p-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed ${isReadOnly ? "bg-muted/30 cursor-not-allowed select-text" : ""}`}
         />
 
         {/* Quick expand floating button */}
@@ -365,9 +365,10 @@ export function SingleBoxInput({
               <textarea
                 ref={fullscreenTextareaRef}
                 value={rawMarkdown}
-                onChange={(e) => onChangeRaw(e.target.value)}
+                readOnly={isReadOnly}
+                onChange={(e) => !isReadOnly && onChangeRaw(e.target.value)}
                 placeholder="วางหรือเขียนเนื้อหาตัวละครแบบอิสระที่นี่..."
-                className="w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner"
+                className={`w-full flex-1 p-5 rounded-xl bg-muted/50 border border-border text-base text-foreground placeholder:text-muted-foreground/50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all leading-relaxed shadow-inner ${isReadOnly ? 'bg-muted/30 cursor-not-allowed select-text' : ''}`}
               />
             </div>
 
@@ -384,13 +385,15 @@ export function SingleBoxInput({
                   </span>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={onClear}
-                className="text-xs text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
-              >
-                🗑️ ล้างทั้งหมด
-              </button>
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  className="text-xs text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                >
+                  🗑️ ล้างทั้งหมด
+                </button>
+              )}
             </div>
           </div>
         </div>
