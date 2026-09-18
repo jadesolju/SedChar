@@ -203,7 +203,7 @@ export function SingleBoxInput({
             <span className="text-base">🔒</span>
             <div>
               <span className="font-bold text-primary">ฟีเจอร์สำหรับสมาชิก: </span>
-              <span className="text-muted-foreground">เข้าสู่ระบบเพื่อใช้งาน Auto-Parser แปลงข้อความอัตโนมัติด้วย Gemini AI (รับโควตาฟรี 15 ครั้ง/วัน)</span>
+              <span className="text-muted-foreground">เข้าสู่ระบบเพื่อใช้งาน Auto-Parser แปลงข้อความอัตโนมัติด้วย (รับโควตาฟรี 15 ครั้ง/วัน)</span>
             </div>
           </div>
           <button

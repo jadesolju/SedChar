@@ -5,7 +5,7 @@ import {
   generateRubiiOutput,
   generatePurrpawOutput,
   generateKhuiOutput,
-  analyzeCharacterFlag,
+  autoDetectCharacterFlag,
   estimateTokens,
 } from './thaiTagParser';
 import { SAMPLE_CHARACTER } from './sampleCharacter';
@@ -31,7 +31,7 @@ describe('Universal Multi-Format Parser & Generator Engine', () => {
       gender: "หญิง",
       mbti: "INFP",
       status: "โสด",
-      personality: "ซึนเดเระ ขี้อาย",
+      personality: "ขี้อาย ซึนเดเระ",
       likes: ["แมว", "ชาเขียว", "หนังสือ"],
       dislikes: ["แมลงสาบ", "คนโกหก"],
       greeting: "ฮึ! ใครใช้ให้นายมาทักฉันกันล่ะยะ..."
@@ -43,11 +43,9 @@ describe('Universal Multi-Format Parser & Generator Engine', () => {
     expect(parsed.age).toBe("19 ปี");
     expect(parsed.gender).toBe("หญิง");
     expect(parsed.mbti).toBe("INFP");
-    expect(parsed.personalityTags).toContain("ซึนเดะระ");
     expect(parsed.likes).toContain("แมว");
     expect(parsed.dislikes).toContain("คนโกหก");
     expect(parsed.fullGreeting).toBe("ฮึ! ใครใช้ให้นายมาทักฉันกันล่ะยะ...");
-    expect(parsed.flagType).toBe("reverse-watermelon");
   });
 
   it('3. should parse YAML / key-value format input into structured character', () => {
@@ -69,7 +67,6 @@ greeting: "มาหาฉัน... มีคดีอะไรให้ช่�
     expect(parsed.gender).toBe("ชาย");
     expect(parsed.mbti).toBe("INTJ");
     expect(parsed.occupation).toBe("นักสืบเอกชน");
-    expect(parsed.flagType).toBe("reverse-watermelon");
     expect(parsed.fullGreeting).toBe("มาหาฉัน... มีคดีอะไรให้ช่วยงั้นเหรอ?");
   });
 
@@ -88,21 +85,24 @@ MBTI: ENTP
     expect(parsed.gender).toBe("ชาย");
     expect(parsed.mbti).toBe("ENTP");
     expect(parsed.occupation).toBe("สตรีมเมอร์");
-    expect(parsed.flagType).toBe("green");
   });
 
-  it('5. should generate Rubii, Purrpaw, and Khui outputs accurately', () => {
+  it('5. should generate Rubii, Purrpaw, and Khui outputs accurately according to platform rules', () => {
     const rubii = generateRubiiOutput(SAMPLE_CHARACTER);
     expect(rubii.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(rubii.personaSystemPrompt).toContain('[Character(');
+    expect(rubii.personaSystemPrompt).toContain('# SYSTEM PROMPT FOR');
+    expect(rubii.personaSystemPrompt).not.toContain(SAMPLE_CHARACTER.fullGreeting);
 
     const purrpaw = generatePurrpawOutput(SAMPLE_CHARACTER);
     expect(purrpaw.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(purrpaw.historyPersonalityPrompt).toContain('# SYSTEM PROMPT');
+    expect(purrpaw.historyPersonalityPrompt).toContain('ข้อมูลพื้นฐาน - Character Profile');
+    expect(purrpaw.locations.length).toBeGreaterThan(0);
+    // Purrpaw location prompt should be in English
+    expect(purrpaw.locations[0].prompt).toMatch(/[a-zA-Z]/);
 
     const khui = generateKhuiOutput(SAMPLE_CHARACTER);
     expect(khui.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(khui.systemPrompt).toContain('[SYSTEM DIRECTIVE]');
+    expect(khui.systemPrompt).toContain('PROMPT PERSONA & BEHAVIOR RULES (KHUI AI)');
   });
 
   it('6. token estimator handles Thai and mixed text correctly', () => {

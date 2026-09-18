@@ -102,6 +102,7 @@ export interface SubCharacter {
   appearWhen: string;
   shortDesc: string; // 0/500 characters
   systemPrompt: string; // 0/750 characters
+  isSelected?: boolean; // Whether active/selected for export
 }
 
 export interface LocationItem {
@@ -181,6 +182,9 @@ export interface ThaiMasterCharacter {
   supportingCharacters: SubCharacter[];
   subCharRules: string;
   subCharAllowed: string;
+
+  // Garage Storage (คลังเก็บข้อมูลส่วนเกิน)
+  garageStorage: string;
 
   // 10. คำโปรย & บทนำ
   shortIntro: string; // 0/500
@@ -289,6 +293,7 @@ export const DEFAULT_SUB_CHARACTER: SubCharacter = {
   appearWhen: '',
   shortDesc: '',
   systemPrompt: '',
+  isSelected: true,
 };
 
 export const DEFAULT_LOCATION: LocationItem = {
@@ -349,6 +354,7 @@ export const DEFAULT_CHARACTER: ThaiMasterCharacter = {
   supportingCharacters: [],
   subCharRules: 'แย่งซีนตัวหลัก, เปลี่ยนบุคลิกกะทันหัน, รู้ข้อมูลที่ตัวหลักยังไม่รู้, ตายหรือหายแล้วกลับมามีบท',
   subCharAllowed: 'อยู่ในบทสนทนาหลักได้, ทำให้เนื้อเรื่องดำเนินเมื่อถึงจุดตัน',
+  garageStorage: '',
   shortIntro: '',
   punchline: '',
   plotSummary: '',

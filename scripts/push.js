@@ -7,6 +7,13 @@ const readline = require('readline');
 
 const dir = path.resolve(__dirname, '..');
 
+function getAuthConfig(token, password) {
+  return {
+    username: token,
+    password: password !== undefined ? password : token,
+  };
+}
+
 async function askQuestion(query) {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -23,7 +30,7 @@ async function askQuestion(query) {
 async function main() {
   console.log('\n🚀 === SedChar.AI GitHub Push Utility ===\n');
 
-  let token = process.argv[2];
+  let token = process.argv[2] || process.env.GITHUB_TOKEN;
   if (!token) {
     console.log('💡 คุณสามารถสร้าง GitHub Token (Personal Access Token - Classic หรือ Fine-grained) ได้ที่:');
     console.log('   https://github.com/settings/tokens (ติ๊กเลือกสิทธิ์ "repo")\n');
@@ -35,7 +42,8 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('\n⏳ กำลัง Push ไปยัง https://github.com/jadesolju/SedChar.git (branch: main)...');
+  const targetBranch = process.argv[3] || 'preview';
+  console.log(`\n⏳ กำลัง Push ไปยัง https://github.com/jadesolju/SedChar.git (branch: ${targetBranch})...`);
 
   try {
     const pushResult = await git.push({
@@ -43,12 +51,9 @@ async function main() {
       http,
       dir,
       remote: 'origin',
-      ref: 'main',
+      ref: targetBranch,
       force: true,
-      onAuth: () => ({
-        username: token,
-        password: '',
-      }),
+      onAuth: () => getAuthConfig(token),
       onProgress: evt => {
         if (evt.total) {
           process.stdout.write(`\r📤 อัปโหลด: ${evt.phase} (${evt.loaded}/${evt.total})`);
@@ -59,7 +64,7 @@ async function main() {
     });
 
     console.log('\n\n✅ Push ขึ้น GitHub สำเร็จเรียบร้อยแล้ว!');
-    console.log('🔗 ตรวจสอบ repository ได้ที่: https://github.com/jadesolju/SedChar\n');
+    console.log(`🔗 ตรวจสอบ repository ได้ที่: https://github.com/jadesolju/SedChar/tree/${targetBranch}\n`);
   } catch (err) {
     console.error('\n\n❌ เกิดข้อผิดพลาดในการ Push:', err.message || err);
     console.log('\n💡 ข้อแนะนำ: ตรวจสอบว่า Token มีสิทธิ์เข้าถึง repository "jadesolju/SedChar" และยังไม่หมดอายุ');
@@ -67,4 +72,8 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { getAuthConfig };

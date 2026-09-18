@@ -114,6 +114,11 @@ export function formatCount(val: string | number | undefined | null): string {
   return '0';
 }
 
+export function estimateTokens(text: string = ""): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / 3);
+}
+
 export function autoDetectCharacterFlag(char: ThaiMasterCharacter): CharacterFlagType {
   const text = [
     char.coreTraits,
@@ -147,9 +152,41 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
 
   const char: ThaiMasterCharacter = { ...DEFAULT_CHARACTER };
 
+  // Handle JSON input
+  const trimmed = raw.trim();
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      const json = JSON.parse(trimmed);
+      if (json && typeof json === 'object') {
+        if (json.name) char.fullName = String(json.name);
+        if (json.nickname) char.nickname = String(json.nickname);
+        if (json.age) char.age = String(json.age);
+        if (json.gender) char.gender = String(json.gender);
+        if (json.mbti) char.mbti = String(json.mbti);
+        if (json.status) char.status = String(json.status);
+        if (json.personality) {
+          char.coreTraits = String(json.personality);
+          if (json.personality.includes('ซึนเดะระ') || json.personality.includes('ซึนเดเระ')) {
+            char.personalityTags = ['ซึนเดะระ'];
+          }
+        }
+        if (Array.isArray(json.likes)) char.likes = json.likes.map(String);
+        if (Array.isArray(json.dislikes)) char.dislikes = json.dislikes.map(String);
+        if (json.greeting) char.fullGreeting = String(json.greeting);
+        if (json.flagType) char.flagType = json.flagType;
+        else char.flagType = autoDetectCharacterFlag(char);
+        return char;
+      }
+    } catch {}
+  }
+
+  const normalizedRaw = raw
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1');
+
   const matchFirst = (patterns: RegExp[]): string => {
     for (const p of patterns) {
-      const m = raw.match(p);
+      const m = raw.match(p) || normalizedRaw.match(p);
       if (m && m[1]) {
         const cleaned = cleanString(m[1]);
         if (cleaned) return cleaned;
@@ -165,6 +202,7 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
   char.fullName = matchFirst([
     /(?:ชื่อเต็ม|Full\s*Name|ชื่อจริง)\s*[:：=]\s*([^\n\r]+)/i,
+    /(?:^|\n)\s*name\s*[:：=]\s*([^\n\r]+)/i,
     /\[(?:CHARACTER)\]\s*[:：=]\s*([^\n\r]+)/i,
   ]);
   if (!char.nickname && char.fullName) {
@@ -404,9 +442,17 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
 
   // Open Greeting
-  const greetingMatch = raw.match(/(?:ฉากเปิด|Open\s*Greeting)\s*(?:\([^)]*\))?\s*[:：\n]\s*([\s\S]*?)(?=\n\s*(?:วิเคราะห์เนื้อหา|\[CHARACTER|\n\s*---|\n\s*#|$))/i);
-  if (greetingMatch && greetingMatch[1]) {
-    const fullGreetingText = greetingMatch[1].trim();
+  const greetingSingleLine = matchFirst([
+    /(?:ฉากเปิด|Open\s*Greeting|greeting|คำทักทาย)\s*[:：=]\s*([^`\n\r]+)/i,
+  ]);
+  const greetingMultiMatch = raw.match(/(?:ฉากเปิด|Open\s*Greeting|greeting|คำทักทาย)\s*(?:\([^)]*\))?\s*[:：\n]\s*([\s\S]+?)(?=\n\s*(?:วิเคราะห์เนื้อหา|\[CHARACTER|\n\s*---|\n\s*#|$))/i) || normalizedRaw.match(/(?:ฉากเปิด|Open\s*Greeting|greeting|คำทักทาย)\s*(?:\([^)]*\))?\s*[:：\n]\s*([\s\S]+?)(?=\n\s*(?:วิเคราะห์เนื้อหา|\[CHARACTER|\n\s*---|\n\s*#|$))/i);
+
+  const rawGreeting = (greetingMultiMatch && greetingMultiMatch[1] && greetingMultiMatch[1].trim().length > (greetingSingleLine?.length || 0))
+    ? greetingMultiMatch[1].trim()
+    : (greetingSingleLine || '');
+
+  if (rawGreeting) {
+    const fullGreetingText = rawGreeting.replace(/^["']|["']$/g, '').trim();
     char.fullGreeting = fullGreetingText;
 
     const dialogues = fullGreetingText.match(/"([^"]+)"/g);

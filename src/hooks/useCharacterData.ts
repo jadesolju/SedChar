@@ -36,7 +36,7 @@ export function useCharacterData() {
           return { ...SAMPLE_CHARACTER, ...parsed };
         }
       }
-    } catch {}
+    } catch { }
     return SAMPLE_CHARACTER;
   });
 
@@ -53,7 +53,7 @@ export function useCharacterData() {
     const timer = setTimeout(() => {
       try {
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(character));
-      } catch {}
+      } catch { }
     }, 400);
     return () => clearTimeout(timer);
   }, [character]);
@@ -184,7 +184,7 @@ export function useCharacterData() {
     setRawMarkdown(characterToFullMarkdown(SAMPLE_CHARACTER));
     try {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(SAMPLE_CHARACTER));
-    } catch {}
+    } catch { }
   }, []);
 
   // Reset to default empty character
@@ -193,7 +193,7 @@ export function useCharacterData() {
     setRawMarkdown(characterToFullMarkdown(DEFAULT_CHARACTER));
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
-    } catch {}
+    } catch { }
   }, []);
 
   // Parse raw markdown input
@@ -203,7 +203,7 @@ export function useCharacterData() {
     setRawMarkdown(text);
     try {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsed));
-    } catch {}
+    } catch { }
   }, []);
 
   // Direct parsed character setter from Gemini AI or Share Link
@@ -212,7 +212,7 @@ export function useCharacterData() {
     setRawMarkdown(characterToFullMarkdown(parsedChar));
     try {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsedChar));
-    } catch {}
+    } catch { }
   }, []);
 
   // Keep rawMarkdown in sync when switching to single mode

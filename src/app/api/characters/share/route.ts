@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing character payload' }, { status: 400 });
     }
 
-    const shareId = `sh_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    // Cryptographically secure RNG (PR #6)
+    const randomBuffer = new Uint8Array(4);
+    crypto.getRandomValues(randomBuffer);
+    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    const shareId = `sh_${Date.now().toString(36)}_${randomHex}`;
 
     if (id) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -63,8 +67,9 @@ export async function POST(req: NextRequest) {
         .eq('id', id);
     }
 
-    const origin = req.headers.get('origin') || `https://${req.headers.get('host') || 'sedchar.vercel.app'}`;
-    const shareUrl = `${origin}/?share=${shareId}&mode=${permission}`;
+    // Secure base URL (PR #8)
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')).replace(/\/+$/, '');
+    const shareUrl = `${baseUrl}/?share=${shareId}&mode=${permission}`;
 
     return NextResponse.json({
       success: true,

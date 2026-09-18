@@ -15,6 +15,7 @@ import {
   Layers,
   Zap,
   Bookmark,
+  RefreshCw,
   Share2,
   FileEdit,
   Eye,
@@ -53,7 +54,8 @@ function MainWorkspace() {
     syncToMarkdown,
   } = useCharacterData();
 
-  const { user, openAuthModal, openLibraryModal, saveToLibrary } = useAuth();
+  const { user, openAuthModal, openLibraryModal, saveToLibrary, overwriteCharacterInLibrary, activeLoadedCharacterId, setActiveLoadedCharacterId, savedCharacters } = useAuth();
+  const activeRecord = activeLoadedCharacterId ? savedCharacters.find(c => c.id === activeLoadedCharacterId) : null;
 
 
 

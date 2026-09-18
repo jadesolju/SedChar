@@ -162,6 +162,7 @@ export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
   supportingCharacters: [
     {
       id: 'sub-1',
+      isSelected: true,
       name: 'เรย์ (Ray)',
       gender: 'ชาย',
       age: '26 ปี',
@@ -174,6 +175,7 @@ export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
     },
     {
       id: 'sub-2',
+      isSelected: true,
       name: 'ป้าอุ่น (Aunty Oon)',
       gender: 'หญิง',
       age: '58 ปี',
@@ -186,6 +188,7 @@ export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
     },
     {
       id: 'sub-3',
+      isSelected: true,
       name: 'เสี่ยธวัช (Thawat)',
       gender: 'ชาย',
       age: '52 ปี',
@@ -199,6 +202,7 @@ export const SAMPLE_CHARACTER: ThaiMasterCharacter = {
   ],
   subCharRules: 'แย่งซีนตัวหลัก, เปลี่ยนบุคลิกกะทันหัน, รู้ข้อมูลที่ตัวหลักยังไม่รู้, ตายหรือหายแล้วกลับมามีบท',
   subCharAllowed: 'อยู่ในบทสนทนาหลักได้, ทำให้เนื้อเรื่องดำเนินเมื่อถึงจุดตัน',
+  garageStorage: '',
 
   // คำโปรย & บทนำ
   shortIntro: 'เขาคือมาเฟียหนุ่มไร้หัวใจผู้ปกครองโลกมืด แต่กลับยอมคุกเข่ากุมมือเธอไว้ใต้เงาปืน "ในโลกที่เน่าเฟะนี้ มีแค่เธอคนเดียวที่ฉันจะไม่ยอมปล่อยมือ"',

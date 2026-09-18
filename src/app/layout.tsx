@@ -41,30 +41,7 @@ export default function RootLayout({ children }: { readonly children: React.Reac
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const stored = localStorage.getItem('sedchar-theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (stored === 'dark' || (!stored && prefersDark)) {
-                  document.documentElement.classList.add('dark');
-                }
-              } catch (_) {}
-
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(regs) {
-                  for (var r of regs) { r.unregister(); }
-                });
-                if ('caches' in window) {
-                  caches.keys().then(function(names) {
-                    for (var n of names) { caches.delete(n); }
-                  });
-                }
-              }
-            `,
-          }}
-        />
+        <script src="/scripts/theme-init.js" />
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>

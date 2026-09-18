@@ -13,6 +13,7 @@ import {
   RotateCcw,
   BookOpen,
   Sparkles,
+  Archive,
   Plus,
   Trash2,
   Compass,
@@ -838,6 +839,18 @@ export function InputForm({
 
             {character.supportingCharacters.map((sub, idx) => (
               <div key={sub.id || idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3 relative">
+                <div className="flex items-center justify-between pb-1 border-b border-border/60 pr-7">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sub.isSelected !== false}
+                      onChange={(e) => onUpdateSubCharacter(idx, { isSelected: e.target.checked })}
+                      className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer"
+                    />
+                    <span>เปิดใช้งาน / รวมตัวละครนี้ใน System Prompt (Rubii / Khui)</span>
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">ตัวที่ {idx + 1}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => onRemoveSubCharacter(idx)}
@@ -1023,6 +1036,25 @@ export function InputForm({
               placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
             />
           </div>
+        </FormSection>
+
+        {/* SECTION 11: คลังเก็บข้อมูลส่วนเกิน (Garage Storage) */}
+        <FormSection
+          id="section-garage"
+          title="11. คลังเก็บข้อมูลส่วนเกิน (Garage Storage)"
+          icon={<Archive className="w-4 h-4 text-amber-500" />}
+          description="ช่องสำหรับเก็บข้อมูลดิบ, กฎเพิ่มเติม, หรือ Prompt อิสระที่ไม่อยู่ใน 10 หมวดหมู่หลัก (ระบบจะส่งออกไปยัง Rubii, Purrpaw, Khui AI อัตโนมัติ)"
+          badge={character.garageStorage ? character.garageStorage.length : undefined}
+        >
+          <ExpandableTextarea readOnly={isReadOnly}
+            id="garageStorage"
+            label="คลังเก็บข้อมูลส่วนเกิน / ข้อมูลเพิ่มเติม (Garage Storage)"
+            hint="บันทึกข้อความอิสระ, Lore พิเศษ, หรือเงื่อนไขเพิ่มเติมที่ต้องการให้ AI จดจำ"
+            rows={5}
+            value={character.garageStorage || ''}
+            onChange={v => onUpdateField('garageStorage', v)}
+            placeholder="ใส่ข้อมูลดิบ, รายละเอียดฉาก, ประวัติลับ หรือข้อความ Prompt เสริมที่ต้องการส่งต่อไปยัง AI..."
+          />
         </FormSection>
       </div>
     

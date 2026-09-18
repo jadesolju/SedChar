@@ -56,7 +56,17 @@ interface AuthContextType {
   updatePassword: (newPass: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   consumeQuota: () => boolean;
+  activeLoadedCharacterId: string | null;
+  setActiveLoadedCharacterId: (id: string | null) => void;
   saveToLibrary: (
+    char: ThaiMasterCharacter,
+    title?: string,
+    imageUrl?: string,
+    galleryUrls?: string[],
+    targetId?: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  overwriteCharacterInLibrary: (
+    id: string,
     char: ThaiMasterCharacter,
     title?: string,
     imageUrl?: string,
@@ -99,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+  const [activeLoadedCharacterId, setActiveLoadedCharacterId] = useState<string | null>(null);
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -384,17 +395,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [user, userRole, quotaRemaining, getTodayKey]);
 
-  const saveToLibrary = async (
+  const overwriteCharacterInLibrary = async (
+    id: string,
     char: ThaiMasterCharacter,
     title?: string,
     imageUrl?: string,
     galleryUrls?: string[]
   ): Promise<{ success: boolean; error?: string }> => {
+    const charTitle = title?.trim() || char.fullName || char.nickname || 'ตัวละครไม่มีชื่อ';
+    const key = getStorageKey(user?.id);
+    const currentList = [...savedCharacters];
+    const targetIdx = currentList.findIndex(c => c.id === id);
+
+    if (targetIdx === -1) {
+      return saveToLibrary(char, title, imageUrl, galleryUrls);
+    }
+
+    const existing = currentList[targetIdx];
+    if (!existing) {
+      return saveToLibrary(char, title, imageUrl, galleryUrls);
+    }
+
+    const updatedRecord: SavedCharacterRecord = {
+      ...existing,
+      id: existing.id || id,
+      user_id: existing.user_id || user?.id || 'guest',
+      title: charTitle,
+      nickname: char.nickname || char.fullName || existing.nickname,
+      tagline: char.punchline || char.shortIntro || char.occupation || existing.tagline,
+      flag_type: char.flagType,
+      image_url: imageUrl !== undefined ? imageUrl : (existing.image_url || ''),
+      gallery_urls: galleryUrls && galleryUrls.length > 0 ? galleryUrls : (imageUrl ? [imageUrl] : (existing.gallery_urls || [])),
+      character_data: char,
+      created_at: existing.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    currentList[targetIdx] = updatedRecord;
+    setSavedCharacters(currentList);
+    try {
+      localStorage.setItem(key, JSON.stringify(currentList));
+    } catch (storageErr) {
+      console.warn('LocalStorage save error:', storageErr);
+    }
+
+    if (user) {
+      supabase
+        .from('characters')
+        .upsert(updatedRecord)
+        .then(({ error }) => {
+          if (error) console.warn('Supabase DB update note:', error.message);
+        }, (e) => console.warn('Supabase DB update error:', e));
+    }
+
+    setActiveLoadedCharacterId(id);
+    return { success: true };
+  };
+
+  const saveToLibrary = async (
+    char: ThaiMasterCharacter,
+    title?: string,
+    imageUrl?: string,
+    galleryUrls?: string[],
+    targetId?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (targetId) {
+      return overwriteCharacterInLibrary(targetId, char, title, imageUrl, galleryUrls);
+    }
+
     const effectiveUserId = user?.id || 'guest';
-    const charTitle = title || char.fullName || char.nickname || 'ตัวละครไม่มีชื่อ';
+    const charTitle = title?.trim() || char.fullName || char.nickname || 'ตัวละครไม่มีชื่อ';
     
+    // Cryptographically secure RNG (PR #6)
+    const randomBuffer = new Uint8Array(4);
+    crypto.getRandomValues(randomBuffer);
+    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+
     const newRecord: SavedCharacterRecord = {
-      id: `char-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: `char-${Date.now().toString(36)}-${randomHex}`,
       user_id: effectiveUserId,
       title: charTitle,
       nickname: char.nickname || char.fullName || 'ตัวละคร',
@@ -410,15 +488,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     try {
-      // 1. Immediately save to LocalStorage so it is never lost
       const key = getStorageKey(user?.id);
-      const currentList = [...savedCharacters];
-      const existingIdx = currentList.findIndex(c => c.title === charTitle || (c.nickname === char.nickname && char.nickname !== ''));
-      if (existingIdx !== -1) {
-        currentList[existingIdx] = { ...newRecord, id: currentList[existingIdx]?.id ?? newRecord.id };
-      } else {
-        currentList.unshift(newRecord);
-      }
+      const currentList = [newRecord, ...savedCharacters];
       setSavedCharacters(currentList);
       try {
         localStorage.setItem(key, JSON.stringify(currentList));
@@ -426,7 +497,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('LocalStorage quota or write error:', storageErr);
       }
 
-      // 2. If logged in, persist to Supabase Database
       if (user) {
         supabase
           .from('characters')
@@ -436,6 +506,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }, (e) => console.warn('Supabase DB save error:', e));
       }
 
+      setActiveLoadedCharacterId(newRecord.id);
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'บันทึกไม่สำเร็จ' };
@@ -552,7 +623,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatePassword,
         signOut,
         consumeQuota,
+        activeLoadedCharacterId,
+        setActiveLoadedCharacterId,
         saveToLibrary,
+        overwriteCharacterInLibrary,
         deleteFromLibrary,
         loadLibrary,
         shareCharacter,
