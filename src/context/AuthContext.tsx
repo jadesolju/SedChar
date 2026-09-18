@@ -514,6 +514,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteFromLibrary = async (id: string): Promise<boolean> => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('sedchar_is_readonly_active') === 'true') {
+      console.warn('Blocked delete attempt in Read-Only mode');
+      return false;
+    }
     const key = getStorageKey(user?.id);
     const updated = savedCharacters.filter(c => c.id !== id);
     setSavedCharacters(updated);

@@ -25,12 +25,21 @@ const flagLabels: Record<string, FlagEntry> = {
 const defaultFlag: FlagEntry = { label: 'ตัวละครบทบาท', color: '#f43f5e', emoji: '🎭' };
 
 /**
- * Pre-fetches an external image with a strict timeout (e.g. 1.8s) and converts to base64 Data URI.
- * If fetching fails, times out, or returns an error, returns null immediately.
+ * Pre-fetches an external image with a strict timeout (1.8s) and converts to Base64 Data URI.
+ * Satori / resvg only supports PNG, JPEG, GIF, and SVG formats.
+ * If fetching fails, times out, or format is unsupported (e.g. WebP/AVIF), returns null to fall back to the built-in Logo Layer.
  */
 async function fetchImageWithTimeout(url: string, timeoutMs = 1800): Promise<string | null> {
   if (!url || typeof url !== 'string') return null;
-  if (url.startsWith('data:image/')) return url;
+  
+  const lower = url.toLowerCase();
+  if (lower.startsWith('data:image/png') || lower.startsWith('data:image/jpeg') || lower.startsWith('data:image/jpg') || lower.startsWith('data:image/svg+xml')) {
+    return url;
+  }
+  if (lower.startsWith('data:image/webp') || lower.startsWith('data:image/avif')) {
+    // Satori resvg cannot rasterize WebP data URIs
+    return null;
+  }
 
   try {
     const controller = new AbortController();
@@ -40,27 +49,31 @@ async function fetchImageWithTimeout(url: string, timeoutMs = 1800): Promise<str
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SedCharBot/1.0; +https://sedchar.vercel.app)',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept': 'image/png,image/jpeg,image/*;q=0.8',
       },
     });
 
     clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      console.warn(`[OG] Image fetch returned status ${res.status} for ${url}`);
+    if (!res.ok) return null;
+
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    // Only PNG, JPEG, and SVG are natively supported by Satori / resvg
+    const isSupported = contentType.includes('png') || contentType.includes('jpeg') || contentType.includes('jpg') || contentType.includes('gif') || contentType.includes('svg');
+    if (!isSupported) {
+      console.warn('[OG] Unsupported image format for Satori:', contentType, url);
       return null;
     }
 
-    const contentType = res.headers.get('content-type') || 'image/png';
     const arrayBuffer = await res.arrayBuffer();
-
     if (!arrayBuffer || arrayBuffer.byteLength === 0) return null;
 
-    // Convert to Base64 Data URI so Satori decodes without additional network requests
+    // Convert to Base64 Data URI so Satori decodes cleanly without network requests
     const base64 = Buffer.from(arrayBuffer).toString('base64');
-    return `data:${contentType};base64,${base64}`;
+    const mime = contentType.split(';')[0] || 'image/png';
+    return `data:${mime};base64,${base64}`;
   } catch (err: any) {
-    console.warn(`[OG] Image fetch timed out or failed (${err.name || err.message}): ${url}`);
+    console.warn(`[OG] Image fetch error: ${err.message}`);
     return null;
   }
 }
@@ -109,7 +122,7 @@ export async function GET(req: NextRequest) {
 
     const flagInfo: FlagEntry = flagLabels[flagType] || defaultFlag;
 
-    // Attempt to load character image with strict 1.8s timeout
+    // Attempt to load character image with strict 1.8s timeout and format validation
     const loadedImageDataUri = imageUrl ? await fetchImageWithTimeout(imageUrl, 1800) : null;
     const hasValidImage = Boolean(loadedImageDataUri);
 
