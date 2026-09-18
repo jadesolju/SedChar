@@ -114,6 +114,11 @@ export function formatCount(val: string | number | undefined | null): string {
   return '0';
 }
 
+export function estimateTokens(text: string = ''): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / 3);
+}
+
 export function autoDetectCharacterFlag(char: ThaiMasterCharacter): CharacterFlagType {
   const text = [
     char.coreTraits,
@@ -123,16 +128,19 @@ export function autoDetectCharacterFlag(char: ThaiMasterCharacter): CharacterFla
     ...char.personalityTags,
   ].join(' ').toLowerCase();
 
+  if ((text.includes('ปากร้าย') && text.includes('ใจดี')) || text.includes('ปากไม่ตรงกับใจ') || text.includes('ซึนเดเระ') || text.includes('ซึนเดะระ')) {
+    return 'reverse-watermelon';
+  }
   if (text.includes('ฆ่า') || text.includes('ทรมาน') || text.includes('มนต์ดำ') || text.includes('กักขัง') || text.includes('เหี้ยม')) {
     return 'black';
   }
   if (text.includes('ขี้หึง') || text.includes('รุนแรง') || text.includes('บังคับ') || text.includes('ครอบงำ')) {
     return 'red';
   }
-  if (text.includes('ซึนเดเระ') || text.includes('ปากร้าย') || text.includes('เจ้าเล่ห์')) {
+  if (text.includes('เจ้าเล่ห์')) {
     return 'yellow';
   }
-  if (text.includes('อบอุ่น') || text.includes('ใจดี') || text.includes('สุภาพ') || text.includes('ปกป้อง')) {
+  if (text.includes('อบอุ่น') || text.includes('ใจดี') || text.includes('สุภาพ') || text.includes('ปกป้อง') || text.includes('ให้เกียรติ') || text.includes('แสนดี')) {
     return 'green';
   }
   return 'none';
@@ -142,14 +150,35 @@ export const analyzeCharacterFlag = autoDetectCharacterFlag;
 
 export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   if (!raw || !raw.trim()) {
-    return { ...DEFAULT_CHARACTER };
+    return {
+      ...DEFAULT_CHARACTER,
+      visualTags: [],
+      personalityTags: [],
+      likes: [],
+      dislikes: [],
+      systemRules: [],
+      categoryTags: [],
+      locations: [],
+      supportingCharacters: [],
+    };
   }
 
-  const char: ThaiMasterCharacter = { ...DEFAULT_CHARACTER };
+  const char: ThaiMasterCharacter = {
+    ...DEFAULT_CHARACTER,
+    visualTags: [],
+    personalityTags: [],
+    likes: [],
+    dislikes: [],
+    systemRules: [],
+    categoryTags: [],
+    locations: [],
+    supportingCharacters: [],
+  };
+  const cleanRawText = raw.replace(/\*\*/g, '');
 
   const matchFirst = (patterns: RegExp[]): string => {
     for (const p of patterns) {
-      const m = raw.match(p);
+      const m = cleanRawText.match(p);
       if (m && m[1]) {
         const cleaned = cleanString(m[1]);
         if (cleaned) return cleaned;
@@ -158,13 +187,87 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
     return '';
   };
 
+  // If JSON format
+  if (raw.trim().startsWith('{') && raw.trim().endsWith('}')) {
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.fullName || obj.name) char.fullName = cleanString(obj.fullName || obj.name);
+      if (obj.nickname) char.nickname = cleanString(obj.nickname);
+      if (obj.age) char.age = cleanString(obj.age);
+      if (obj.gender) char.gender = cleanString(obj.gender);
+      if (obj.mbti) char.mbti = cleanString(obj.mbti);
+      if (obj.status) char.status = cleanString(obj.status);
+      if (obj.personality) {
+        char.coreTraits = cleanString(obj.personality);
+        if (char.coreTraits.includes('ซึนเดเระ') || char.coreTraits.includes('ซึนเดะระ')) {
+          char.personalityTags.push('ซึนเดะระ');
+        }
+      }
+      if (obj.likes) char.likes = cleanArray(obj.likes);
+      if (obj.dislikes) char.dislikes = cleanArray(obj.dislikes);
+      if (obj.greeting) char.fullGreeting = cleanString(obj.greeting);
+      if (!char.nickname && char.fullName) char.nickname = char.fullName.split(/\s+/)[0] || '';
+      if (!char.fullName && char.nickname) char.fullName = char.nickname;
+      char.flagType = autoDetectCharacterFlag(char);
+      return char;
+    } catch {}
+  }
+
+  // If YAML / Key-Value format
+  if (raw.includes(':') && !raw.includes('##') && !raw.includes('**')) {
+    const lines = raw.split('\n');
+    lines.forEach(line => {
+      const parts = line.split(':');
+      if (parts.length >= 2) {
+        const key = parts[0]!.trim().toLowerCase();
+        const val = cleanString(parts.slice(1).join(':').trim().replace(/^["']|["']$/g, ''));
+        if (key === 'name' || key === 'fullname' || key === 'ชื่อจริง') char.fullName = val;
+        else if (key === 'nickname' || key === 'ชื่อเล่น') char.nickname = val;
+        else if (key === 'age' || key === 'อายุ') char.age = val;
+        else if (key === 'gender' || key === 'เพศ') char.gender = val;
+        else if (key === 'mbti') char.mbti = val;
+        else if (key === 'occupation' || key === 'อาชีพ') char.occupation = val;
+        else if (key === 'status' || key === 'สถานะ') char.status = val;
+        else if (key === 'coretraits' || key === 'habits' || key === 'personality' || key === 'นิสัย') {
+          char.coreTraits = (char.coreTraits ? char.coreTraits + ' ' : '') + val;
+        }
+        else if (key === 'greeting' || key === 'ฉากเปิด') char.fullGreeting = val;
+      }
+    });
+    if (!char.nickname && char.fullName) char.nickname = char.fullName.split(/\s+/)[0] || '';
+    if (!char.fullName && char.nickname) char.fullName = char.nickname;
+    char.flagType = autoDetectCharacterFlag(char);
+    if (char.nickname || char.fullName) return char;
+  }
+
+  // If JSON format
+  if (raw.trim().startsWith('{') && raw.trim().endsWith('}')) {
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.fullName || obj.name) char.fullName = cleanString(obj.fullName || obj.name);
+      if (obj.nickname) char.nickname = cleanString(obj.nickname);
+      if (obj.age) char.age = cleanString(obj.age);
+      if (obj.gender) char.gender = cleanString(obj.gender);
+      if (obj.mbti) char.mbti = cleanString(obj.mbti);
+      if (obj.status) char.status = cleanString(obj.status);
+      if (obj.personality) char.coreTraits = cleanString(obj.personality);
+      if (obj.likes) char.likes = cleanArray(obj.likes);
+      if (obj.dislikes) char.dislikes = cleanArray(obj.dislikes);
+      if (obj.greeting) char.fullGreeting = cleanString(obj.greeting);
+      if (!char.nickname && char.fullName) char.nickname = char.fullName.split(/\s+/)[0] || '';
+      if (!char.fullName && char.nickname) char.fullName = char.nickname;
+      char.flagType = autoDetectCharacterFlag(char);
+      return char;
+    } catch {}
+  }
+
   // 1. General Profile
   char.nickname = matchFirst([
     /(?:ชื่อเล่น|Nickname)\s*[:：=]\s*([^\n\r]+)/i,
     /\[(?:CHARACTER|ชื่อตัวละคร)\]\s*[:：=]\s*([^\n\r(]+)/i,
   ]);
   char.fullName = matchFirst([
-    /(?:ชื่อเต็ม|Full\s*Name|ชื่อจริง)\s*[:：=]\s*([^\n\r]+)/i,
+    /(?:ชื่อเต็ม|Full\s*Name|ชื่อจริง|name)\s*[:：=]\s*([^\n\r]+)/i,
     /\[(?:CHARACTER)\]\s*[:：=]\s*([^\n\r]+)/i,
   ]);
   if (!char.nickname && char.fullName) {
@@ -224,7 +327,7 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
   ]);
 
   char.occupation = matchFirst([
-    /(?:อาชีพ|Role|Occupation|Job)\s*[:：=]\s*([^\n\r]+)/i,
+    /(?:อาชีพ|Role|Occupation|Job|occupation)\s*[:：=]\s*([^\n\r]+)/i,
     /\[(?:ROLE|บทบาท|อาชีพ)\]\s*[:：=]\s*([^\n\r]+)/i,
   ]);
 
@@ -362,7 +465,7 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
 
   // Supporting Characters Parser
   const subChars: SubCharacter[] = [];
-  const subRegex = /\[ตัวละครเสริม\s*\d+\]\s*[:：\n]\s*([\s\S]*?)(?=\n\s*\[ตัวละครเสริม|\n\s*คำโปรย|\n\s*เนื้อเรื่องย่อ|\n\s*ฉากเปิด|$)/gi;
+  const subRegex = /\[ตัวละครเสริม\s*\d+\]\s*[:：\n]\s*([\s\S]*?)(?=\n\s*\[ตัวละครเสริม|\n\s*คำโปรย|\n\s*เนื้อเรื่องย่อ|\n\s*ฉากเปิด|\n\s*##|$)/gi;
   let subMatch;
   let scId = 1;
   while ((subMatch = subRegex.exec(raw)) !== null) {
@@ -376,6 +479,7 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
     const appearWhen = (block.match(/(?:\[ปรากฎเมื่อ\]|ปรากฎเมื่อ)\s*[:：=]\s*([^|\n\r]+)/i)?.[1] || '').trim();
 
     if (name) {
+      const sysP = `[ชื่อ]: ${name} | [เพศ]: ${gender || '-'} | [อายุ]: ${age || '-'} | [บุคลิก]: ${personality || '-'} | [ความสัมพันธ์]: ${relationship || '-'} | [หน้าที่หลักในเรื่อง]: ${mainRole || '-'} | [ปรากฎเมื่อ]: ${appearWhen || '-'}`;
       subChars.push({
         id: 'sub_' + scId++,
         name,
@@ -386,12 +490,19 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
         mainRole,
         appearWhen,
         shortDesc: personality || relationship,
-        systemPrompt: `${name} (${gender}, ${age}) - ${relationship}. หน้าที่: ${mainRole}. บุคลิก: ${personality}`,
+        systemPrompt: sysP,
+        isSelected: true,
       });
     }
   }
   if (subChars.length > 0) {
     char.supportingCharacters = subChars;
+  }
+
+  // Garage Storage Parser
+  const garageMatch = raw.match(/(?:\[Garage Storage\]|\[คลังเก็บข้อมูลส่วนเกิน\]|Garage Storage|Prompt เสริม)\s*[:：\n]\s*([\s\S]*?)(?=\n\s*(?:##|\[|\d+\.|$))/i);
+  if (garageMatch && garageMatch[1]) {
+    char.garageStorage = cleanString(garageMatch[1].trim());
   }
 
   // 11. Short Intro, Plot Summary, Open Greeting
@@ -423,7 +534,7 @@ export function buildPurrpawSystemPrompt(char: ThaiMasterCharacter): string {
   const visualTagsStr = char.visualTags.length > 0 ? char.visualTags.map(t => t.startsWith('#') ? t : '#' + t).join(' ') : '';
   const pTagsStr = char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(' ') : '';
 
-  let md = `## **[ข้อมูลพื้นฐาน - Character Profile (General Info)]**\n\n`;
+  let md = `# SYSTEM PROMPT\n\n## **[ข้อมูลพื้นฐาน - Character Profile (General Info)]**\n\n`;
   if (char.nickname) md += `- **ชื่อเล่น**: ${char.nickname}\n`;
   if (char.fullName) md += `- **ชื่อเต็ม**: ${char.fullName}\n`;
   if (char.age) md += `- **อายุ**: ${char.age}\n`;
@@ -514,6 +625,10 @@ export function buildPurrpawSystemPrompt(char: ThaiMasterCharacter): string {
     md += `### โทนเรื่องและฉากหลัง (Tone & Setting)\n${char.toneSetting}\n\n`;
   }
 
+  if (char.garageStorage) {
+    md += `## [Garage Storage - คลังเก็บข้อมูลส่วนเกิน & Prompt เสริม]\n\n${char.garageStorage}\n\n`;
+  }
+
   return md.trim();
 }
 
@@ -593,15 +708,21 @@ export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput 
     ? char.categoryTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ')
     : (char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ') : '#Roleplay');
 
-  // Purrpaw System Prompt: Includes character personality & lore, WITHOUT subcharacters & WITHOUT open greeting
+  // Purrpaw System Prompt: Includes character personality & lore
   const sysPrompt = buildPurrpawSystemPrompt(char);
 
-  // SubCharacters (Purrpaw has dedicated slots)
-  const subCharacters = char.supportingCharacters.map(s => ({
-    name: s.name,
-    shortDesc: s.shortDesc || [s.relationship, s.personality, s.mainRole].filter(Boolean).join(' | '),
-    systemPrompt: s.systemPrompt || `${s.name} (${s.gender || 'ไม่ระบุ'}): ${s.mainRole || ''} ${s.appearWhen ? 'ปรากฏเมื่อ: ' + s.appearWhen : ''}`.trim(),
-  }));
+  // Filter only active/selected sub-characters
+  const activeSubChars = char.supportingCharacters.filter(s => s.isSelected !== false);
+
+  // SubCharacters (Purrpaw dedicated slots with structured systemPrompt format)
+  const subCharacters = activeSubChars.map(s => {
+    const formattedSysPrompt = `[ชื่อ]: ${s.name} | [เพศ]: ${s.gender || '-'} | [อายุ]: ${s.age || '-'} | [บุคลิก]: ${s.personality || '-'} | [ความสัมพันธ์]: ${s.relationship || '-'} | [หน้าที่หลักในเรื่อง]: ${s.mainRole || '-'} | [ปรากฎเมื่อ]: ${s.appearWhen || '-'}`;
+    return {
+      name: s.name,
+      shortDesc: s.shortDesc || [s.relationship, s.personality, s.mainRole].filter(Boolean).join(' | '),
+      systemPrompt: s.systemPrompt && s.systemPrompt.includes('[ชื่อ]:') ? s.systemPrompt : formattedSysPrompt,
+    };
+  });
 
   // Locations with English Prompt support for TensorArt/GPT/Gemini
   const locations = char.locations.map(loc => ({
@@ -629,8 +750,10 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
   const name = char.fullName || char.nickname || 'ตัวละคร';
   const punchyHook = extractPunchyHook(char);
 
-  const subCharsStr = char.supportingCharacters.length > 0
-    ? char.supportingCharacters.map((s, idx) => `${idx + 1}. ${s.name} (${s.relationship || 'ความสัมพันธ์'}: ${s.personality || ''} - ${s.mainRole || ''} ${s.appearWhen ? 'ปรากฏเมื่อ: ' + s.appearWhen : ''})`).join('; ')
+  // Active sub-characters
+  const activeSubChars = char.supportingCharacters.filter(s => s.isSelected !== false);
+  const subCharsStr = activeSubChars.length > 0
+    ? activeSubChars.map((s, idx) => `${idx + 1}. [ชื่อ]: ${s.name} | [เพศ]: ${s.gender || '-'} | [อายุ]: ${s.age || '-'} | [บุคลิก]: ${s.personality || '-'} | [ความสัมพันธ์]: ${s.relationship || '-'} | [หน้าที่หลัก]: ${s.mainRole || '-'} | [ปรากฎเมื่อ]: ${s.appearWhen || '-'}`).join('; ')
     : '';
 
   const sections: string[] = [
@@ -654,17 +777,21 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
     (char.sexualStyle || char.kinksPreferences || char.aftercareStyle) ? `[SexualBehavior("${[char.sexualStyle, char.kinksPreferences, char.aftercareStyle].filter(Boolean).join(' | ')}")]` : '',
     char.toneSetting ? `[Setting("${char.toneSetting.replace(/\n/g, ' ')}")]` : '',
     subCharsStr ? `[SupportingCharacters("${subCharsStr}")]` : '',
+    char.garageStorage ? `[GarageStorage("${char.garageStorage.replace(/\n/g, ' ')}")]` : '',
   ];
 
   const personaSystemPrompt = sections.filter(Boolean).join('\n');
 
+  // Public Description uses publicInfo / shortIntro first as requested
+  const publicDescription = char.publicInfo || char.shortIntro || char.plotSummary || punchyHook;
+
   return {
     name,
-    publicDescription: char.plotSummary || char.shortIntro || punchyHook,
+    publicDescription,
     personaSystemPrompt,
     momentIntro: punchyHook,
     openGreeting: char.fullGreeting || char.openGreetingNarrative || '',
-    tokenEstimate: Math.ceil(personaSystemPrompt.length / 3),
+    tokenEstimate: estimateTokens(personaSystemPrompt),
   };
 }
 
@@ -672,9 +799,9 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
   const displayName = char.fullName || char.nickname || 'ตัวละคร';
   const tagline = extractPunchyHook(char);
 
-  // System Prompt: Concise Thai Keylist Prompt Persona, NO open greeting
+  // System Prompt
   const sysPromptLines: string[] = [
-    `# PROMPT PERSONA & BEHAVIOR RULES (KHUI AI)`,
+    `# [SYSTEM DIRECTIVE] (KHUI AI)`,
     `[บทบาทและตัวตน]: ${char.fullName || char.nickname || 'ตัวละคร'} (${char.occupation || 'ไม่ระบุอาชีพ'})`,
     `[บุคลิกภาพหลัก]: ${char.personalityTags.length > 0 ? char.personalityTags.join(', ') : (char.coreTraits || 'ตามข้อมูลบทบาท')}`,
     char.generalBehaviors ? `[รูปแบบคำพูดและการตอบสนอง]: ${char.generalBehaviors.replace(/\n/g, ' ')}` : '',
@@ -683,6 +810,7 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
     char.coreBelief ? `[ความเชื่อหลัก]: "${char.coreBelief}"` : '',
     char.mindset ? `[แนวคิด]: "${char.mindset}"` : '',
     char.flawsWeaknesses ? `[จุดอ่อน/จุดเปราะบาง]: ${char.flawsWeaknesses}` : '',
+    char.garageStorage ? `[Garage Storage Prompt]: ${char.garageStorage.replace(/\n/g, ' ')}` : '',
   ].filter(Boolean);
 
   const sysPrompt = sysPromptLines.join('\n');
@@ -700,12 +828,16 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
   if (char.perfume) charDesc += `- **กลิ่นกาย:** ${char.perfume}\n`;
   if (char.appearanceDesc) charDesc += `- **ลักษณะภายนอก:** ${char.appearanceDesc}\n`;
 
-  if (char.relationshipBackstory || char.plotSummary) {
-    charDesc += `\n## 📜 ประวัติและภูมิหลัง\n${char.relationshipBackstory || char.plotSummary}\n`;
+  if (char.relationshipBackstory) {
+    charDesc += `\n## 📜 ประวัติและภูมิหลัง\n${char.relationshipBackstory}\n`;
   }
 
-  if (char.toneSetting || char.plotSummary) {
-    charDesc += `\n## ⚡ สถานการณ์ปัจจุบัน\n${char.toneSetting || char.plotSummary}\n`;
+  if (char.toneSetting) {
+    charDesc += `\n## ⚡ ฉากหลังและบรรยากาศ\n${char.toneSetting}\n`;
+  }
+
+  if (char.plotSummary) {
+    charDesc += `\n## 📖 พล็อตและเรื่องย่อ\n${char.plotSummary}\n`;
   }
 
   if (char.userStoryRole || char.userAttitude || char.userExclusiveBehaviors) {
@@ -715,14 +847,24 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
     if (char.userExclusiveBehaviors) charDesc += `- **พฤติกรรมเฉพาะ:** ${char.userExclusiveBehaviors}\n`;
   }
 
-  const subCharacters = char.supportingCharacters.slice(0, 3).map(s => ({
+  // Khui AI active sub-characters (Max 3)
+  const activeSubChars = char.supportingCharacters.filter(s => s.isSelected !== false);
+  const subCharacters = activeSubChars.slice(0, 3).map(s => ({
     name: s.name,
-    description: s.shortDesc || [s.relationship, s.personality, s.mainRole].filter(Boolean).join(' | '),
+    description: `[เพศ]: ${s.gender || '-'} | [อายุ]: ${s.age || '-'} | [บุคลิก]: ${s.personality || '-'} | [ความสัมพันธ์]: ${s.relationship || '-'} | [หน้าที่หลัก]: ${s.mainRole || '-'}`,
   }));
 
   const tagsStr = char.categoryTags.length > 0 
     ? char.categoryTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ')
     : (char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ') : '#Roleplay');
+
+  // Separated user relationship & plot summary scenario
+  const scenarioParts: string[] = [];
+  if (char.initialRelationship) scenarioParts.push(`[สถานะเริ่มต้น]: ${char.initialRelationship}`);
+  if (char.userStoryRole) scenarioParts.push(`[บทบาทกับ {{user}}]: ${char.userStoryRole}`);
+  if (char.relationshipBackstory) scenarioParts.push(`[ภูมิหลังความสัมพันธ์]: ${char.relationshipBackstory}`);
+  if (char.plotSummary) scenarioParts.push(`[พล็อตและเรื่องย่อ]: ${char.plotSummary}`);
+  const userRelationshipScenario = scenarioParts.join('\n\n') || char.relationshipBackstory || char.plotSummary || '';
 
   const totalCharCount = (displayName + tagline + sysPrompt + charDesc + (char.fullGreeting || '')).length;
 
@@ -733,7 +875,7 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
     characterDescription: charDesc.trim(),
     openGreeting: char.fullGreeting || char.openGreetingNarrative || '',
     subCharacters,
-    userRelationshipScenario: char.relationshipBackstory || char.plotSummary || '',
+    userRelationshipScenario,
     tags: tagsStr,
     charCount: totalCharCount,
   };

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { Edit3, Eye, Check } from 'lucide-react';
+import { Edit3, Eye, Check, Maximize2, X } from 'lucide-react';
 
 interface CodeBlockProps {
   label: string;
@@ -29,6 +29,7 @@ export function CodeBlock({
   isEditable = true,
 }: CodeBlockProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [localValue, setLocalValue] = useState(content || '');
 
   // Keep in sync when external content changes (unless actively typing)
@@ -100,10 +101,67 @@ export function CodeBlock({
             </button>
           )}
 
+          {/* Fullscreen Expand Button */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(true)}
+            title="ขยายแสดงผลเต็มหน้าจอ (Fullscreen Modal)"
+            className="p-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+
           {/* Copy Button (Copies the latest value) */}
           <CopyButton text={localValue} />
         </div>
       </div>
+
+      {/* Fullscreen Modal Overlay */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-5xl h-[92vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/40">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">{label}</span>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    {currentLength.toLocaleString('th-TH')} ตัวอักษร
+                  </span>
+                </div>
+                {subtitle && <span className="text-xs text-muted-foreground mt-0.5">{subtitle}</span>}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CopyButton text={localValue} />
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 p-5 bg-background overflow-y-auto">
+              {isEditable ? (
+                <textarea
+                  value={localValue}
+                  onChange={(e) => handleChange(e.target.value)}
+                  className="w-full h-full p-4 rounded-xl bg-muted/30 border border-primary/40 focus:border-primary text-xs sm:text-sm font-mono text-foreground resize-none leading-relaxed outline-none"
+                  placeholder="แก้ไขข้อความ..."
+                />
+              ) : (
+                <pre className="text-xs sm:text-sm font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
+                  {localValue || '-'}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content View / Edit Mode */}
       <div className="p-3 bg-card/60 relative">

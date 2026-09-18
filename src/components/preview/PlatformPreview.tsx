@@ -36,12 +36,46 @@ type TabType = 'purrpaw' | 'rubii' | 'khui' | 'master';
 type ExportFormat = 'txt' | 'xml' | 'md' | 'json' | 'pdf';
 
 export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast }: PlatformPreviewProps) {
+  const [selectedPlatforms, setSelectedPlatforms] = useState({
+    purrpaw: true,
+    rubii: true,
+    khui: true,
+  });
+
   const [activeTab, setActiveTab] = useState<TabType>('purrpaw');
   const [copiedAll, setCopiedAll] = useState(false);
   const { openLibraryModal } = useAuth();
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const togglePlatform = (p: 'purrpaw' | 'rubii' | 'khui') => {
+    setSelectedPlatforms((prev) => {
+      const updated = { ...prev, [p]: !prev[p] };
+      // Ensure at least one platform or master is selected
+      if (!updated.purrpaw && !updated.rubii && !updated.khui) {
+        return prev;
+      }
+      return updated;
+    });
+  };
+
+  // If activeTab gets hidden because its platform was toggled off, auto-switch tab
+  useEffect(() => {
+    if (activeTab === 'purrpaw' && !selectedPlatforms.purrpaw) {
+      if (selectedPlatforms.rubii) setActiveTab('rubii');
+      else if (selectedPlatforms.khui) setActiveTab('khui');
+      else setActiveTab('master');
+    } else if (activeTab === 'rubii' && !selectedPlatforms.rubii) {
+      if (selectedPlatforms.purrpaw) setActiveTab('purrpaw');
+      else if (selectedPlatforms.khui) setActiveTab('khui');
+      else setActiveTab('master');
+    } else if (activeTab === 'khui' && !selectedPlatforms.khui) {
+      if (selectedPlatforms.purrpaw) setActiveTab('purrpaw');
+      else if (selectedPlatforms.rubii) setActiveTab('rubii');
+      else setActiveTab('master');
+    }
+  }, [selectedPlatforms, activeTab]);
 
   const rubiiData = useMemo(() => generateRubiiOutput(character), [character]);
   const purrpawData = useMemo(() => generatePurrpawOutput(character), [character]);
@@ -290,46 +324,84 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Top Header Bar */}
-      <div className="flex-shrink-0 p-3 border-b border-border bg-card/60 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
-          {/* Navigation Tabs */}
+      <div className="flex-shrink-0 p-3 border-b border-border bg-card/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          {/* Target Platform Selection Checkboxes */}
+          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/40 border border-border/60 text-[11px]">
+            <span className="font-bold text-muted-foreground hidden sm:inline">แปลงเฉพาะ:</span>
+            <label className="flex items-center gap-1 cursor-pointer font-semibold select-none">
+              <input
+                type="checkbox"
+                checked={selectedPlatforms.purrpaw}
+                onChange={() => togglePlatform('purrpaw')}
+                className="rounded text-pink-500 focus:ring-pink-500 w-3.5 h-3.5 cursor-pointer"
+              />
+              <span className={selectedPlatforms.purrpaw ? 'text-pink-600 dark:text-pink-400' : 'text-muted-foreground'}>Purrpaw</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer font-semibold select-none">
+              <input
+                type="checkbox"
+                checked={selectedPlatforms.rubii}
+                onChange={() => togglePlatform('rubii')}
+                className="rounded text-violet-500 focus:ring-violet-500 w-3.5 h-3.5 cursor-pointer"
+              />
+              <span className={selectedPlatforms.rubii ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}>Rubii</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer font-semibold select-none">
+              <input
+                type="checkbox"
+                checked={selectedPlatforms.khui}
+                onChange={() => togglePlatform('khui')}
+                className="rounded text-amber-500 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+              />
+              <span className={selectedPlatforms.khui ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}>Khui AI</span>
+            </label>
+          </div>
+
+          {/* Navigation Tabs (Filtered by target platform selection) */}
           <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border">
-            <button
-              type="button"
-              onClick={() => setActiveTab('purrpaw')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'purrpaw'
-                  ? 'bg-card text-pink-600 dark:text-pink-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-pink-500" />
-              <span>Purrpaw</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('rubii')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'rubii'
-                  ? 'bg-card text-violet-600 dark:text-violet-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Bot className="w-3.5 h-3.5 text-violet-500" />
-              <span>Rubii</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('khui')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'khui'
-                  ? 'bg-card text-amber-600 dark:text-amber-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              <span>Khui AI</span>
-            </button>
+            {selectedPlatforms.purrpaw && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('purrpaw')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'purrpaw'
+                    ? 'bg-card text-pink-600 dark:text-pink-400 shadow-sm border border-border'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                <span>Purrpaw</span>
+              </button>
+            )}
+            {selectedPlatforms.rubii && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('rubii')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'rubii'
+                    ? 'bg-card text-violet-600 dark:text-violet-400 shadow-sm border border-border'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5 text-violet-500" />
+                <span>Rubii</span>
+              </button>
+            )}
+            {selectedPlatforms.khui && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('khui')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'khui'
+                    ? 'bg-card text-amber-600 dark:text-amber-400 shadow-sm border border-border'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                <span>Khui AI</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('master')}

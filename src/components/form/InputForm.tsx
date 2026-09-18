@@ -29,6 +29,7 @@ import { TagInput } from './TagInput';
 import { FlagSelector } from '@/components/ui/FlagSelector';
 import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 import { AIAssistantModal } from './AIAssistantModal';
+import { useAuth } from '@/context/AuthContext';
 
 type ArrayField =
   | 'visualTags'
@@ -79,7 +80,10 @@ export function InputForm({
   onReset,
   onLoadDefaultLocations,
 }: InputFormProps) {
+  const { user } = useAuth();
   const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
+
+  const maxSubChars = user ? 25 : 6;
 
   const handleAIApply = (enhancedChar: ThaiMasterCharacter, notice: string) => {
     if (onApplyParsedCharacter) {
@@ -89,10 +93,11 @@ export function InputForm({
       onShowToast(notice);
     }
   };
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      {/* Top Controls Bar */}
-      <div className="flex-shrink-0 p-3.5 border-b border-border bg-card/60 flex items-center justify-between gap-2">
+      {/* Top Controls Bar (Widget Grid Layout for Mobile) */}
+      <div className="flex-shrink-0 p-3 sm:p-3.5 border-b border-border bg-card/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
           <span className="text-base">📋</span>
           <div>
@@ -101,9 +106,9 @@ export function InputForm({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 w-full sm:w-auto">
           {isReadOnly ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold shadow-xs">
+            <div className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold shadow-xs">
               <span>🔒</span>
               <span>โหมดอ่านอย่างเดียว (Read-Only)</span>
             </div>
@@ -112,7 +117,7 @@ export function InputForm({
               <button
                 type="button"
                 onClick={() => setIsAIModalOpen(true)}
-                className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                className="col-span-2 sm:col-span-1 text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
               >
                 <span>✨</span>
                 <span>AI ช่วยเติมเต็มฟอร์ม</span>
@@ -120,16 +125,16 @@ export function InputForm({
               <button
                 type="button"
                 onClick={onLoadSample}
-                className="text-xs px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs font-semibold"
               >
                 <span>📄</span> โหลดตัวอย่าง
               </button>
               <button
                 type="button"
                 onClick={onReset}
-                className="text-xs px-2.5 py-1 rounded-md hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-card hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-border transition-colors cursor-pointer flex items-center justify-center gap-1 font-semibold"
               >
-                ล้างฟอร์ม
+                <span>🗑️</span> ล้างฟอร์ม
               </button>
             </>
           )}
@@ -605,12 +610,12 @@ export function InputForm({
           />
         </FormSection>
 
-        {/* 5. ขอบเขตและ Logic ขั้นเด็ดขาด */}
+        {/* 5. ขอบเขตและ Logic ขั้นเด็ดขาด & Garage Storage */}
         <FormSection
           id="sec-rules"
-          title="5. ขอบเขตและ Logic ขั้นเด็ดขาด (Rules & Logic)"
+          title="5. ขอบเขตและ Logic ขั้นเด็ดขาด (Rules & Garage Storage)"
           icon={<ShieldAlert className="w-4 h-4 text-amber-500" />}
-          description="พฤติกรรมที่ห้ามทำเด็ดขาด, มุมอ่อนโยน, ด้านมืด และกฎระบบ"
+          description="พฤติกรรมที่ห้ามทำเด็ดขาด, มุมอ่อนโยน, ด้านมืด, กฎระบบ และ Garage Storage"
           defaultOpen={false}
           badge={character.systemRules.length}
         >
@@ -652,6 +657,25 @@ export function InputForm({
               onRemove={onRemoveTag}
             />
           </FieldRow>
+
+          {/* Garage Storage Section */}
+          <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">📦</span>
+              <div>
+                <h4 className="text-xs font-bold text-foreground">Garage Storage (คลังเก็บข้อมูลส่วนเกิน / Prompt เสริม)</h4>
+                <p className="text-[11px] text-muted-foreground">ใช้เก็บข้อความ Trigger, World Setting, Route Story หรือ Prompt พิเศษที่ไม่มีในฟอร์มมาตรฐาน เพื่อให้คงอยู่ใน Master MD และ System Prompt เสมอ</p>
+              </div>
+            </div>
+            <ExpandableTextarea readOnly={isReadOnly}
+              id="garageStorage"
+              label="เนื้อหา Garage Storage"
+              rows={4}
+              value={character.garageStorage || ''}
+              onChange={v => onUpdateField('garageStorage', v)}
+              placeholder="วาง Prompt ส่วนเกิน เช่น [Trigger]: เมื่อเจอฝนตก..., [World Setting]: โลกคู่ขนาน..., [Route Story]: บทความลับ..."
+            />
+          </div>
         </FormSection>
 
         {/* 6. พฤติกรรมทางเพศและบนเตียง */}
@@ -797,7 +821,7 @@ export function InputForm({
           id="sec-subchars"
           title="9. ตัวละครเสริม (Supporting Characters)"
           icon={<Users className="w-4 h-4 text-indigo-500" />}
-          description="จัดการตัวละครเสริมในเรื่อง (สูงสุด 5 ตัว)"
+          description={`จัดการตัวละครเสริม (${user ? 'เข้าสู่ระบบแล้ว - เพิ่มได้ถึง 25 ตัว' : 'Guest - จำกัด 6 ตัว'})`}
           defaultOpen={false}
           badge={character.supportingCharacters.length}
         >
@@ -821,15 +845,22 @@ export function InputForm({
           </div>
 
           <div className="space-y-3 pt-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground">
-                รายชื่อตัวละครเสริม ({character.supportingCharacters.length}/5)
-              </span>
-              {character.supportingCharacters.length < 5 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-foreground">
+                  รายชื่อตัวละครเสริม ({character.supportingCharacters.length}/{maxSubChars})
+                </span>
+                {!user && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                    💡 โหมด Guest เพิ่มได้สูงสุด 6 ตัว (เข้าสู่ระบบเพื่อปลดล็อกเพิ่มได้ 20+ ตัว)
+                  </p>
+                )}
+              </div>
+              {character.supportingCharacters.length < maxSubChars && !isReadOnly && (
                 <button
                   type="button"
                   onClick={() => onAddSubCharacter()}
-                  className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
                 >
                   + เพิ่มตัวละครเสริม
                 </button>
@@ -837,23 +868,50 @@ export function InputForm({
             </div>
 
             {character.supportingCharacters.map((sub, idx) => (
-              <div key={sub.id || idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3 relative">
-                <button
-                  type="button"
-                  onClick={() => onRemoveSubCharacter(idx)}
-                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
-                >
-                  ✕
-                </button>
+              <div
+                key={sub.id || idx}
+                className={`p-3.5 rounded-xl border transition-all ${
+                  sub.isSelected !== false ? 'border-primary/40 bg-card' : 'border-border/60 bg-muted/20 opacity-70'
+                } space-y-3 relative`}
+              >
+                <div className="flex items-center justify-between pr-6 border-b border-border/50 pb-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={sub.isSelected !== false}
+                      onChange={e => onUpdateSubCharacter(idx, { isSelected: e.target.checked })}
+                      className="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                    />
+                    <span>ตัวละครเสริม #{idx + 1}: {sub.name || 'ยังไม่ระบุชื่อ'}</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">
+                      ({sub.isSelected !== false ? 'เปิดใช้งานส่งออก' : 'ปิดไว้'})
+                    </span>
+                  </label>
 
-                <div className="grid grid-cols-3 gap-2 pr-6">
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveSubCharacter(idx)}
+                      className="text-xs text-muted-foreground hover:text-rose-500 cursor-pointer p-1 rounded hover:bg-rose-500/10"
+                      title="ลบตัวละครเสริมนี้"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
                   <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
                     <input
                       id={'sub-name-' + idx}
                       type="text"
                       value={sub.name}
-                      onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
-                      placeholder="เช่น ธันวา"
+                      onChange={e => {
+                        const newName = e.target.value;
+                        const newSysP = `[ชื่อ]: ${newName} | [เพศ]: ${sub.gender || '-'} | [อายุ]: ${sub.age || '-'} | [บุคลิก]: ${sub.personality || '-'} | [ความสัมพันธ์]: ${sub.relationship || '-'} | [หน้าที่หลักในเรื่อง]: ${sub.mainRole || '-'} | [ปรากฎเมื่อ]: ${sub.appearWhen || '-'}`;
+                        onUpdateSubCharacter(idx, { name: newName, systemPrompt: sub.systemPrompt && sub.systemPrompt.includes('[ชื่อ]:') ? newSysP : sub.systemPrompt });
+                      }}
+                      placeholder="เช่น อชิรญา (อาชิ)"
                       className="form-input text-xs"
                     />
                   </FieldRow>
@@ -863,7 +921,7 @@ export function InputForm({
                       type="text"
                       value={sub.gender}
                       onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
-                      placeholder="ชาย"
+                      placeholder="หญิง"
                       className="form-input text-xs"
                     />
                   </FieldRow>
@@ -873,51 +931,66 @@ export function InputForm({
                       type="text"
                       value={sub.age}
                       onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
-                      placeholder="30 ปี"
+                      placeholder="22 ปี"
                       className="form-input text-xs"
                     />
                   </FieldRow>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
+                  <FieldRow label="บุคลิก / นิสัย" htmlFor={'sub-pers-' + idx}>
+                    <input
+                      id={'sub-pers-' + idx}
+                      type="text"
+                      value={sub.personality}
+                      onChange={e => onUpdateSubCharacter(idx, { personality: e.target.value })}
+                      placeholder="นิ่ง หยิ่ง ห้าว ปากหนัก"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
                   <FieldRow label="ความสัมพันธ์กับตัวหลัก" htmlFor={'sub-rel-' + idx}>
                     <input
                       id={'sub-rel-' + idx}
                       type="text"
                       value={sub.relationship}
                       onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
-                      placeholder="มือขวาคนสนิท"
+                      placeholder="พี่ใหญ่แก๊งดอกไม้เหล็ก"
                       className="form-input text-xs"
                     />
                   </FieldRow>
-                  <FieldRow label="บทบาทหลักในเรื่อง" htmlFor={'sub-role-' + idx}>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <FieldRow label="หน้าที่หลักในเรื่อง" htmlFor={'sub-role-' + idx}>
                     <input
                       id={'sub-role-' + idx}
                       type="text"
                       value={sub.mainRole}
                       onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
-                      placeholder="คอยรับคำสั่งและรายงานสถานการณ์"
+                      placeholder="คอยปกป้องแอร์เงียบๆ"
+                      className="form-input text-xs"
+                    />
+                  </FieldRow>
+                  <FieldRow label="ปรากฎเมื่อ" htmlFor={'sub-appear-' + idx}>
+                    <input
+                      id={'sub-appear-' + idx}
+                      type="text"
+                      value={sub.appearWhen}
+                      onChange={e => onUpdateSubCharacter(idx, { appearWhen: e.target.value })}
+                      placeholder="เมื่อพูดถึงแก๊งเพื่อน"
                       className="form-input text-xs"
                     />
                   </FieldRow>
                 </div>
 
                 <ExpandableTextarea readOnly={isReadOnly}
-                  id={'sub-shortDesc-' + idx}
-                  label="คำบรรยายตัวละครเสริม (หน้ารายละเอียด)"
-                  rows={3}
-                  value={sub.shortDesc}
-                  onChange={v => onUpdateSubCharacter(idx, { shortDesc: v })}
-                  placeholder="ชายหนุ่มร่างสูง สวมสูทดำ นิ่งขรึม ภักดีต่อคิงสูงสุด..."
-                />
-
-                <ExpandableTextarea readOnly={isReadOnly}
                   id={'sub-sysPrompt-' + idx}
                   label="System Prompt สำหรับควบคุมตัวละครเสริม (บทบาทและตัวตน)"
-                  rows={4}
-                  value={sub.systemPrompt}
+                  hint="รูปแบบโครงสร้างมาตรฐาน [ชื่อ]: ... | [เพศ]: ... | [อายุ]: ..."
+                  rows={3}
+                  value={sub.systemPrompt || `[ชื่อ]: ${sub.name || '-'} | [เพศ]: ${sub.gender || '-'} | [อายุ]: ${sub.age || '-'} | [บุคลิก]: ${sub.personality || '-'} | [ความสัมพันธ์]: ${sub.relationship || '-'} | [หน้าที่หลักในเรื่อง]: ${sub.mainRole || '-'} | [ปรากฎเมื่อ]: ${sub.appearWhen || '-'}`}
                   onChange={v => onUpdateSubCharacter(idx, { systemPrompt: v })}
-                  placeholder="[Character: ธันวา] หน้าที่: มือขวา จงปฏิบัติตามคำสั่งของคิงอย่างเคร่งครัด..."
+                  placeholder="[ชื่อ]: อชิรญา วงศ์วิวัฒน์ | [เพศ]: หญิง | [อายุ]: 22 ปี | [บุคลิก]: นิ่ง หยิ่ง ห้าว | [ความสัมพันธ์]: พี่ใหญ่แก๊ง..."
                 />
               </div>
             ))}
@@ -990,38 +1063,53 @@ export function InputForm({
           />
 
           {/* Open Greetings */}
-          <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3.5">
-            <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <span>🎭</span> ฉากเปิดตัวละคร (Open Greeting)
-            </h4>
-
-            <ExpandableTextarea readOnly={isReadOnly}
-              id="openGreetingNarrative"
-              label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
-              rows={4}
-              value={character.openGreetingNarrative}
-              onChange={v => onUpdateField('openGreetingNarrative', v)}
-              placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ..."
-            />
-
-            <ExpandableTextarea readOnly={isReadOnly}
-              id="openGreetingDialogue"
-              label="บทพูดเปิดตัว (Dialogue)"
-              rows={3}
-              value={character.openGreetingDialogue}
-              onChange={v => onUpdateField('openGreetingDialogue', v)}
-              placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
-            />
+          <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <span>🎭</span> ฉากเปิดตัวละครหลัก (Full Open Greeting) *
+              </h4>
+              <span className="text-[10px] text-primary font-bold px-2 py-0.5 rounded bg-primary/10">
+                ช่องหลักสำหรับใช้แสดงผลบทนำ
+              </span>
+            </div>
 
             <ExpandableTextarea readOnly={isReadOnly}
               id="fullGreeting"
               label="ฉากเปิดรวมทั้งหมด (Full Open Greeting) *"
-              hint="ฉากเริ่มต้นเมื่อผู้ใช้เริ่มเปิดการสนทนา"
+              hint="กรอกฉากเริ่มต้นทั้งการบรรยายและบทพูดที่นี่เพื่อลดความซ้ำซ้อน"
               rows={7}
               value={character.fullGreeting}
-              onChange={v => onUpdateField('fullGreeting', v)}
+              onChange={v => {
+                onUpdateField('fullGreeting', v);
+                if (!character.openGreetingNarrative) onUpdateField('openGreetingNarrative', v);
+              }}
               placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
             />
+
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer hover:text-foreground font-semibold py-1">
+                ⚙️ แยกช่อง Narrative & Dialogue เพิ่มเติม (ทางเลือก)
+              </summary>
+              <div className="space-y-3 pt-2 pl-2">
+                <ExpandableTextarea readOnly={isReadOnly}
+                  id="openGreetingNarrative"
+                  label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
+                  rows={3}
+                  value={character.openGreetingNarrative}
+                  onChange={v => onUpdateField('openGreetingNarrative', v)}
+                  placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด..."
+                />
+
+                <ExpandableTextarea readOnly={isReadOnly}
+                  id="openGreetingDialogue"
+                  label="บทพูดเปิดตัว (Dialogue)"
+                  rows={2}
+                  value={character.openGreetingDialogue}
+                  onChange={v => onUpdateField('openGreetingDialogue', v)}
+                  placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
+                />
+              </div>
+            </details>
           </div>
         </FormSection>
       </div>

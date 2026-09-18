@@ -142,30 +142,30 @@ export function SingleBoxInput({
   return (
     <div className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden">
       {/* Top Header Toolbar */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/40">
-        <div className="flex items-center gap-2">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between p-3 border-b border-border bg-muted/40 gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm">⚡</span>
           <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             Auto-Parser ช่องเดียวรวด
           </h2>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
+          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
             Plaintext / MD / JSON / YAML
           </span>
         </div>
 
-        {/* Quota indicator & Controls */}
-        <div className="flex items-center gap-2">
+        {/* Quota indicator & Controls Grid (Mobile Responsive Stack Grid) */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 w-full sm:w-auto">
           {user ? (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25">
+            <span className="col-span-2 sm:col-span-1 text-[11px] font-semibold px-2 py-1.5 text-center rounded-lg bg-primary/10 text-primary border border-primary/25">
               โควตา AI วันนี้: <strong>{quotaRemaining}/{quotaMax}</strong>
             </span>
           ) : (
             <button
               type="button"
               onClick={() => openAuthModal('signin')}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
+              className="col-span-2 sm:col-span-1 text-[11px] font-semibold px-2.5 py-1.5 text-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer truncate"
             >
-              🔒 เข้าสู่ระบบเพื่อรับโควตา 15 ครั้ง/วัน
+              🔒 เข้าสู่ระบบรับโควตา 15 ครั้ง/วัน
             </button>
           )}
 
@@ -173,25 +173,27 @@ export function SingleBoxInput({
             type="button"
             onClick={() => setIsFullscreen(true)}
             title="ขยายเต็มจอ (Fullscreen Focus Mode)"
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:border-primary/50 text-foreground transition-all cursor-pointer shadow-xs flex items-center gap-1"
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border bg-card hover:border-primary/50 text-foreground transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1"
           >
             <span>⛶</span>
-            <span className="hidden sm:inline">เต็มจอ</span>
+            <span>เต็มจอ</span>
           </button>
 
           <button
             type="button"
             onClick={onLoadSample}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-xs"
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1"
           >
-            📋 ตัวอย่าง
+            <span>📋</span>
+            <span>ตัวอย่าง</span>
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-rose-500/10 hover:text-rose-500 text-muted-foreground transition-all cursor-pointer shadow-xs"
+            className="col-span-2 sm:col-span-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-rose-500/10 hover:text-rose-500 text-muted-foreground transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1"
           >
-            🗑️ ล้าง
+            <span>🗑️</span>
+            <span>ล้าง</span>
           </button>
         </div>
       </div>
