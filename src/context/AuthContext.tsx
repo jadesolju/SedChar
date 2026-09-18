@@ -393,8 +393,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const effectiveUserId = user?.id || 'guest';
     const charTitle = title || char.fullName || char.nickname || 'ตัวละครไม่มีชื่อ';
     
+    const randomBuffer = new Uint8Array(2);
+    crypto.getRandomValues(randomBuffer);
+    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+
     const newRecord: SavedCharacterRecord = {
-      id: `char-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: `char-${Date.now()}-${randomHex}`,
       user_id: effectiveUserId,
       title: charTitle,
       nickname: char.nickname || char.fullName || 'ตัวละคร',
@@ -465,7 +469,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     permission: 'read-only' | 'edit'
   ): Promise<{ shareUrl: string; instantUrl: string; shareId: string }> => {
     const charRecord = savedCharacters.find(c => c.id === id);
-    const shareId = `sh_${id.replace(/[^a-zA-Z0-9]/g, '')}_${Date.now().toString(36)}`;
+    const randomBuffer = new Uint8Array(4);
+    crypto.getRandomValues(randomBuffer);
+    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    const shareId = `sh_${Date.now().toString(36)}_${randomHex}`;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     
     // 1. Generate Instant Compressed URL (Zero-dependency, works anywhere)

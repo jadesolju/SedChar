@@ -48,7 +48,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing character payload' }, { status: 400 });
     }
 
-    const shareId = `sh_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    const randomBuffer = new Uint8Array(4);
+    crypto.getRandomValues(randomBuffer);
+    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    const shareId = `sh_${Date.now().toString(36)}_${randomHex}`;
 
     if (id) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
