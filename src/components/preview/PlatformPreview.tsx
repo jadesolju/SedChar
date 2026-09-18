@@ -422,22 +422,22 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         </div>
 
         {/* Action Buttons: Flag, Library, Export Dropdown, Copy All */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Flag Indicator */}
           <div
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium border flex items-center gap-1.5 ${flagConfig.badgeBg}`}
+            className={`px-2 py-1 rounded-lg text-xs font-medium border flex items-center gap-1 ${flagConfig.badgeBg}`}
             title={flagConfig.description}
           >
             <Flag className="w-3 h-3" />
-            <span className="font-semibold">{flagConfig.label}</span>
+            <span className="font-semibold text-[11px]">{flagConfig.label}</span>
           </div>
 
           {/* Character Library Modal Trigger */}
           <button
             type="button"
             onClick={() => openLibraryModal()}
-            className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-foreground text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-            title="เปิดคลังเก็บข้อมูลตัวละคร (Character Vault & Sharing)"
+            className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-foreground text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="เปิดคลังเก็บข้อมูลตัวละคร"
           >
             <FolderOpen className="w-3.5 h-3.5 text-primary" />
             <span className="hidden sm:inline">คลังตัวละคร</span>
@@ -449,10 +449,10 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               type="button"
               onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
               disabled={isExporting}
-              className="px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-foreground text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-foreground text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5 text-foreground" />
-              <span>ส่งออก</span>
+              <span className="hidden sm:inline">ส่งออก</span>
               <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
 
@@ -498,12 +498,12 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
           <button
             type="button"
             onClick={handleCopyAll}
-            className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             {copiedAll ? (
               <>
                 <Check className="w-3.5 h-3.5 text-white" />
-                <span>คัดลอกทั้งหมดแล้ว!</span>
+                <span>คัดลอกเรียบร้อย!</span>
               </>
             ) : (
               <>

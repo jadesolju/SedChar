@@ -41,7 +41,12 @@ export function useCharacterData() {
     return SAMPLE_CHARACTER;
   });
 
-  const [inputMode, setInputMode] = useState<'structured' | 'single'>('structured');
+  const [inputMode, setInputMode] = useState<'structured' | 'single'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'single';
+    }
+    return 'structured';
+  });
   const [rawMarkdown, setRawMarkdown] = useState<string>(() => characterToFullMarkdown(character));
   const isInitialMount = useRef(true);
 

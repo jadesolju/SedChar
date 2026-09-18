@@ -36,6 +36,7 @@ export function SingleBoxInput({
   const [quotaWarning, setQuotaWarning] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showTagDetails, setShowTagDetails] = useState(false);
   const fullscreenTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Focus fullscreen textarea when opened
@@ -144,40 +145,42 @@ export function SingleBoxInput({
   };
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden">
+    <div className="flex flex-col h-full bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
       {/* Top Header Toolbar */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/40">
+      <div className="flex-shrink-0 flex items-center justify-between px-3.5 py-2 sm:px-4 sm:py-2.5 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
-          <span className="text-sm">⚡</span>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-            Auto-Parser ช่องเดียวรวด
-          </h2>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
-            Plaintext / MD / JSON / YAML
-          </span>
+          <span className="text-base sm:text-lg">✨</span>
+          <div>
+            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <span>สร้างตัวละครช่องเดียว</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-semibold hidden sm:inline">
+                AI Auto-Parser
+              </span>
+            </h2>
+          </div>
         </div>
 
-        {/* Quota indicator & Controls */}
-        <div className="flex items-center gap-2">
+        {/* Quota indicator & Quick Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {user ? (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25">
-              โควตา AI วันนี้: <strong>{quotaRemaining}/{quotaMax}</strong>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              โควตา AI: <strong>{quotaRemaining}/{quotaMax}</strong>
             </span>
           ) : (
             <button
               type="button"
               onClick={() => openAuthModal('signin')}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
+              className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
             >
-              🔒 เข้าสู่ระบบเพื่อรับโควตา 15 ครั้ง/วัน
+              🔒 เข้าสู่ระบบรับ 15 ครั้ง/วัน
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setIsFullscreen(true)}
-            title="ขยายเต็มจอ (Fullscreen Focus Mode)"
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:border-primary/50 text-foreground transition-all cursor-pointer shadow-xs flex items-center gap-1"
+            title="ขยายเต็มจอ"
+            className="px-2 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:border-primary/50 text-foreground transition-all cursor-pointer shadow-2xs flex items-center gap-1"
           >
             <span>⛶</span>
             <span className="hidden sm:inline">เต็มจอ</span>
@@ -186,16 +189,19 @@ export function SingleBoxInput({
           <button
             type="button"
             onClick={onLoadSample}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-xs"
+            title="โหลดข้อมูลตัวอย่าง"
+            className="px-2 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-2xs flex items-center gap-1"
           >
-            📋 ตัวอย่าง
+            <span>📋</span>
+            <span className="hidden sm:inline">ตัวอย่าง</span>
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-rose-500/10 hover:text-rose-500 text-muted-foreground transition-all cursor-pointer shadow-xs"
+            title="ล้างข้อความ"
+            className="px-2 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-rose-500/10 hover:text-rose-500 text-muted-foreground transition-all cursor-pointer shadow-2xs"
           >
-            🗑️ ล้าง
+            🗑️
           </button>
         </div>
       </div>
@@ -261,56 +267,69 @@ export function SingleBoxInput({
         </button>
       </div>
 
-      {/* Detection Pills & Action Footer */}
-      <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/30 space-y-2.5">
+      {/* Minimal Detection Tracking & Hero Action Footer */}
+      <div className="flex-shrink-0 px-3.5 py-2.5 border-t border-border bg-card space-y-2">
         {isReadOnly && (
-          <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5">
+          <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5">
             <span>🔒</span>
-            <span>กำลังเปิดดูในโหมดอ่านอย่างเดียว (Read-Only) — ข้อความถูกล็อกไม่ให้แก้ไข</span>
+            <span>โหมดอ่านอย่างเดียว (Read-Only)</span>
           </div>
         )}
-        {/* Detection Status */}
-        <div className="flex items-center justify-between">
-          <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5">
-            <span>ตรวจพบข้อมูลแล้ว:</span>
-            <span className="font-bold text-foreground">{detectedCount} / 10 หมวดหมู่</span>
-          </div>
+
+        {/* Minimal Progress/Tracking Bar (~10% height) */}
+        <div className="flex items-center justify-between text-xs">
+          <button
+            type="button"
+            onClick={() => setShowTagDetails(!showTagDetails)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer text-left"
+          >
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              ตรวจพบข้อมูล: <strong className="text-primary font-bold">{detectedCount}/10</strong> หมวดหมู่
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+              {showTagDetails ? 'ซ่อน' : 'ดูรายละเอียด ▾'}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handleCopy}
             disabled={!rawMarkdown}
-            className="text-[11px] text-muted-foreground hover:text-foreground transition-all cursor-pointer disabled:opacity-30"
+            className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer disabled:opacity-30"
           >
-            {copied ? '✅ คัดลอกแล้ว' : '📋 คัดลอกข้อความทั้งหมด'}
+            {copied ? '✅ คัดลอกแล้ว' : '📋 คัดลอก'}
           </button>
         </div>
 
-        {/* Section Tags */}
-        <div className="flex flex-wrap gap-1">
-          {detectedSections.map((s) => (
-            <span
-              key={s.name}
-              className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${s.detected
-                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
-                  : 'bg-muted/60 text-muted-foreground/50 border border-border/40'
+        {/* Collapsible Tag Pills for Detailed View */}
+        {showTagDetails && (
+          <div className="flex flex-wrap gap-1 pt-1 pb-1 animate-in fade-in duration-150">
+            {detectedSections.map((s) => (
+              <span
+                key={s.name}
+                className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${
+                  s.detected
+                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
+                    : 'bg-muted/60 text-muted-foreground/50 border border-border/40'
                 }`}
-            >
-              {s.detected ? '✓ ' : '○ '}
-              {s.name}
-            </span>
-          ))}
-        </div>
+              >
+                {s.detected ? '✓ ' : '○ '}
+                {s.name}
+              </span>
+            ))}
+          </div>
+        )}
 
-        {/* Big Action Buttons */}
-        <div className="pt-1 flex items-center gap-2">
+        {/* Hero Action Button */}
+        <div className="pt-0.5">
           <button
             type="button"
             onClick={handleApply}
             disabled={!rawMarkdown.trim() || isParsing || isReadOnly}
-            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            <span>{isParsing ? '⏳' : '✨'}</span>
-            <span>{isParsing ? 'กำลังวิเคราะห์ด้วย Gemini AI...' : 'แปลงข้อมูลสู่ฟอร์ม (Auto-Parse & Sync)'}</span>
+            <span className="text-sm">{isParsing ? '⏳' : '✨'}</span>
+            <span>{isParsing ? 'กำลังวิเคราะห์ด้วย Gemini AI...' : 'AI ช่วยเติม / แปลงข้อมูลอัตโนมัติ'}</span>
           </button>
         </div>
       </div>
