@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
         .eq('id', id);
     }
 
-    const origin = req.headers.get('origin') || `https://${req.headers.get('host') || 'sedchar.vercel.app'}`;
-    const shareUrl = `${origin}/?share=${shareId}&mode=${permission}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')).replace(/\/+$/, '');
+    const shareUrl = `${baseUrl}/?share=${shareId}&mode=${permission}`;
 
     return NextResponse.json({
       success: true,
