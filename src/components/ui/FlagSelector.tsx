@@ -14,10 +14,10 @@ export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect, readOnly
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <span>🚩</span> ระบบวิเคราะห์ธงตัวละคร (Character Flag)
+            <span>🚩</span> ระบบวิเคราะห์ธงตัวละคร
           </span>
           <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full border font-medium ${selectedInfo.badgeBg}`}>
             <span>{selectedInfo.emoji}</span>
@@ -27,8 +27,8 @@ export function FlagSelector({ currentFlag, onSelectFlag, onAutoDetect, readOnly
         <button
           type="button"
           onClick={() => !readOnly && onAutoDetect()}
-            disabled={readOnly}
-          className="text-xs text-primary hover:text-primary/80 font-medium px-2.5 py-1 rounded-md border border-primary/20 hover:bg-primary/5 transition-colors"
+          disabled={readOnly}
+          className="w-full sm:w-auto text-xs text-primary hover:text-primary/80 font-medium px-3 py-1.5 rounded-lg border border-primary/20 hover:bg-primary/5 transition-colors text-center cursor-pointer"
         >
           ✨ วิเคราะห์อัตโนมัติ
         </button>
