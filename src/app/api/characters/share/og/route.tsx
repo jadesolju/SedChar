@@ -24,15 +24,51 @@ const flagLabels: Record<string, FlagEntry> = {
 
 const defaultFlag: FlagEntry = { label: 'ตัวละครบทบาท', color: '#f43f5e', emoji: '🎭' };
 
+/**
+ * Pre-fetches an external image with a strict timeout (e.g. 1.8s) and converts to base64 Data URI.
+ * If fetching fails, times out, or returns an error, returns null immediately.
+ */
+async function fetchImageWithTimeout(url: string, timeoutMs = 1800): Promise<string | null> {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:image/')) return url;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SedCharBot/1.0; +https://sedchar.vercel.app)',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.warn(`[OG] Image fetch returned status ${res.status} for ${url}`);
+      return null;
+    }
+
+    const contentType = res.headers.get('content-type') || 'image/png';
+    const arrayBuffer = await res.arrayBuffer();
+
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) return null;
+
+    // Convert to Base64 Data URI so Satori decodes without additional network requests
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    return `data:${contentType};base64,${base64}`;
+  } catch (err: any) {
+    console.warn(`[OG] Image fetch timed out or failed (${err.name || err.message}): ${url}`);
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const shareId = searchParams.get('id');
-
-    const baseUrl = (
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')
-    ).replace(/\/+$/, '');
 
     let title = searchParams.get('title') || 'ตัวละคร AI Roleplay';
     let nickname = searchParams.get('nickname') || '';
@@ -72,11 +108,10 @@ export async function GET(req: NextRequest) {
     }
 
     const flagInfo: FlagEntry = flagLabels[flagType] || defaultFlag;
-    const isCustomImage = Boolean(
-      imageUrl &&
-      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:image/'))
-    );
-    const finalArtworkUrl = isCustomImage ? imageUrl : `${baseUrl}/shedchar_logo.png`;
+
+    // Attempt to load character image with strict 1.8s timeout
+    const loadedImageDataUri = imageUrl ? await fetchImageWithTimeout(imageUrl, 1800) : null;
+    const hasValidImage = Boolean(loadedImageDataUri);
 
     return new ImageResponse(
       (
@@ -253,7 +288,7 @@ export async function GET(req: NextRequest) {
             </div>
           </div>
 
-          {/* Right Column: Character Artwork Layer or Logo Layer */}
+          {/* Right Column: Character Artwork Layer OR Brand Logo Fallback Layer */}
           <div
             style={{
               display: 'flex',
@@ -263,22 +298,104 @@ export async function GET(req: NextRequest) {
               height: '520px',
               borderRadius: '24px',
               overflow: 'hidden',
-              border: '2px solid rgba(255, 255, 255, 0.15)',
+              border: hasValidImage
+                ? '2px solid rgba(255, 255, 255, 0.15)'
+                : '2px solid rgba(244, 63, 94, 0.35)',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-              backgroundColor: 'rgba(24, 24, 27, 0.7)',
+              backgroundColor: 'rgba(24, 24, 27, 0.85)',
               marginLeft: '30px',
-              padding: isCustomImage ? '0px' : '30px',
+              position: 'relative',
             }}
           >
-            <img
-              src={finalArtworkUrl}
-              alt={title}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-              }}
-            />
+            {hasValidImage ? (
+              <img
+                src={loadedImageDataUri!}
+                alt={title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              /* High-impact Brand Logo & Mascot Layer (Zero Network Latency, 100% Reliability) */
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                  padding: '40px 24px',
+                  background: 'linear-gradient(145deg, rgba(39, 39, 42, 0.9), rgba(9, 9, 11, 0.95))',
+                  textAlign: 'center',
+                }}
+              >
+                {/* Glowing Mask Crest */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '130px',
+                    height: '130px',
+                    borderRadius: '32px',
+                    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                    border: '2px solid rgba(244, 63, 94, 0.5)',
+                    boxShadow: '0 0 40px rgba(244, 63, 94, 0.3)',
+                    fontSize: '64px',
+                    marginBottom: '24px',
+                  }}
+                >
+                  🎭
+                </div>
+
+                <div
+                  style={{
+                    fontSize: '32px',
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    letterSpacing: '-0.5px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  SedChar.AI
+                </div>
+
+                <div
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    color: '#f43f5e',
+                    marginBottom: '20px',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  THAI ROLEPLAY STUDIO
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 20px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', color: '#d4d4d8', fontWeight: 500 }}>
+                    ✨ Model & Persona Design
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#a1a1aa' }}>
+                    Purrpaw • Rubii • Khui AI
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ),
