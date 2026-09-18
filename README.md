@@ -1,20 +1,20 @@
-# 🌸 SedChar.AI (Demo) — Thai Bot Character Studio
+﻿# 🌸 SedChar.AI — Thai Roleplay Character Studio
 
 <div align="center">
 
 ![SedChar Banner](public/icons/icon-512x512.svg)
 
-**สตูดิโอสร้างและแปลงข้อมูลตัวละครภาษาไทย Tag-Based สำหรับ Purrpaw, Rubii และ Khui AI**  
-*9-Pillar Rich Prompts • Supabase Auth • 5 Calls/Day Quota • Cloud Library & Album • PWA Mobile Ready*
+**สตูดิโอสร้าง ออกแบบ และแปลงข้อมูลตัวละครภาษาไทย Tag-Based สำหรับ Purrpaw, Rubii และ Khui AI**  
+*10-Category Rich Architecture • Multi-Platform Auto-Parser • Selective Checkbox Engine • Cloud Vault • PWA Ready*
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.3-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
 [![Vitest](https://img.shields.io/badge/Vitest-3.2-6e9f18?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-MIT-rose?style=flat-square)](LICENSE)
 
-[ฟีเจอร์เด่น](#-ฟีเจอร์หลัก) • [9 เสาหลักคำสั่ง](#-โครงสร้างคำสั่ง-9-เสาหลัก) • [ระบบสมาชิกและคลัง](#-ระบบสมาชิกและ-cloud-library) • [แพลตฟอร์มที่รองรับ](#-แพลตฟอร์มที่รองรับ) • [การติดตั้ง](#-การติดตั้งและเริ่มใช้งาน)
+[ฟีเจอร์เด่น](#-ฟีเจอร์หลัก) • [10 หมวดหมู่คำสั่ง](#-โครงสร้างคำสั่ง-10-หมวดหมู่หลัก) • [แพลตฟอร์มที่รองรับ](#-แพลตฟอร์มที่รองรับ) • [ความปลอดภัยและการแชร์](#-ความปลอดภัยและระบบ-read-only-sharing) • [การติดตั้ง](#-การติดตั้งและเริ่มใช้งาน)
 
 </div>
 
@@ -22,58 +22,72 @@
 
 ## ✨ ฟีเจอร์หลัก (Key Features)
 
-### 1. ⚡ Universal Multi-Format Parser (ระบบอ่านข้อมูลอเนกประสงค์)
-- **รองรับทุกรูปแบบอินพุต**: วางข้อมูลได้ทันทีทั้ง **Plaintext (ข้อความบรรยายทั่วไป), Markdown, JSON และ YAML**
-- **100% Two-Way Form Sync**: ข้อมูลเชื่อมโยงระหว่างโหมด *"ช่องแยกตามหัวข้อ (Structured Form)"* และโหมด *"ช่องเดียวรวด (Single Box)"* อย่างราบรื่น
-- **Fuzzy Matching & Intelligent Inferrer**: ตรวจแก้คำสะกดผิดอัตโนมัติและแยกแยะหมวดหมู่เนื้อหาอย่างแม่นยำ
-- **Smart Safety Flag Auto-Detection**: ประเมินธงพฤติกรรมตัวละคร (Green / Yellow / Red / Black / Watermelon Flag) พร้อมแสดง Badge และคำอธิบาย
+### 1. ⚡ Universal Multi-Format Auto-Parser (ระบบอ่านข้อมูลอเนกประสงค์)
+- **รองรับทุกรูปแบบอินพุต**: วางข้อความได้ทันทีทั้ง **Plaintext (ข้อความบรรยายทั่วไป), Markdown, JSON และ YAML**
+- **Target Platform Selector**: เลือกแพลตฟอร์มปลายทางที่ต้องการแปลง (`🌐 ทุกแพลตฟอร์ม`, `🐾 Purrpaw`, `💎 Rubii`, `💬 Khui AI`) เพื่อโฟกัสการสกัดข้อมูลเฉพาะส่วนที่จำเป็น
+- **Hybrid AI Engine**: ประมวลผลร่วมกันระหว่าง Google Gemini AI และ Universal Local Regex Parser ทำงานได้ลื่นไหลแม้ขณะออฟไลน์
+- **Two-Way Synchronization**: ซิงค์ข้อมูลระหว่างโหมด *"ช่องแยก 10 หมวดหมู่ (Structured Form)"* และโหมด *"ช่องเดียวรวด (Single Box)"* อย่างแม่นยำ
 
-### 2. 🔐 Supabase Auth & 5-Call Daily AI Quota (ระบบสมาชิกและโควตา)
-- **Multi-Provider Login**: รองรับ **Google OAuth, Discord OAuth** และ Email/Password พร้อมระบบรีเซ็ตรหัสผ่าน
-- **Access Gate**: สมาชิกที่เข้าสู่ระบบสามารถใช้งาน Auto-Parser วิเคราะห์แปลงข้อมูลได้ฟรี 5 ครั้ง/วัน (ระบบนับโควตาข้ามอุปกรณ์และรีเฟรชไม่หาย)
-- **Zero-Data Leakage**: การสร้างและแสดงผล Prompt ทำงานในเครื่อง (Client-Side) 100%
+### 2. 🎯 Selective Platform Checkbox & Token Optimization (ระบบเลือกเปิด/ปิดการแปลงผล)
+- **Interactive Checkboxes**: มีช่อง Checkbox บนแต่ละแท็บแพลตฟอร์ม (`Purrpaw`, `Rubii`, `Khui AI`, `Master MD`)
+- **Skip & Lazy Processing**: ข้ามการประมวลผลสำหรับแพลตฟอร์มที่ไม่ได้ติ๊กเลือก ช่วยลดภาระการทำงานเบื้องหลังของระบบ และ **ประหยัด AI Token** อย่างแท้จริง
+- **One-Click Enable**: หน้าจอแจ้งสถานะพร้อมปุ่มลัดเพื่อเปิดใช้งานการแปลงสำหรับแพลตฟอร์มนั้นได้ทันที
 
-### 3. 📁 Cloud Library & Album Gallery (คลังตัวละครและอัลบั้มชุดรูปภาพ)
-- **Supabase Cloud Sync**: สำรองและกู้คืนตัวละครที่สร้างไว้กลับสู่ Editor ได้ในคลิกเดียว
-- **Cloudflare Images / R2 Integration**: รองรับการระบุลิงก์รูปภาพหลัก (Avatar) และชุดรูปภาพสีหน้า/อารมณ์ (Gallery Set) ผ่าน Cloudflare Delivery CDN
-- **Expression Album**: แท็บเปิดดูและคัดลอกชุดรูปภาพสีหน้าของตัวละครได้ตลอดเวลา
+### 3. 📝 Unified Markdown Persona Engine (โครงสร้าง Markdown มาตรฐาน)
+- **Purrpaw & Rubii Standardization**: รวมโครงสร้างคำสั่ง System Prompt & Persona Prompt ของทั้งสองแพลตฟอร์มให้อยู่ในรูปแบบ Markdown คุณภาพสูงตัวเดียวกัน
+- **Rich Lore & Storage**: รองรับการส่งต่อตัวละครเสริม (Supporting Characters) ในรูปแบบ Structured Tags และคลังข้อมูลส่วนเกิน (Garage Storage) อย่างครบถ้วน
+
+### 4. 💬 Khui AI Clean Section Separation (การแยกส่วนผลลัพธ์ Khui AI)
+- **Scenario & Plot Summary**: แยก Section 6 ออกมาเป็นสถานการณ์/พล็อตเรื่องย่อ ดึงข้อมูลจาก *พล็อตและเรื่องย่อ (Plot Summary)* เท่านั้น
+- **User Relationship & Role**: Section 7 แยกความสัมพันธ์และบทบาทกับ {{user}} อย่างชัดเจน
+- **Character Tags**: Section 8 สำหรับแท็กหมวดหมู่เนื้อหา
+
+### 5. 🚩 8-Tier Character Flag System (ระบบวิเคราะห์ธงพฤติกรรม 8 ระดับ)
+- วิเคราะห์ประเมินระดับความปลอดภัยและจิตวิทยาของตัวละครอัตโนมัติ:
+  - `🟢 Green Flag` • `🟡 Yellow Flag` • `🔴 Red Flag` • `⚫ Black Flag`
+  - `⚪ White Flag` • `🍉 Watermelon Flag` • `🔄 Reverse-Watermelon Flag` • `🚩 ยังไม่ได้ระบุ`
+
+### 6. 🔒 Enterprise-Grade Read-Only Sharing (ระบบแชร์ที่ปลอดภัยสูงสุด)
+- **Strict Read-Only Mode**: ล็อกการแก้ไขทุกจุดเมื่อเปิดดูผ่านลิงก์แชร์แบบอ่านอย่างเดียว ซ่อนปุ่มแก้ไข และล็อกหน้าต่างขยายเต็มจอ
+- **No Clone/Modify**: นำปุ่มบันทึกสำเนาออก ป้องกันการคัดลอกหรือดัดแปลงผลงานของผู้สร้าง
+- **CSPRNG Security**: สุ่ม Share Token ด้วย `crypto.getRandomValues()` ปลอดภัยต่อการเดารหัส
 
 ---
 
-## 🏛️ โครงสร้างคำสั่ง 9 เสาหลัก (9-Pillar Architecture)
+## 🏛️ โครงสร้างคำสั่ง 10 หมวดหมู่หลัก (10-Category Architecture)
 
-ระบบสร้าง Persona และ System Prompt ครอบคลุมลึกถึง 9 เสาหลัก เพื่อการสวมบทบาทที่สมจริงที่สุด:
-
-| # | เสาหลัก | รายละเอียดในคำสั่ง |
+| # | หมวดหมู่ | รายละเอียดในคำสั่ง |
 |---|---|---|
-| 1 | **ข้อมูลพื้นฐาน** | ชื่อ, อายุ, เพศ, MBTI, ฐานะ, รถยนต์, น้ำหอม, อาชีพ, สไตล์การแต่งตัว |
-| 2 | **รูปลักษณ์ภายนอก** | สรีระ, จุดเด่น, รอยสัก, ทรงผม, แววตา |
-| 3 | **สรีระส่วนลับ & NSFW** | ขนาด/สัดส่วน, รสนิยมบนเตียง (Kinks), สไตล์ Aftercare |
-| 4 | **จิตวิทยา & นิสัย** | นิสัยหลัก, จิตวิทยา 7 ชั้น (Mindset, Triggers, Flaws) |
-| 5 | **สิ่งที่ชอบ / สิ่งที่เกลียด** | รายการสิ่งที่โปรดปราน และสิ่งที่เกลียด/แพ้ทาง |
-| 6 | **ความสัมพันธ์กับ {{user}}** | สถานะเริ่มต้น, ปูมหลังความสัมพันธ์, ทัศนคติที่มีต่อ {{user}} |
-| 7 | **กฎระบบ & ข้อห้ามเด็ดขาด** | กฎเหล็กห้ามสวมบทบาทหรือแย่งพูดแทน {{user}}, พฤติกรรมที่ห้ามทำ |
-| 8 | **ตัวละครเสริม (Sub-characters)** | รายชื่อตัวละครเสริม, บทบาท, จังหวะที่ปรากฏตัว, กฎการควบคุมบท |
-| 9 | **สถานที่ & บรรยากาศ** | โทนของเรื่อง และสถานที่หลัก (Locations) กระชับแบบ Keyword |
+| 1 | **ข้อมูลพื้นฐาน** | ชื่อเล่น, ชื่อเต็ม, อายุ, เพศ, สถานะ, วันเกิด, น้ำหนัก/ส่วนสูง, MBTI, รสนิยม, รถ, น้ำหอม, ที่อยู่, ฐานะ, อาชีพ, การแต่งกาย |
+| 2 | **ลักษณะภายนอก** | รูปลักษณ์, จุดเด่น (Visual Features), Visual Tags |
+| 3 | **สรีระส่วนลับ & NSFW** | ขนาดโจ้ย, ขนาดหน้าอก, จิ๊มิ, สไตล์บนเตียง (Sexual Style), Kinks, Aftercare |
+| 4 | **จิตวิทยา 7 ข้อ & นิสัย** | ลักษณะเด่น, Personality Tags, Core Belief, Mindset, Perception, Expression, Emotion, Triggers, Flaws |
+| 5 | **สิ่งที่ชอบ / สิ่งที่ไม่ชอบ** | รายการสิ่งที่ชอบ (Likes) และสิ่งที่ไม่ชอบ (Dislikes) |
+| 6 | **พฤติกรรม & มิติ {{user}}** | พฤติกรรมทั่วไป, พฤติกรรมพิเศษเฉพาะกับ {{user}}, บทบาทของ {{user}}, ทัศนคติที่มีต่อ {{user}}, ภูมิหลังความสัมพันธ์ |
+| 7 | **ขอบเขตพฤติกรรม & กฎระบบ** | สิ่งที่ไม่ทำเด็ดขาด (Anti-Behaviors), ด้านอ่อนโยน (Soft Side), ด้านมืด (Dark Side), โทนเรื่อง (Tone & Setting), กฎระบบ |
+| 8 | **ตัวละครเสริม (Sub-characters)** | รองรับสูงสุด 8 ตัว (Guest) และ 25 ตัว (Member) พร้อม Accordion UI และ Tag-based System Prompt |
+| 9 | **สถานที่ในเรื่อง (Locations)** | สถานที่สำคัญ (สูงสุด 10 สถานที่) พร้อมระบบสร้าง English Visual Prompt อัตโนมัติ |
+| 10 | **คำโปรย & ฉากเปิด** | Short Intro, Punchline, เรื่องย่อ (Plot Summary), ข้อมูลสาธารณะ, Moment Intro, ฉากเปิดรวมทั้งหมด (Full Open Greeting) |
+| 11 | **คลังข้อมูลส่วนเกิน (Garage Storage)** | ช่องสำหรับเก็บข้อมูลดิบ, Lore เสริม หรือ Prompt อิสระ |
 
 ---
 
 ## 📱 แพลตฟอร์มที่รองรับ (Target Platforms)
 
-### 🐱 Purrpaw
-- รูปแบบ: **Markdown Database**
-- ความยาวเป้าหมาย: **18,000 – 30,000 ตัวอักษร**
-- ระบบแยกตัวละครเสริมและสถานที่อย่างเป็นระเบียบ
+### 🐾 Purrpaw AI
+- **รูปแบบ:** Rich Markdown Database
+- **ขอบเขต:** ครอบคลุม 10 หมวดหมู่หลัก + ตัวละครเสริม (Max 5) + สถานที่ (Max 10 พร้อม English Visual Prompt) + ฉากเปิด
 
-### 💎 Rubii
-- รูปแบบ: **Persona & System Prompt**
-- รองรับ Gemini Token Estimation
-- จัดโครงสร้างตามรูปแบบ `[Character(...)]` ครบทั้ง 9 เสาหลัก
+### 💎 Rubii AI
+- **รูปแบบ:** Unified Markdown Persona Prompt
+- **ขอบเขต:** Persona Prompt มาตรฐานเดียวกับ Purrpaw + Public Description + Moment Intro + Supporting Characters + Lore Storage
 
 ### 💬 Khui AI
-- รูปแบบ: **Structured System Directive**
-- รองรับตัวละครเสริมสูงสุด 3 ตัว
-- จัดระเบียบบทสนทนาและขอบเขตพฤติกรรม
+- **รูปแบบ:** Structured Thai Keylist & Markdown Profile
+- **ขอบเขต:** System Prompt + ข้อมูลเบื้องต้น + แยกพล็อตเรื่องย่อ + แยกความสัมพันธ์กับ {{user}} + ตัวละครเสริม (Max 3)
+
+### 📄 Master Markdown (SedChar Standard)
+- **รูปแบบ:** Master Markdown Schema ครบ 11 หมวดหมู่ พร้อมจัดเก็บหรือสำรองข้อมูล
 
 ---
 
@@ -86,12 +100,16 @@ npm install
 # 2. ตั้งค่าไฟล์ .env.local
 NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+GEMINI_API_KEY="your-gemini-api-key"
 
-# 3. รัน Dev Server
+# 3. รัน Development Server
 npm run dev
 
-# 4. ทดสอบ Unit Tests
+# 4. ทดสอบ Unit Tests (Vitest)
 npm test
+
+# 5. Build สำหรับ Production
+npm run build
 ```
 
 ---

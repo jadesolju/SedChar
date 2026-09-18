@@ -48,7 +48,7 @@ function DisabledPlatformView({ platformName, onEnable }: { platformName: string
           ปิดการแปลงผลสำหรับ {platformName} อยู่
         </h4>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          ระบบจะไม่แปลงและไม่ประมวลผลข้อมูลในส่วนนี้ เพื่อลดภาระการทำงานเบื้องหลังและช่วยประหยัด AI Token เมื่อไม่ต้องการใช้งาน
+          ระบบจะไม่แปลงและไม่ประมวลผลข้อมูลในส่วนนี้
         </p>
       </div>
       <button
