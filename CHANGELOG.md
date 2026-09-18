@@ -4,7 +4,7 @@
 
 ---
 
-## [v1.0.0] — 2026-09-18 (Official Production Release 🚀)
+## [v0.4.3] — 2026-09-18 (Testing & Trial Release 🚀)
 
 ### 🎯 Selective Platform Checkbox & Token Optimization (ระบบเลือกเปิด/ปิดการแปลงผลเพื่อประหยัด Token)
 - **Interactive Platform Checkboxes**: เพิ่ม Checkbox ประจำแต่ละแท็บ (`☑ ✨ Purrpaw`, `☑ 🤖 Rubii`, `☑ 💬 Khui AI`, `☑ 📄 Master MD`) ให้ผู้ใช้เลือกติ๊กเปิด/ปิดการแปลงผลแต่ละแพลตฟอร์มได้อย่างอิสระ

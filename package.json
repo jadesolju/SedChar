@@ -1,6 +1,6 @@
 {
   "name": "sedchar-ai",
-  "version": "1.0.0",
+  "version": "0.4.3",
   "description": "Thai character data converter for Rubii, Purrpaw, and Khui AI",
   "scripts": {
     "dev": "next dev",
