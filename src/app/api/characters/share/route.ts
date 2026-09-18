@@ -48,14 +48,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing character payload' }, { status: 400 });
     }
 
-    // Cryptographically secure RNG (PR #6)
-    const randomBuffer = new Uint8Array(4);
-    crypto.getRandomValues(randomBuffer);
-    const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    const shareId = `sh_${Date.now().toString(36)}_${randomHex}`;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    let shareId = '';
 
     if (id) {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      // Check if character already has an existing share_id to keep URLs stable
+      const { data: existing } = await supabase
+        .from('characters')
+        .select('share_id')
+        .eq('id', id)
+        .limit(1)
+        .single();
+
+      if (existing?.share_id) {
+        shareId = existing.share_id;
+      }
+    }
+
+    if (!shareId) {
+      // Cryptographically secure RNG (PR #6)
+      const randomBuffer = new Uint8Array(4);
+      crypto.getRandomValues(randomBuffer);
+      const randomHex = Array.from(randomBuffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+      shareId = `sh_${Date.now().toString(36)}_${randomHex}`;
+    }
+
+    if (id) {
       await supabase
         .from('characters')
         .update({
@@ -67,8 +85,8 @@ export async function POST(req: NextRequest) {
         .eq('id', id);
     }
 
-    // Secure base URL (PR #8)
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')).replace(/\/+$/, '');
+    // Always use public production domain
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
     const shareUrl = `${baseUrl}/?share=${shareId}&mode=${permission}`;
 
     return NextResponse.json({

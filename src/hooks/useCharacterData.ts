@@ -24,6 +24,7 @@ type ArrayField =
   | 'categoryTags';
 
 const DRAFT_STORAGE_KEY = 'sedchar_active_draft';
+const BACKUP_STORAGE_KEY = 'sedchar_backup_user_draft';
 
 export function useCharacterData() {
   const [character, setCharacter] = useState<ThaiMasterCharacter>(() => {
@@ -52,6 +53,10 @@ export function useCharacterData() {
     }
     const timer = setTimeout(() => {
       try {
+        // Do not overwrite user's main draft if currently viewing in Read-Only mode
+        if (typeof window !== 'undefined' && sessionStorage.getItem('sedchar_is_readonly_active') === 'true') {
+          return;
+        }
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(character));
       } catch { }
     }, 400);
@@ -207,11 +212,45 @@ export function useCharacterData() {
   }, []);
 
   // Direct parsed character setter from Gemini AI or Share Link
-  const applyParsedCharacter = useCallback((parsedChar: ThaiMasterCharacter) => {
+  const applyParsedCharacter = useCallback((parsedChar: ThaiMasterCharacter, isReadOnly = false) => {
     setCharacter(parsedChar);
     setRawMarkdown(characterToFullMarkdown(parsedChar));
     try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsedChar));
+      if (isReadOnly) {
+        sessionStorage.setItem('sedchar_is_readonly_active', 'true');
+        // Backup user's existing draft if not already backed up
+        const existingDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (existingDraft && !localStorage.getItem(BACKUP_STORAGE_KEY)) {
+          localStorage.setItem(BACKUP_STORAGE_KEY, existingDraft);
+        }
+      } else {
+        sessionStorage.removeItem('sedchar_is_readonly_active');
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsedChar));
+      }
+    } catch { }
+  }, []);
+
+  // Restore user's personal draft or reset after exiting read-only mode
+  const restoreBackupDraft = useCallback(() => {
+    try {
+      sessionStorage.removeItem('sedchar_is_readonly_active');
+      const backup = localStorage.getItem(BACKUP_STORAGE_KEY);
+      if (backup) {
+        const parsed = JSON.parse(backup);
+        if (parsed && typeof parsed === 'object') {
+          setCharacter(parsed);
+          setRawMarkdown(characterToFullMarkdown(parsed));
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsed));
+          localStorage.removeItem(BACKUP_STORAGE_KEY);
+          return;
+        }
+      }
+    } catch { }
+    // Fallback if no previous draft was stored: return to SAMPLE_CHARACTER
+    setCharacter(SAMPLE_CHARACTER);
+    setRawMarkdown(characterToFullMarkdown(SAMPLE_CHARACTER));
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(SAMPLE_CHARACTER));
     } catch { }
   }, []);
 
@@ -242,6 +281,7 @@ export function useCharacterData() {
     resetCharacter,
     importRawMarkdown,
     applyParsedCharacter,
+    restoreBackupDraft,
     syncToMarkdown,
   };
 }

@@ -536,7 +536,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     permission: 'read-only' | 'edit'
   ): Promise<{ shareUrl: string; instantUrl: string; shareId: string }> => {
     const charRecord = savedCharacters.find(c => c.id === id);
-    const shareId = `sh_${id.replace(/[^a-zA-Z0-9]/g, '')}_${Date.now().toString(36)}`;
+    const shareId = charRecord?.share_id || `sh_${id.replace(/[^a-zA-Z0-9]/g, '')}_${Date.now().toString(36)}`;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     
     // 1. Generate Instant Compressed URL (Zero-dependency, works anywhere)

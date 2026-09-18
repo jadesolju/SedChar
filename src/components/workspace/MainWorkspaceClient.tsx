@@ -52,6 +52,7 @@ function MainWorkspace() {
     resetCharacter,
     importRawMarkdown,
     applyParsedCharacter,
+    restoreBackupDraft,
     syncToMarkdown,
   } = useCharacterData();
 
@@ -72,6 +73,15 @@ function MainWorkspace() {
     mode: 'read-only' | 'edit';
   } | null>(null);
   const isReadOnly = sharedBanner?.mode === 'read-only';
+
+    const handleExitReadOnly = () => {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setSharedBanner(null);
+    restoreBackupDraft();
+    showToast('ออกจากโหมดอ่านแล้ว รีเซ็ตกลับสู่พื้นที่ทำงานหลักเรียบร้อย');
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

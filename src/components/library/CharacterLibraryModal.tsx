@@ -36,6 +36,7 @@ interface CharacterLibraryModalProps {
   onLoadCharacter: (char: ThaiMasterCharacter, id?: string, title?: string) => void;
   activeLibraryId?: string | null;
   setActiveLibraryId?: (id: string | null) => void;
+  isReadOnly?: boolean;
 }
 
 export function CharacterLibraryModal({
@@ -43,6 +44,7 @@ export function CharacterLibraryModal({
   onLoadCharacter,
   activeLibraryId,
   setActiveLibraryId,
+  isReadOnly = false,
 }: CharacterLibraryModalProps) {
   const {
     isLibraryModalOpen,
@@ -63,7 +65,7 @@ export function CharacterLibraryModal({
   // Save / Overwrite Form State
   const effectiveActiveId = activeLibraryId || activeLoadedCharacterId;
   const [saveMode, setSaveMode] = useState<'overwrite' | 'new'>(
-    effectiveActiveId && savedCharacters.some((c) => c.id === effectiveActiveId)
+    !isReadOnly && effectiveActiveId && savedCharacters.some((c) => c.id === effectiveActiveId)
       ? 'overwrite'
       : 'new'
   );
@@ -144,10 +146,8 @@ export function CharacterLibraryModal({
 
     let res: { success: boolean; error?: string };
 
-    if (saveMode === 'overwrite' && targetOverwriteId) {
+    if (!isReadOnly && saveMode === 'overwrite' && targetOverwriteId) {
       res = await overwriteCharacterInLibrary(targetOverwriteId, currentCharacter, title, imageUrl);
-      if (setActiveLibraryId) setActiveLibraryId(targetOverwriteId);
-      setActiveLoadedCharacterId(targetOverwriteId);
     } else {
       res = await saveToLibrary(currentCharacter, title, imageUrl);
     }
@@ -483,9 +483,9 @@ export function CharacterLibraryModal({
                             <button
                               type="button"
                               onClick={() =>
-                                handleQuickOverwriteCard(charRecord.id, charRecord.title)
+                                !isReadOnly && handleQuickOverwriteCard(charRecord.id, charRecord.title)
                               }
-                              disabled={quickOverwritingId === charRecord.id}
+                              disabled={isReadOnly || quickOverwritingId === charRecord.id}
                               title="บันทึกทับตัวละครนี้ด้วยข้อมูลที่กำลังแก้อยู่ในหน้าหลัก"
                               className={`px-2 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                                 quickOverwriteSuccessId === charRecord.id
@@ -576,7 +576,12 @@ export function CharacterLibraryModal({
           {activeTab === 'save' && (
             <form onSubmit={handleSaveCurrent} className="max-w-xl mx-auto space-y-4 py-3">
               {/* Save Mode Selector */}
-              {savedCharacters.length > 0 && (
+              {isReadOnly ? (
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-700 dark:text-amber-300">
+                  <Lock className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  <span>🔒 <strong>โหมดอ่านอย่างเดียว (Read-Only)</strong>: ไม่อนุญาตให้แก้ไขหรือบันทึกทับตัวละครต้นฉบับ คุณสามารถบันทึกเป็นตัวละครใหม่ลงในคลังของคุณได้ (สร้างสำเนา)</span>
+                </div>
+              ) : savedCharacters.length > 0 && (
                 <div className="p-1 rounded-xl bg-muted/80 border border-border grid grid-cols-2 gap-1">
                   <button
                     type="button"
