@@ -8,30 +8,55 @@ const readline = require('readline');
 const dir = path.resolve(__dirname, '..');
 
 async function askQuestion(query) {
-  const rl = readline.createInterface({
+  const rl = readline.close ? readline : readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
   return new Promise(resolve =>
     rl.question(query, ans => {
-      rl.close();
+      if (typeof readline.createInterface === 'function' && rl.close) {
+        rl.close();
+      }
       resolve(ans.trim());
     })
   );
 }
 
+function getAuthConfig(token, explicitPassword, explicitUsername) {
+  const username = explicitUsername || token || 'x-access-token';
+  const password = explicitPassword || token || '';
+  return { username, password };
+}
+
+async function resolveCredentials(options = {}) {
+  const env = options.env || process.env;
+  const argv = options.argv || process.argv;
+  const prompt = options.prompt || askQuestion;
+
+  let token = env.GITHUB_TOKEN || env.GH_TOKEN || (argv && argv[2]);
+  let password = env.GIT_PASSWORD || env.GITHUB_PASSWORD;
+  let username = env.GIT_USERNAME || env.GITHUB_USER || env.GITHUB_ACTOR;
+
+  if (!token && !password && typeof prompt === 'function') {
+    console.log('💡 คุณสามารถสร้าง GitHub Token (Personal Access Token - Classic หรือ Fine-grained) ได้ที่:');
+    console.log('   https://github.com/settings/tokens (ติ๊กเลือกสิทธิ์ "repo")\n');
+    token = await prompt('🔑 กรุณากรอก GitHub Personal Access Token (PAT): ');
+  }
+
+  if (!token && !password) {
+    return null;
+  }
+
+  return getAuthConfig(token, password, username);
+}
+
 async function main() {
   console.log('\n🚀 === SedChar.AI GitHub Push Utility ===\n');
 
-  let token = process.argv[2];
-  if (!token) {
-    console.log('💡 คุณสามารถสร้าง GitHub Token (Personal Access Token - Classic หรือ Fine-grained) ได้ที่:');
-    console.log('   https://github.com/settings/tokens (ติ๊กเลือกสิทธิ์ "repo")\n');
-    token = await askQuestion('🔑 กรุณากรอก GitHub Personal Access Token (PAT): ');
-  }
+  const auth = await resolveCredentials();
 
-  if (!token) {
-    console.error('❌ ไม่พบ Token ยกเลิกการ Push');
+  if (!auth || (!auth.username && !auth.password)) {
+    console.error('❌ ไม่พบ Token หรือ Password ยกเลิกการ Push');
     process.exit(1);
   }
 
@@ -46,8 +71,8 @@ async function main() {
       ref: 'main',
       force: true,
       onAuth: () => ({
-        username: token,
-        password: '',
+        username: auth.username,
+        password: auth.password,
       }),
       onProgress: evt => {
         if (evt.total) {
@@ -67,4 +92,12 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  getAuthConfig,
+  resolveCredentials,
+  askQuestion,
+};
