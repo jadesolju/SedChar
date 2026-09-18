@@ -17,9 +17,11 @@ interface PageProps {
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const shareId = searchParams.share;
   const dataParam = searchParams.data;
+  // Use official public production domain to ensure social crawlers (Discord, LINE, Facebook) are never blocked by Vercel deployment login protection
   const baseUrl = (
     process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://sedchar.vercel.app')
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '') ||
+    'https://sedchar.vercel.app'
   ).replace(/\/+$/, '');
 
   // 1. Cloud Share Metadata (via Supabase database)
