@@ -862,8 +862,9 @@ export function CharacterLibraryModal({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5 text-amber-500" />
-                      <span>2. Instant Share URL (ลิงก์ออฟไลน์)</span>
+                      <span>2. Instant Share URL (ลิงก์ออฟไลน์ / Zero-DB)</span>
                     </span>
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">แชร์แบบฝังข้อมูล</span>
                   </div>
                   <div className="flex gap-2">
                     <input

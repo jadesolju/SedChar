@@ -80,13 +80,24 @@ function MainWorkspace() {
     }, 4500);
   };
 
-  // Detect Share Link in URL on mount
+  // Detect Share Link in URL / Hash on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlParams = new URLSearchParams(window.location.search);
-    const dataParam = urlParams.get('data');
+    let dataParam = urlParams.get('data');
+    let mode = (urlParams.get('mode') as 'read-only' | 'edit') || 'read-only';
+
+    // Support Hash-based Instant URL (#data=...&mode=...) to bypass HTTP 414 URL length limits
+    if (!dataParam && window.location.hash) {
+      const hashClean = window.location.hash.replace(/^#/, '');
+      const hashParams = new URLSearchParams(hashClean);
+      dataParam = hashParams.get('data');
+      if (hashParams.get('mode')) {
+        mode = hashParams.get('mode') as 'read-only' | 'edit';
+      }
+    }
+
     const shareId = urlParams.get('share');
-    const mode = (urlParams.get('mode') as 'read-only' | 'edit') || 'read-only';
 
     // 1. Check Instant URL Payload
     if (dataParam) {
