@@ -271,7 +271,7 @@ ${JSON_SCHEMA_TEMPLATE}
 
 export async function POST(req: NextRequest) {
   try {
-    const { rawText, model } = await req.json();
+    const { rawText, model, targetPlatform } = await req.json();
 
     if (!rawText || typeof rawText !== 'string' || !rawText.trim()) {
       return NextResponse.json({ error: 'Missing rawText' }, { status: 400 });
@@ -279,7 +279,15 @@ export async function POST(req: NextRequest) {
 
     const geminiKey = process.env.GEMINI_API_KEY;
     const openRouterKey = process.env.OPENROUTER_API_KEY;
-    const prompt = PARSE_PROMPT_PREFIX + rawText;
+    let platformGuidance = '';
+    if (targetPlatform === 'purrpaw') {
+      platformGuidance = '\n\nNOTE: Target platform is Purrpaw AI. Ensure rich 10-category profile, locations, subcharacters, and full greeting are faithfully structured.';
+    } else if (targetPlatform === 'rubii') {
+      platformGuidance = '\n\nNOTE: Target platform is Rubii AI. Ensure complete Markdown persona prompt, moment intro, and public description are faithfully structured.';
+    } else if (targetPlatform === 'khui') {
+      platformGuidance = '\n\nNOTE: Target platform is Khui AI. Ensure concise system prompt, character profile, scenario plot summary, and user relationship are separated cleanly.';
+    }
+    const prompt = PARSE_PROMPT_PREFIX + platformGuidance + '\n\n' + rawText;
 
     let aiResult: { text: string; model: string } | null = null;
 

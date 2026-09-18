@@ -28,6 +28,7 @@ import {
 
 interface PlatformPreviewProps {
   character: ThaiMasterCharacter;
+  isReadOnly?: boolean;
   onApplyParsedCharacter?: (char: ThaiMasterCharacter) => void;
   onShowToast?: (msg: string) => void;
 }
@@ -35,7 +36,7 @@ interface PlatformPreviewProps {
 type TabType = 'purrpaw' | 'rubii' | 'khui' | 'master';
 type ExportFormat = 'txt' | 'xml' | 'md' | 'json' | 'pdf';
 
-export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast }: PlatformPreviewProps) {
+export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCharacter, onShowToast }: PlatformPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('purrpaw');
   const [copiedAll, setCopiedAll] = useState(false);
   const { openLibraryModal } = useAuth();
@@ -447,24 +448,24 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
         ========================================================================= */}
         {activeTab === 'purrpaw' && (
           <div className="space-y-3.5">
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="1. ชื่อตัวละคร (Character Name)"
               subtitle="ชื่อหลักและชื่อเล่นที่จะแสดงในหน้าต่างสนทนา"
               content={purrpawData.name}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="2. TAGLINE (คำโปรยสั้นๆกระชับ)"
               subtitle="ประโยค Hook คำพูดเด็ดของตัวละครที่ดึงดูดใจผู้เล่น"
               content={purrpawData.tagline}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="3. แท็ก (ตัวละคร)"
               subtitle="คั่นด้วยเครื่องหมายจุลภาค (,)"
               content={purrpawData.tags}
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="4. ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)"
               subtitle="โครงสร้างคำสั่งหลักสำหรับ Purrpaw"
               content={purrpawData.historyPersonalityPrompt}
@@ -491,7 +492,7 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
                     <div className="text-[11px] text-muted-foreground">
                       <strong>คำอธิบายหน้ารายละเอียด:</strong> {sub.shortDesc}
                     </div>
-                    <CodeBlock
+                    <CodeBlock isEditable={!isReadOnly}
                       label={`System Prompt สำหรับ ${sub.name}`}
                       content={sub.systemPrompt}
                     />
@@ -533,14 +534,14 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
             </div>
 
             {purrpawData.initialRelationship && (
-              <CodeBlock
+              <CodeBlock isEditable={!isReadOnly}
                 label="5. ความสัมพันธ์แรกเริ่ม"
                 subtitle="สถานะเริ่มต้นระหว่าง {{user}} กับตัวละคร"
                 content={purrpawData.initialRelationship}
               />
             )}
 
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="6. ข้อความแรกทักทาย (Open Greeting)"
               subtitle="บทเปิดฉากที่จะแสดงทันทีเมื่อเริ่มแชท"
               content={purrpawData.openGreeting}
@@ -554,30 +555,30 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
         ========================================================================= */}
         {activeTab === 'rubii' && (
           <div className="space-y-3.5">
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="ชื่อ (Name)"
               subtitle="ชื่อตัวละครในระบบ Rubii"
               content={rubiiData.name}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="คำอธิบายสาธารณะ (Public Description)"
               subtitle="คำโปรยและข้อมูลเบื้องต้นสำหรับผู้เล่นอื่น"
               content={rubiiData.publicDescription}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="การตั้งค่าตัวละคร (Persona Prompt + System Prompt)"
               subtitle="คำสั่งควบคุมบุคลิกและพฤติกรรมของ Rubii"
               content={rubiiData.personaSystemPrompt}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="สร้างโมเมนต์ (Moment Intro)"
               subtitle="คำโปรยสั้นๆ สไตล์ Hook กระชับ"
               content={rubiiData.momentIntro}
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="เปิดเรื่อง (Open Greeting)"
               subtitle="บทนำฉากแรกเมื่อเริ่มบทสนทนา"
               content={rubiiData.openGreeting}
@@ -591,31 +592,31 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
         ========================================================================= */}
         {activeTab === 'khui' && (
           <div className="space-y-3.5">
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="1. ชื่อตัวละคร"
               subtitle="ชื่อของตัวละครใน Khui AI"
               content={khuiData.name}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="2. คำโปรย"
               subtitle="คำพูดเด็ดของตัวละคร เน้น Hook"
               content={khuiData.tagline}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="3. คำอธิบาย (System Prompt)"
               subtitle="คำสั่งหลักสำหรับควบคุม AI Khui"
               content={khuiData.systemPrompt}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="4. ประวัติตัวละคร (Profile)"
               subtitle="ข้อมูลเบื้องต้น, ประวัติภูมิหลัง, สถานการณ์ และความสัมพันธ์"
               content={khuiData.characterDescription}
               required
             />
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="5. คำทักทาย"
               subtitle="บทเปิดฉากพร้อมการกระทำและการตอบสนอง"
               content={khuiData.openGreeting}
@@ -642,13 +643,18 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
               </div>
             )}
 
-            <CodeBlock
-              label="6. ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ"
-              subtitle="ปูมหลังและความสัมพันธ์กับผู้เล่น"
+            <CodeBlock isEditable={!isReadOnly}
+              label="6. สถานการณ์ / พล็อตและเรื่องย่อ (Scenario & Plot Summary)"
+              subtitle="ข้อมูลจากพล็อตและเรื่องย่อสำหรับสร้างบริบทเหตุการณ์"
+              content={khuiData.scenarioPlotSummary}
+            />
+            <CodeBlock isEditable={!isReadOnly}
+              label="7. ความสัมพันธ์และบทบาทกับ {{user}} (Relationship with {{user}})"
+              subtitle="บทบาท, ความสัมพันธ์เริ่มต้น, ภูมิหลัง และทัศนคติที่มีต่อผู้เล่น"
               content={khuiData.userRelationshipScenario}
             />
-            <CodeBlock
-              label="7. แท็กตัวละคร"
+            <CodeBlock isEditable={!isReadOnly}
+              label="8. แท็กตัวละคร (Character Tags)"
               subtitle="แท็กสำหรับการจัดหมวดหมู่"
               content={khuiData.tags}
             />
@@ -660,7 +666,7 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
         ========================================================================= */}
         {activeTab === 'master' && (
           <div className="space-y-3.5">
-            <CodeBlock
+            <CodeBlock isEditable={!isReadOnly}
               label="Master Markdown Schema (SedChar Standard)"
               subtitle="เอกสาร Master Markdown ครบทั้ง 10 หมวดหมู่ พร้อมนำไปใช้หรือจัดเก็บ"
               content={masterMarkdown}

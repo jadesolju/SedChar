@@ -408,7 +408,7 @@ function MainWorkspace() {
             mobileTab === 'editor' ? 'hidden md:flex' : 'flex'
           }`}
         >
-          <PlatformPreview character={character} />
+          <PlatformPreview character={character} isReadOnly={isReadOnly} />
         </div>
       </main>
 

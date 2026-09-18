@@ -687,8 +687,7 @@ export function generatePurrpawOutput(char: ThaiMasterCharacter): PurrpawOutput 
 }
 
 export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
-  const nick = char.nickname || char.fullName || 'ตัวละคร';
-  const name = char.fullName || char.nickname || 'ตัวละคร';
+  const name = char.fullName || char.nickname || "ตัวละคร";
   const punchyHook = extractPunchyHook(char);
 
   // Rubii Public Description prioritizes Public Info
@@ -696,102 +695,87 @@ export function generateRubiiOutput(char: ThaiMasterCharacter): RubiiOutput {
 
   const activeRubiiSubChars = char.supportingCharacters.filter(s => s.isSelected !== false);
   const subCharsStr = activeRubiiSubChars.length > 0
-    ? activeRubiiSubChars.map((s, idx) => `${idx + 1}. ${formatSubCharacterSystemPrompt(s)}`).join('\n')
-    : '';
+    ? activeRubiiSubChars.map((s, idx) => (idx + 1) + ". " + formatSubCharacterSystemPrompt(s)).join("\n")
+    : "";
 
+  // Use Unified Markdown System Prompt (identical structure to Purrpaw)
   const sections: string[] = [
-    `# SYSTEM PROMPT FOR ${name.toUpperCase()}`,
-    `[Character("${name}")]`,
-    `[Nickname("${nick}")]`,
-    char.gender ? `[Gender("${char.gender}")]` : '',
-    char.age ? `[Age("${char.age}")]` : '',
-    char.mbti ? `[MBTI("${char.mbti}")]` : '',
-    char.occupation ? `[Role("${char.occupation}")]` : '',
-    char.appearanceDesc ? `[Appearance("${char.appearanceDesc.replace(/\n/g, ' ')}")]` : '',
-    char.coreTraits ? `[Mind("${char.coreTraits.replace(/\n/g, ' ')}")]` : '',
-    char.personalityTags.length > 0 ? `[Personality("${char.personalityTags.join(', ')}")]` : '',
-    char.likes.length > 0 ? `[Likes("${char.likes.join(', ')}")]` : '',
-    char.dislikes.length > 0 ? `[Dislikes("${char.dislikes.join(', ')}")]` : '',
-    char.generalBehaviors ? `[Habits("${char.generalBehaviors.replace(/\n/g, ' ')}")]` : '',
-    char.userStoryRole ? `[User_Role("${char.userStoryRole}")]` : '',
-    char.initialRelationship ? `[Relationship("${char.initialRelationship}")]` : '',
-    char.relationshipBackstory ? `[Relationship_Lore("${char.relationshipBackstory.replace(/\n/g, ' ')}")]` : '',
-    char.absoluteAntiBehaviors ? `[Anti_Behaviors("${char.absoluteAntiBehaviors.replace(/\n/g, ' ')}")]` : '',
-    char.sexualStyle ? `[Intimacy_Style("${char.sexualStyle}")]` : '',
-    char.kinksPreferences ? `[Intimacy_Kinks("${char.kinksPreferences}")]` : '',
-    char.aftercareStyle ? `[Intimacy_Aftercare("${char.aftercareStyle}")]` : '',
-    char.toneSetting ? `[Setting_Tone("${char.toneSetting}")]` : '',
-    subCharsStr ? `[SUPPORTING CHARACTERS / ตัวละครเสริม]:\n${subCharsStr}` : '',
-    char.subCharRules ? `[SUB_CHARACTER_RULES]: ${char.subCharRules}` : '',
-    char.subCharAllowed ? `[SUB_CHARACTER_ALLOWED]: ${char.subCharAllowed}` : '',
-  ].filter(Boolean);
+    buildPurrpawSystemPrompt(char),
+  ];
 
-  // Rubii garageStorage
-  if (char.garageStorage && char.garageStorage.trim()) {
-    sections.push(`[GARAGE STORAGE / ADDITIONAL LORE / คลังข้อมูลเสริม]:\n${char.garageStorage.trim()}`);
+  if (subCharsStr) {
+    let subSection = "## [ตัวละครเสริม (Supporting Characters)]\n\n" + subCharsStr;
+    if (char.subCharRules) subSection += "\n\n- **กฎการควบคุมตัวละครเสริม (Sub-Character Rules):** " + char.subCharRules;
+    if (char.subCharAllowed) subSection += "\n- **ขอบเขตการมีส่วนร่วม (Allowed Actions):** " + char.subCharAllowed;
+    sections.push(subSection);
   }
 
-  const personaSystemPrompt = sections.join('\n\n');
+  // Rubii garageStorage / Lore Storage
+  if (char.garageStorage && char.garageStorage.trim()) {
+    sections.push("## [คลังข้อมูลเสริม / Lore Storage]\n\n" + char.garageStorage.trim());
+  }
+
+  const personaSystemPrompt = sections.join("\n\n");
 
   return {
     name,
     publicDescription,
     personaSystemPrompt,
-    momentIntro: char.momentIntro || `${name} - "${char.punchline || '...'}"`,
-    openGreeting: char.fullGreeting || char.openGreetingNarrative || '',
+    momentIntro: char.momentIntro || (name + " - \"" + (char.punchline || "...") + "\""),
+    openGreeting: char.fullGreeting || char.openGreetingNarrative || "",
     tokenEstimate: Math.ceil(personaSystemPrompt.length / 3),
   };
 }
 
 export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
-  const displayName = char.fullName || char.nickname || 'ตัวละคร';
+  const displayName = char.fullName || char.nickname || "ตัวละคร";
   const tagline = extractPunchyHook(char);
 
   // System Prompt: Concise Thai Keylist Prompt Persona, NO open greeting
   const sysPromptLines: string[] = [
-    `# PROMPT PERSONA & BEHAVIOR RULES (KHUI AI)`,
-    `[บทบาทและตัวตน]: ${char.fullName || char.nickname || 'ตัวละคร'} (${char.occupation || 'ไม่ระบุอาชีพ'})`,
-    `[บุคลิกภาพหลัก]: ${char.personalityTags.length > 0 ? char.personalityTags.join(', ') : (char.coreTraits || 'ตามข้อมูลบทบาท')}`,
-    char.generalBehaviors ? `[รูปแบบคำพูดและการตอบสนอง]: ${char.generalBehaviors.replace(/\n/g, ' ')}` : '',
-    char.userExclusiveBehaviors ? `[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: ${char.userExclusiveBehaviors.replace(/\n/g, ' ')}` : (char.userAttitude ? `[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: ${char.userAttitude}` : ''),
-    char.absoluteAntiBehaviors ? `[กฎเหล็กและข้อห้ามเด็ดขาด]: ห้ามทำเด็ดขาด - ${char.absoluteAntiBehaviors.replace(/\n/g, ' ')}` : '',
-    char.coreBelief ? `[ความเชื่อหลัก]: "${char.coreBelief}"` : '',
-    char.mindset ? `[แนวคิด]: "${char.mindset}"` : '',
-    char.flawsWeaknesses ? `[จุดอ่อน/จุดเปราะบาง]: ${char.flawsWeaknesses}` : '',
+    "# PROMPT PERSONA & BEHAVIOR RULES (KHUI AI)",
+    "[บทบาทและตัวตน]: " + (char.fullName || char.nickname || "ตัวละคร") + " (" + (char.occupation || "ไม่ระบุอาชีพ") + ")",
+    "[บุคลิกภาพหลัก]: " + (char.personalityTags.length > 0 ? char.personalityTags.join(", ") : (char.coreTraits || "ตามข้อมูลบทบาท")),
+    char.generalBehaviors ? "[รูปแบบคำพูดและการตอบสนอง]: " + char.generalBehaviors.replace(/\n/g, " ") : "",
+    char.userExclusiveBehaviors ? "[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: " + char.userExclusiveBehaviors.replace(/\n/g, " ") : (char.userAttitude ? "[พฤติกรรมเฉพาะกับผู้ใช้ {{user}}]: " + char.userAttitude : ""),
+    char.absoluteAntiBehaviors ? "[กฎเหล็กและข้อห้ามเด็ดขาด]: ห้ามทำเด็ดขาด - " + char.absoluteAntiBehaviors.replace(/\n/g, " ") : "",
+    char.coreBelief ? "[ความเชื่อหลัก]: \"" + char.coreBelief + "\"" : "",
+    char.mindset ? "[แนวคิด]: \"" + char.mindset + "\"" : "",
+    char.flawsWeaknesses ? "[จุดอ่อน/จุดเปราะบาง]: " + char.flawsWeaknesses : "",
   ].filter(Boolean);
 
   // Khui garageStorage
   if (char.garageStorage && char.garageStorage.trim()) {
-    sysPromptLines.push(`[คลังข้อมูลเสริม / GARAGE STORAGE]: ${char.garageStorage.trim()}`);
+    sysPromptLines.push("[คลังข้อมูลเสริม / GARAGE STORAGE]: " + char.garageStorage.trim());
   }
 
-  const sysPrompt = sysPromptLines.join('\n');
+  const sysPrompt = sysPromptLines.join("\n");
 
   // Rich Markdown + Emoji Character Description
-  let charDesc = '## 📌 ข้อมูลเบื้องต้น\n';
+  let charDesc = "## 📌 ข้อมูลเบื้องต้น\n";
   if (char.fullName || char.nickname) {
-    charDesc += `- **ชื่อ:** ${char.fullName || char.nickname}${char.nickname && char.fullName && char.nickname !== char.fullName ? ` (${char.nickname})` : ''}\n`;
+    charDesc += "- **ชื่อ:** " + (char.fullName || char.nickname) + (char.nickname && char.fullName && char.nickname !== char.fullName ? " (" + char.nickname + ")" : "") + "\n";
   }
-  if (char.age) charDesc += `- **อายุ:** ${char.age}\n`;
-  if (char.gender || char.status) charDesc += `- **เพศ / สถานะ:** ${[char.gender, char.status].filter(Boolean).join(' | ')}\n`;
-  if (char.mbti) charDesc += `- **MBTI:** ${char.mbti}\n`;
-  if (char.occupation) charDesc += `- **อาชีพ:** ${char.occupation}\n`;
-  if (char.fashionStyle) charDesc += `- **สไตล์การแต่งกาย:** ${char.fashionStyle}\n`;
-  if (char.appearanceDesc) charDesc += `- **รูปลักษณ์:** ${char.appearanceDesc.replace(/\n/g, ' ')}\n`;
+  if (char.age) charDesc += "- **อายุ:** " + char.age + "\n";
+  if (char.gender || char.status) charDesc += "- **เพศ / สถานะ:** " + [char.gender, char.status].filter(Boolean).join(" | ") + "\n";
+  if (char.mbti) charDesc += "- **MBTI:** " + char.mbti + "\n";
+  if (char.occupation) charDesc += "- **อาชีพ:** " + char.occupation + "\n";
+  if (char.fashionStyle) charDesc += "- **สไตล์การแต่งกาย:** " + char.fashionStyle + "\n";
+  if (char.appearanceDesc) charDesc += "- **รูปลักษณ์:** " + char.appearanceDesc.replace(/\n/g, " ") + "\n";
 
   if (char.coreTraits || char.personalityTags.length > 0) {
-    charDesc += `\n## 🧠 บุคลิกภาพและจิตวิทยา\n`;
-    if (char.coreTraits) charDesc += `- **ลักษณะเด่น:** ${char.coreTraits.replace(/\n/g, ' ')}\n`;
-    if (char.personalityTags.length > 0) charDesc += `- **แท็กนิสัย:** ${char.personalityTags.join(', ')}\n`;
-    if (char.likes.length > 0) charDesc += `- **สิ่งที่ชอบ:** ${char.likes.join(', ')}\n`;
-    if (char.dislikes.length > 0) charDesc += `- **สิ่งที่ไม่ชอบ:** ${char.dislikes.join(', ')}\n`;
+    charDesc += "\n## 🧠 บุคลิกภาพและจิตวิทยา\n";
+    if (char.coreTraits) charDesc += "- **ลักษณะเด่น:** " + char.coreTraits.replace(/\n/g, " ") + "\n";
+    if (char.personalityTags.length > 0) charDesc += "- **แท็กนิสัย:** " + char.personalityTags.join(", ") + "\n";
+    if (char.likes.length > 0) charDesc += "- **สิ่งที่ชอบ:** " + char.likes.join(", ") + "\n";
+    if (char.dislikes.length > 0) charDesc += "- **สิ่งที่ไม่ชอบ:** " + char.dislikes.join(", ") + "\n";
   }
 
   if (char.sexualStyle || char.kinksPreferences || char.aftercareStyle) {
-    charDesc += `\n## 🔞 เรื่องบนเตียงและความใกล้ชิด (NSFW & Intimacy)\n`;
-    if (char.sexualStyle) charDesc += `- **สไตล์:** ${char.sexualStyle}\n`;
-    if (char.kinksPreferences) charDesc += `- **รสนิยมจำเพาะ (Kinks):** ${char.kinksPreferences}\n`;
-    if (char.aftercareStyle) charDesc += `- **การดูแลหลังกิจกรรม (Aftercare):** ${char.aftercareStyle}\n`;
+    charDesc += "\n## 🔞 เรื่องบนเตียงและความใกล้ชิด (NSFW & Intimacy)\n";
+    if (char.sexualStyle) charDesc += "- **สไตล์:** " + char.sexualStyle + "\n";
+    if (char.kinksPreferences) charDesc += "- **รสนิยมจำเพาะ (Kinks):** " + char.kinksPreferences + "\n";
+    if (char.aftercareStyle) charDesc += "- **การดูแลหลังกิจกรรม (Aftercare):** " + char.aftercareStyle + "\n";
   }
 
   // Active Sub-characters using structured key-value tag format
@@ -801,29 +785,30 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
     description: formatSubCharacterSystemPrompt(sub),
   }));
 
-  // Separated Scenario / Plot Summary vs User Relationship
-  const scenarioPlotSummary = char.plotSummary || char.shortIntro || char.punchline || 'เรื่องราวดำเนินไปตามบริบทและการมีปฏิสัมพันธ์ระหว่างตัวละครกับผู้ใช้';
-  
+  // Separated Scenario / Plot Summary (Derived strictly from Plot Summary / Short Intro)
+  const scenarioPlotSummary = char.plotSummary?.trim() || char.shortIntro?.trim() || "";
+
+  // Separated Relationship and Role with {{user}}
   const userRelLines: string[] = [
-    char.userStoryRole ? `- **บทบาทของ {{user}} ในเนื้อเรื่อง:** ${char.userStoryRole}` : '',
-    char.initialRelationship ? `- **ความสัมพันธ์เริ่มต้น:** ${char.initialRelationship}` : '',
-    char.relationshipBackstory ? `- **ภูมิหลังความสัมพันธ์:** ${char.relationshipBackstory}` : '',
-    char.userAttitude ? `- **ทัศนคติที่มีต่อ {{user}}:** ${char.userAttitude}` : '',
+    char.userStoryRole ? "- **บทบาทของ {{user}} ในเนื้อเรื่อง:** " + char.userStoryRole : "",
+    char.initialRelationship ? "- **ความสัมพันธ์เริ่มต้น:** " + char.initialRelationship : "",
+    char.relationshipBackstory ? "- **ภูมิหลังความสัมพันธ์:** " + char.relationshipBackstory : "",
+    char.userAttitude ? "- **ทัศนคติที่มีต่อ {{user}}:** " + char.userAttitude : "",
   ].filter(Boolean);
-  const userRelationshipScenario = userRelLines.length > 0 ? userRelLines.join('\n') : (char.initialRelationship || 'พบกันครั้งแรกในสถานการณ์ที่น่าจดจำ');
+  const userRelationshipScenario = userRelLines.length > 0 ? userRelLines.join("\n") : "";
 
   const tagsStr = char.categoryTags.length > 0
-    ? char.categoryTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ')
-    : (char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith('#') ? t : '#' + t).join(', ') : '#Roleplay');
+    ? char.categoryTags.map(t => t.startsWith("#") ? t : "#" + t).join(", ")
+    : (char.personalityTags.length > 0 ? char.personalityTags.map(t => t.startsWith("#") ? t : "#" + t).join(", ") : "#Roleplay");
 
-  const totalCharCount = (displayName + tagline + sysPrompt + charDesc + (char.fullGreeting || '')).length;
+  const totalCharCount = (displayName + tagline + sysPrompt + charDesc + (char.fullGreeting || "")).length;
 
   return {
     name: displayName,
     tagline,
     systemPrompt: sysPrompt,
     characterDescription: charDesc.trim(),
-    openGreeting: char.fullGreeting || char.openGreetingNarrative || '',
+    openGreeting: char.fullGreeting || char.openGreetingNarrative || "",
     subCharacters,
     scenarioPlotSummary,
     userRelationshipScenario,

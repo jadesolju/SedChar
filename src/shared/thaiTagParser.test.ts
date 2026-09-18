@@ -90,7 +90,7 @@ MBTI: ENTP
   it('5. should generate Rubii, Purrpaw, and Khui outputs accurately according to platform rules', () => {
     const rubii = generateRubiiOutput(SAMPLE_CHARACTER);
     expect(rubii.name).toBe(SAMPLE_CHARACTER.fullName);
-    expect(rubii.personaSystemPrompt).toContain('# SYSTEM PROMPT FOR');
+    expect(rubii.personaSystemPrompt).toContain('ข้อมูลพื้นฐาน - Character Profile');
     expect(rubii.personaSystemPrompt).not.toContain(SAMPLE_CHARACTER.fullGreeting);
 
     const purrpaw = generatePurrpawOutput(SAMPLE_CHARACTER);

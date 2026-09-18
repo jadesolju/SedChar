@@ -4,6 +4,8 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { ThaiMasterCharacter } from '@/shared/types';
 
+export type TargetPlatformType = 'all' | 'purrpaw' | 'rubii' | 'khui';
+
 interface SingleBoxInputProps {
   isReadOnly?: boolean;
   rawMarkdown: string;
@@ -26,6 +28,8 @@ export function SingleBoxInput({
   onClear,
 }: SingleBoxInputProps) {
   const { user, quotaRemaining, quotaMax, consumeQuota, openAuthModal } = useAuth();
+
+  const [targetPlatform, setTargetPlatform] = useState<TargetPlatformType>('all');
 
   const [copied, setCopied] = useState(false);
   const [parseNotice, setParseNotice] = useState<string | null>(null);
@@ -100,7 +104,7 @@ export function SingleBoxInput({
       const res = await fetch('/api/ai/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: rawMarkdown }),
+        body: JSON.stringify({ rawText: rawMarkdown, targetPlatform }),
       });
 
       if (res.ok) {

@@ -87,7 +87,6 @@ export function InputForm({
     const { user, openAuthModal } = useAuth();
   const maxSubCharacters = user ? 25 : 8;
   const [expandedSubChars, setExpandedSubChars] = useState<Record<number, boolean>>({});
-  const [showGreetingDetails, setShowGreetingDetails] = useState<boolean>(false);
 
   const toggleSubCharExpand = (idx: number) => {
     setExpandedSubChars(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -1118,38 +1117,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
               placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
             />
 
-            {/* Optional Narrative & Dialogue Breakdown Drawer */}
-            <div className="pt-1 border-t border-border/60">
-              <button
-                type="button"
-                onClick={() => setShowGreetingDetails(!showGreetingDetails)}
-                className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <span>{showGreetingDetails ? '▲ ซ่อนการแยกกรอกบทบรรยาย/บทพูด' : '▼ แยกกรอก บทบรรยาย (Narrative) / บทพูด (Dialogue) แบบละเอียด (ตัวเลือกเสริม)'}</span>
-              </button>
-
-              {showGreetingDetails && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 animate-in fade-in duration-150">
-                  <ExpandableTextarea readOnly={isReadOnly}
-                    id="openGreetingNarrative"
-                    label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
-                    rows={3}
-                    value={character.openGreetingNarrative}
-                    onChange={v => onUpdateField('openGreetingNarrative', v)}
-                    placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด..."
-                  />
-
-                  <ExpandableTextarea readOnly={isReadOnly}
-                    id="openGreetingDialogue"
-                    label="บทพูดเปิดตัว (Dialogue)"
-                    rows={3}
-                    value={character.openGreetingDialogue}
-                    onChange={v => onUpdateField('openGreetingDialogue', v)}
-                    placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
-                  />
-                </div>
-              )}
-            </div>
+            
           </div>
         </FormSection>
 
