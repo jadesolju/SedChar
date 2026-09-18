@@ -139,6 +139,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
       if (onShowToast) onShowToast(`แพลตฟอร์ม ${activeTab.toUpperCase()} ถูกปิดการแปลงอยู่ กรุณาติ๊กถูกที่ช่อง Checkbox เพื่อเปิดใช้งาน`);
       return;
     }
+    const protectedMsg = '[🔒 ซ่อนข้อมูล System Prompt ในโหมดอ่านอย่างเดียว]';
     let textToCopy = '';
     if (activeTab === 'purrpaw') {
       if (!purrpawData) return;
@@ -146,13 +147,13 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
         `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
         `- แท็ก (ตัวละคร)\n${purrpawData.tags}\n\n` +
-        `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${purrpawData.historyPersonalityPrompt}\n\n` +
+        `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${isReadOnly ? protectedMsg : purrpawData.historyPersonalityPrompt}\n\n` +
         (purrpawData.subCharacters.length > 0
           ? `ตัวละครเสริม [สร้างได้ Max 5 ตัว] (${purrpawData.subCharacters.length}/5)\n` +
             purrpawData.subCharacters
               .map(
                 (s) =>
-                  `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${s.systemPrompt}`
+                  `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${isReadOnly ? protectedMsg : s.systemPrompt}`
               )
               .join('\n\n') +
             '\n\n'
@@ -169,7 +170,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
       textToCopy =
         `ชื่อ (Name)\n${rubiiData.name}\n\n` +
         `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
-        `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${rubiiData.personaSystemPrompt}\n\n` +
+        `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${isReadOnly ? protectedMsg : rubiiData.personaSystemPrompt}\n\n` +
         `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
         `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
     } else if (activeTab === 'khui') {
@@ -178,7 +179,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         `Khui AI Platform Output\n\n` +
         `ชื่อ\n${khuiData.name}\n\n` +
         `คำโปรย\n${khuiData.tagline}\n\n` +
-        `คำอธิบาย (System Prompt)\n${khuiData.systemPrompt}\n\n` +
+        `คำอธิบาย (System Prompt)\n${isReadOnly ? protectedMsg : khuiData.systemPrompt}\n\n` +
         `ประวัติตัวละคร (Profile)\n${khuiData.characterDescription}\n\n` +
         `คำทักทาย\n${khuiData.openGreeting}\n\n` +
         (khuiData.subCharacters.length > 0
@@ -190,7 +191,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         `ความสัมพันธ์และบทบาทกับ {{user}}\n${khuiData.userRelationshipScenario}\n\n` +
         `แท็กตัวละคร\n${khuiData.tags}`;
     } else {
-      textToCopy = masterMarkdown;
+      textToCopy = isReadOnly ? '[🔒 ซ่อนข้อมูล Master Markdown ในโหมดอ่านอย่างเดียว]' : masterMarkdown;
     }
 
     try {
@@ -218,16 +219,36 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
     const filename = `${charName}_${activeTab}_${Date.now()}`;
 
     try {
+      const protectedMsg = '[🔒 ซ่อนข้อมูล System Prompt ในโหมดอ่านอย่างเดียว]';
       if (format === 'json') {
         let exportObj: any = {};
-        if (activeTab === 'purrpaw') exportObj = { platform: 'purrpaw', ...purrpawData, rawCharacter: character };
-        else if (activeTab === 'rubii') exportObj = { platform: 'rubii', ...rubiiData, rawCharacter: character };
-        else if (activeTab === 'khui') exportObj = { platform: 'khui', ...khuiData, rawCharacter: character };
-        else exportObj = character;
+        if (activeTab === 'purrpaw') {
+          const pData = isReadOnly && purrpawData ? {
+            ...purrpawData,
+            historyPersonalityPrompt: protectedMsg,
+            subCharacters: purrpawData.subCharacters.map(s => ({ ...s, systemPrompt: protectedMsg }))
+          } : purrpawData;
+          exportObj = { platform: 'purrpaw', ...pData };
+        } else if (activeTab === 'rubii') {
+          const rData = isReadOnly && rubiiData ? {
+            ...rubiiData,
+            personaSystemPrompt: protectedMsg
+          } : rubiiData;
+          exportObj = { platform: 'rubii', ...rData };
+        } else if (activeTab === 'khui') {
+          const kData = isReadOnly && khuiData ? {
+            ...khuiData,
+            systemPrompt: protectedMsg
+          } : khuiData;
+          exportObj = { platform: 'khui', ...kData };
+        } else {
+          exportObj = isReadOnly ? { note: 'Master markdown protected in read-only mode' } : character;
+        }
 
         const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json;charset=utf-8' });
         downloadBlob(blob, `${filename}.json`);
       } else if (format === 'xml') {
+        const mdContentToExport = isReadOnly ? '[🔒 ซ่อนข้อมูล Master Markdown ในโหมดอ่านอย่างเดียว]' : masterMarkdown;
         const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <character platform="${activeTab}">
   <name>${escapeXml(character.fullName || character.nickname)}</name>
@@ -237,12 +258,13 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
   <mbti>${escapeXml(character.mbti)}</mbti>
   <shortIntro>${escapeXml(character.shortIntro)}</shortIntro>
   <greeting>${escapeXml(character.fullGreeting || character.openGreetingNarrative)}</greeting>
-  <rawMarkdown><![CDATA[${masterMarkdown}]]></rawMarkdown>
+  <rawMarkdown><![CDATA[${mdContentToExport}]]></rawMarkdown>
 </character>`;
         const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
         downloadBlob(blob, `${filename}.xml`);
       } else if (format === 'md') {
-        const blob = new Blob([masterMarkdown], { type: 'text/markdown;charset=utf-8' });
+        const mdContentToExport = isReadOnly ? '[🔒 ซ่อนข้อมูล Master Markdown ในโหมดอ่านอย่างเดียว]' : masterMarkdown;
+        const blob = new Blob([mdContentToExport], { type: 'text/markdown;charset=utf-8' });
         downloadBlob(blob, `${filename}.md`);
       } else if (format === 'txt') {
         let textToExport = '';
@@ -251,13 +273,13 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
             `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
             `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
             `- แท็ก (ตัวละคร)\n${purrpawData.tags}\n\n` +
-            `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${purrpawData.historyPersonalityPrompt}\n\n` +
+            `- ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)\n${isReadOnly ? protectedMsg : purrpawData.historyPersonalityPrompt}\n\n` +
             (purrpawData.subCharacters.length > 0
               ? `ตัวละครเสริม [สร้างได้ Max 5 ตัว] (${purrpawData.subCharacters.length}/5)\n` +
                 purrpawData.subCharacters
                   .map(
                     (s) =>
-                      `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${s.systemPrompt}`
+                      `* ชื่อตัวละครเสริม: ${s.name}\n* คำอธิบายตัวละคร (หน้ารายละเอียด):\n${s.shortDesc}\n* บทบาทและตัวตน (System Prompt for subchar):\n${isReadOnly ? protectedMsg : s.systemPrompt}`
                   )
                   .join('\n\n') +
                 '\n\n'
@@ -273,7 +295,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
           textToExport =
             `ชื่อ (Name)\n${rubiiData.name}\n\n` +
             `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
-            `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${rubiiData.personaSystemPrompt}\n\n` +
+            `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${isReadOnly ? protectedMsg : rubiiData.personaSystemPrompt}\n\n` +
             `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
             `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
         } else if (activeTab === 'khui' && khuiData) {
@@ -281,7 +303,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
             `Khui AI Platform Output\n\n` +
             `ชื่อ\n${khuiData.name}\n\n` +
             `คำโปรย\n${khuiData.tagline}\n\n` +
-            `คำอธิบาย (System Prompt)\n${khuiData.systemPrompt}\n\n` +
+            `คำอธิบาย (System Prompt)\n${isReadOnly ? protectedMsg : khuiData.systemPrompt}\n\n` +
             `ประวัติตัวละคร (Profile)\n${khuiData.characterDescription}\n\n` +
             `คำทักทาย\n${khuiData.openGreeting}\n\n` +
             (khuiData.subCharacters.length > 0
@@ -293,7 +315,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
             `ความสัมพันธ์และบทบาทกับ {{user}}\n${khuiData.userRelationshipScenario}\n\n` +
             `แท็กตัวละคร\n${khuiData.tags}`;
         } else {
-          textToExport = masterMarkdown;
+          textToExport = isReadOnly ? '[🔒 ซ่อนข้อมูล Master Markdown ในโหมดอ่านอย่างเดียว]' : masterMarkdown;
         }
 
         const blob = new Blob([textToExport], { type: 'text/plain;charset=utf-8' });
@@ -519,7 +541,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               subtitle="คั่นด้วยเครื่องหมายจุลภาค (,)"
               content={purrpawData.tags}
             />
-            <CodeBlock isEditable={!isReadOnly}
+            <CodeBlock isEditable={!isReadOnly} isProtected={isReadOnly}
               label="4. ประวัติ & บุคลิกภาพตัวละคร (System Prompt + Persona Prompt)"
               subtitle="โครงสร้างคำสั่งหลักสำหรับ Purrpaw"
               content={purrpawData.historyPersonalityPrompt}
@@ -546,7 +568,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
                     <div className="text-[11px] text-muted-foreground">
                       <strong>คำอธิบายหน้ารายละเอียด:</strong> {sub.shortDesc}
                     </div>
-                    <CodeBlock isEditable={!isReadOnly}
+                    <CodeBlock isEditable={!isReadOnly} isProtected={isReadOnly}
                       label={`System Prompt สำหรับ ${sub.name}`}
                       content={sub.systemPrompt}
                     />
@@ -623,7 +645,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               content={rubiiData.publicDescription}
               required
             />
-            <CodeBlock isEditable={!isReadOnly}
+            <CodeBlock isEditable={!isReadOnly} isProtected={isReadOnly}
               label="การตั้งค่าตัวละคร (Persona Prompt + System Prompt)"
               subtitle="คำสั่งควบคุมบุคลิกและพฤติกรรมของ Rubii"
               content={rubiiData.personaSystemPrompt}
@@ -662,7 +684,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               content={khuiData.tagline}
               required
             />
-            <CodeBlock isEditable={!isReadOnly}
+            <CodeBlock isEditable={!isReadOnly} isProtected={isReadOnly}
               label="3. คำอธิบาย (System Prompt)"
               subtitle="คำสั่งหลักสำหรับควบคุม AI Khui"
               content={khuiData.systemPrompt}
@@ -726,7 +748,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
           <DisabledPlatformView platformName="Master Markdown" onEnable={() => togglePlatform('master')} />
         ) : (
           <div className="space-y-3.5">
-            <CodeBlock isEditable={!isReadOnly}
+            <CodeBlock isEditable={!isReadOnly} isProtected={isReadOnly}
               label="Master Markdown Schema (SedChar Standard)"
               subtitle="เอกสาร Master Markdown ครบทั้ง 10 หมวดหมู่ พร้อมนำไปใช้หรือจัดเก็บ"
               content={masterMarkdown}

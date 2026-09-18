@@ -1,46 +1,94 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { CopyButton } from '@/components/ui/CopyButton';
-import { Edit3, Eye, Check, Maximize2, Minimize2, X } from 'lucide-react';
+import { Copy, Check, Maximize2, X, Edit3, Eye, Lock } from 'lucide-react';
 
 interface CodeBlockProps {
   label: string;
   subtitle?: string;
+  content: string;
   required?: boolean;
   hint?: string;
-  content: string;
-  onChange?: (newVal: string) => void;
-  countLabel?: string;
-  maxConstraint?: string;
-  isOverLimit?: boolean;
   isEditable?: boolean;
+  isProtected?: boolean;
+  onChange?: (val: string) => void;
+}
+
+function CopyButton({ text, disabled }: { text: string; disabled?: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  if (disabled) {
+    return (
+      <span
+        title="ไม่อนุญาตให้คัดลอกส่วน System Prompt ในโหมดอ่านอย่างเดียว"
+        className="text-[11px] px-2 py-1 rounded bg-muted/60 text-muted-foreground border border-border/50 flex items-center gap-1 font-medium cursor-not-allowed select-none"
+      >
+        <Lock className="w-3 h-3 text-rose-500" />
+        <span>ล็อค</span>
+      </span>
+    );
+  }
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title="คัดลอกข้อความในช่องนี้"
+      className="text-xs px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground border border-border/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5 text-emerald-500" />
+          <span className="text-emerald-500 font-medium">คัดลอกแล้ว</span>
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+          <span>คัดลอก</span>
+        </>
+      )}
+    </button>
+  );
 }
 
 export function CodeBlock({
   label,
   subtitle,
+  content,
   required = false,
   hint,
-  content,
-  onChange,
-  countLabel,
-  maxConstraint,
-  isOverLimit = false,
   isEditable = true,
+  isProtected = false,
+  onChange,
 }: CodeBlockProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [localValue, setLocalValue] = useState(content || '');
+  const [isEditing, setIsEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(content);
 
-  // Keep in sync when external content changes (unless actively typing)
   useEffect(() => {
-    setLocalValue(content || '');
+    setLocalValue(content);
   }, [content]);
 
-  const handleChange = (newVal: string) => {
-    setLocalValue(newVal);
+  const handleChange = (val: string) => {
+    setLocalValue(val);
     if (onChange) {
-      onChange(newVal);
+      onChange(val);
     }
   };
 
@@ -72,22 +120,31 @@ export function CodeBlock({
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Character counter */}
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
-              {currentLength.toLocaleString('th-TH')} ตัวอักษร
-            </span>
+            {isProtected ? (
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center gap-1 font-semibold">
+                <Lock className="w-3 h-3" />
+                <span>ล็อค</span>
+              </span>
+            ) : (
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                {currentLength.toLocaleString('th-TH')} ตัวอักษร
+              </span>
+            )}
 
             {/* Fullscreen Expand Button */}
-            <button
-              type="button"
-              onClick={() => setIsFullscreen(true)}
-              title="ขยายดูแบบเต็มจอ (Fullscreen View)"
-              className="p-1.5 rounded-lg border border-border/60 bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
+            {!isProtected && (
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(true)}
+                title="ขยายดูแบบเต็มจอ (Fullscreen View)"
+                className="p-1.5 rounded-lg border border-border/60 bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+            )}
 
             {/* Edit Toggle Button */}
-            {isEditable && (
+            {isEditable && !isProtected && (
               <button
                 type="button"
                 onClick={() => setIsEditing(!isEditing)}
@@ -113,13 +170,40 @@ export function CodeBlock({
             )}
 
             {/* Copy Button */}
-            <CopyButton text={localValue} />
+            <CopyButton text={localValue} disabled={isProtected} />
           </div>
         </div>
 
         {/* Content View / Edit Mode */}
-        <div className="p-3 bg-card/60 relative">
-          {isEditing ? (
+        <div className="p-3 bg-card/60 relative min-h-[100px]">
+          {isProtected ? (
+            <div className="relative overflow-hidden rounded-lg min-h-[140px] flex items-center justify-center p-2">
+              {/* Blurred Masked Background Text (Simulated to prevent DOM text leak) */}
+              <div
+                aria-hidden="true"
+                className="filter blur-[7px] opacity-30 select-none pointer-events-none font-mono text-[11px] leading-relaxed text-foreground w-full"
+              >
+                ### [System Prompt & Instructions: LOCKED]
+- Persona Directives: [PROTECTED PROMPT STORAGE]
+- Behavioral Rules: [ENCRYPTED CONFIGURATION]
+- Response Pattern: [REDACTED IN READONLY PREVIEW]
+- Knowledge Base & Safety: [REDACTED]
+              </div>
+
+              {/* Secure Lock Badge Overlay */}
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/75 backdrop-blur-xs p-4 text-center select-none border border-border/40 rounded-lg">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-500 shadow-xs mb-1.5">
+                  <Lock className="w-4.5 h-4.5" />
+                </div>
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <span>🔒 ซ่อนข้อมูลส่วน System Prompt & Master Prompt</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 max-w-xs leading-relaxed">
+                  สงวนสิทธิ์เฉพาะเจ้าของตัวละคร (ปิดการแสดงผลในโหมดอ่านอย่างเดียว)
+                </p>
+              </div>
+            </div>
+          ) : isEditing ? (
             <div className="relative">
               <textarea
                 value={localValue}
@@ -154,7 +238,7 @@ export function CodeBlock({
       </div>
 
       {/* Fullscreen Modal View */}
-      {isFullscreen && (
+      {isFullscreen && !isProtected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
           <div className="relative w-full max-w-5xl h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
             {/* Modal Header */}
