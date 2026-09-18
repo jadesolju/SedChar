@@ -582,7 +582,7 @@ export function CharacterLibraryModal({
                   <span>🔒 <strong>โหมดอ่านอย่างเดียว (Read-Only)</strong>: ไม่อนุญาตให้แก้ไขหรือบันทึกทับตัวละครต้นฉบับ คุณสามารถบันทึกเป็นตัวละครใหม่ลงในคลังของคุณได้ (สร้างสำเนา)</span>
                 </div>
               ) : savedCharacters.length > 0 && (
-                <div className="p-1 rounded-xl bg-muted/80 border border-border grid grid-cols-2 gap-1">
+                <div className="p-1 rounded-xl bg-muted/80 border border-border grid grid-cols-1 sm:grid-cols-2 gap-1">
                   <button
                     type="button"
                     onClick={() => setSaveMode('overwrite')}
@@ -798,7 +798,7 @@ export function CharacterLibraryModal({
                   <label className="text-xs font-semibold text-muted-foreground">
                     กำหนดสิทธิ์สำหรับผู้ที่เปิดลิงก์:
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handleChangePermission('read-only')}

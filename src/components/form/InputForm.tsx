@@ -120,7 +120,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Top Controls Bar */}
-      <div className="flex-shrink-0 p-3.5 border-b border-border bg-card/60 flex items-center justify-between gap-2">
+      <div className="flex-shrink-0 p-3.5 border-b border-border bg-card/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
           <span className="text-base">📋</span>
           <div>
@@ -129,7 +129,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           {isReadOnly ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold shadow-xs">
               <span>🔒</span>
@@ -182,7 +182,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
           description="ชื่อ, อายุ, เพศ, MBTI, ฐานะ, อาชีพ, สไตล์การแต่งตัว"
           defaultOpen={true}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="ชื่อเล่น *" htmlFor="nickname" hint="เช่น คิง, เลโอ">
               <input
                 id="nickname"
@@ -206,7 +206,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             </FieldRow>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <FieldRow label="อายุ" htmlFor="age" hint="เช่น 28 ปี">
               <input
                 id="age"
@@ -241,7 +241,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             </FieldRow>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="สถานะ" htmlFor="status" hint="เช่น โสด, หัวหน้าองค์กร">
               <input
                 id="status"
@@ -265,7 +265,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             </FieldRow>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="น้ำหนัก / ส่วนสูง" htmlFor="weightHeight" hint="เช่น 188 ซม. / 82 กก.">
               <input
                 id="weightHeight"
@@ -289,7 +289,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             </FieldRow>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="ฐานะทางการเงิน" htmlFor="wealthStatus">
               <input
                 id="wealthStatus"
@@ -313,7 +313,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             </FieldRow>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldRow label="รถยนต์ประจำตำแหน่ง" htmlFor="car">
               <input
                 id="car"
@@ -929,7 +929,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                   {/* Accordion Body */}
                   {isExpanded && (
                     <div className="p-3.5 space-y-3">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
                           <input
                             readOnly={isReadOnly}
@@ -965,7 +965,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                         </FieldRow>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <FieldRow label="ความสัมพันธ์กับตัวหลัก" htmlFor={'sub-rel-' + idx}>
                           <input
                             readOnly={isReadOnly}
@@ -990,7 +990,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
                         </FieldRow>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <FieldRow label="บุคลิก/นิสัย" htmlFor={'sub-pers-' + idx}>
                           <input
                             readOnly={isReadOnly}
