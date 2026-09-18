@@ -213,14 +213,6 @@ function MainWorkspace() {
                   <Lock className="w-3 h-3 text-rose-500" />
                   <span>โหมดอ่านอย่างเดียว</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={handleSaveAsNewCopy}
-                  className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1 transition-all"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>บันทึกเป็นสำเนาของฉัน</span>
-                </button>
               </div>
             ) : (
               <button

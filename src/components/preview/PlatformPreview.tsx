@@ -36,6 +36,33 @@ interface PlatformPreviewProps {
 type TabType = 'purrpaw' | 'rubii' | 'khui' | 'master';
 type ExportFormat = 'txt' | 'xml' | 'md' | 'json' | 'pdf';
 
+
+function DisabledPlatformView({ platformName, onEnable }: { platformName: string; onEnable: () => void }) {
+  return (
+    <div className="py-14 px-6 text-center flex flex-col items-center justify-center border-2 border-dashed border-border/80 rounded-2xl bg-muted/15 space-y-4 my-3 animate-in fade-in duration-200">
+      <div className="w-12 h-12 rounded-2xl bg-muted/80 border border-border flex items-center justify-center text-xl shadow-inner">
+        ⚡
+      </div>
+      <div className="space-y-1.5 max-w-md">
+        <h4 className="text-sm font-bold text-foreground">
+          ปิดการแปลงผลสำหรับ {platformName} อยู่
+        </h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          ระบบจะไม่แปลงและไม่ประมวลผลข้อมูลในส่วนนี้ เพื่อลดภาระการทำงานเบื้องหลังและช่วยประหยัด AI Token เมื่อไม่ต้องการใช้งาน
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onEnable}
+        className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+      >
+        <span>✓</span>
+        <span>ติ๊กเปิดการแปลงสำหรับ {platformName}</span>
+      </button>
+    </div>
+  );
+}
+
 export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCharacter, onShowToast }: PlatformPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('purrpaw');
   const [copiedAll, setCopiedAll] = useState(false);
@@ -44,10 +71,36 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
   const [isExporting, setIsExporting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const rubiiData = useMemo(() => generateRubiiOutput(character), [character]);
-  const purrpawData = useMemo(() => generatePurrpawOutput(character), [character]);
-  const khuiData = useMemo(() => generateKhuiOutput(character), [character]);
-  const masterMarkdown = useMemo(() => characterToFullMarkdown(character), [character]);
+  const [enabledPlatforms, setEnabledPlatforms] = useState<Record<TabType, boolean>>({
+    purrpaw: true,
+    rubii: true,
+    khui: true,
+    master: true,
+  });
+
+  const togglePlatform = (tab: TabType) => {
+    setEnabledPlatforms((prev) => ({ ...prev, [tab]: !prev[tab] }));
+  };
+
+  const rubiiData = useMemo(() => {
+    if (!enabledPlatforms.rubii) return null;
+    return generateRubiiOutput(character);
+  }, [character, enabledPlatforms.rubii]);
+
+  const purrpawData = useMemo(() => {
+    if (!enabledPlatforms.purrpaw) return null;
+    return generatePurrpawOutput(character);
+  }, [character, enabledPlatforms.purrpaw]);
+
+  const khuiData = useMemo(() => {
+    if (!enabledPlatforms.khui) return null;
+    return generateKhuiOutput(character);
+  }, [character, enabledPlatforms.khui]);
+
+  const masterMarkdown = useMemo(() => {
+    if (!enabledPlatforms.master) return '';
+    return characterToFullMarkdown(character);
+  }, [character, enabledPlatforms.master]);
 
   const flagConfig = CHARACTER_FLAGS[character.flagType] || CHARACTER_FLAGS['none'];
 
@@ -82,8 +135,13 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
   };
 
   const handleCopyAll = async () => {
+    if (!enabledPlatforms[activeTab]) {
+      if (onShowToast) onShowToast(`แพลตฟอร์ม ${activeTab.toUpperCase()} ถูกปิดการแปลงอยู่ กรุณาติ๊กถูกที่ช่อง Checkbox เพื่อเปิดใช้งาน`);
+      return;
+    }
     let textToCopy = '';
     if (activeTab === 'purrpaw') {
+      if (!purrpawData) return;
       textToCopy =
         `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
         `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
@@ -107,6 +165,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         (purrpawData.initialRelationship ? `- ความสัมพันธ์แรกเริ่ม\n${purrpawData.initialRelationship}\n\n` : '') +
         `- ข้อความแรกทักทาย (Open Greeting)\n${purrpawData.openGreeting}`;
     } else if (activeTab === 'rubii') {
+      if (!rubiiData) return;
       textToCopy =
         `ชื่อ (Name)\n${rubiiData.name}\n\n` +
         `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
@@ -114,6 +173,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
         `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
     } else if (activeTab === 'khui') {
+      if (!khuiData) return;
       textToCopy =
         `Khui AI Platform Output\n\n` +
         `ชื่อ\n${khuiData.name}\n\n` +
@@ -186,7 +246,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         downloadBlob(blob, `${filename}.md`);
       } else if (format === 'txt') {
         let textToExport = '';
-        if (activeTab === 'purrpaw') {
+        if (activeTab === 'purrpaw' && purrpawData) {
           textToExport =
             `- ชื่อตัวละคร\n${purrpawData.name}\n\n` +
             `- TAGLINE (คำโปรยสั้นๆกระชับ)\n${purrpawData.tagline}\n\n` +
@@ -209,14 +269,14 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               : '') +
             (purrpawData.initialRelationship ? `- ความสัมพันธ์แรกเริ่ม\n${purrpawData.initialRelationship}\n\n` : '') +
             `- ข้อความแรกทักทาย (Open Greeting)\n${purrpawData.openGreeting}`;
-        } else if (activeTab === 'rubii') {
+        } else if (activeTab === 'rubii' && rubiiData) {
           textToExport =
             `ชื่อ (Name)\n${rubiiData.name}\n\n` +
             `คำอธิบายสาธารณะ (Public Description)\n${rubiiData.publicDescription}\n\n` +
             `การตั้งค่าตัวละคร (Persona Prompt + System Prompt)\n${rubiiData.personaSystemPrompt}\n\n` +
             `สร้างโมเมนต์ (Moment Intro)\n${rubiiData.momentIntro}\n\n` +
             `เปิดเรื่อง (Open Greeting)\n${rubiiData.openGreeting}`;
-        } else if (activeTab === 'khui') {
+        } else if (activeTab === 'khui' && khuiData) {
           textToExport =
             `Khui AI Platform Output\n\n` +
             `ชื่อ\n${khuiData.name}\n\n` +
@@ -229,7 +289,8 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
                 khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
                 '\n\n'
               : '') +
-            `ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ\n${khuiData.userRelationshipScenario}\n\n` +
+            `สถานการณ์ / พล็อตและเรื่องย่อ\n${khuiData.scenarioPlotSummary}\n\n` +
+            `ความสัมพันธ์และบทบาทกับ {{user}}\n${khuiData.userRelationshipScenario}\n\n` +
             `แท็กตัวละคร\n${khuiData.tags}`;
         } else {
           textToExport = masterMarkdown;
@@ -294,56 +355,47 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
       {/* Top Header Bar */}
       <div className="flex-shrink-0 p-3 border-b border-border bg-card/60 flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          {/* Navigation Tabs */}
-          <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border">
-            <button
-              type="button"
-              onClick={() => setActiveTab('purrpaw')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'purrpaw'
-                  ? 'bg-card text-pink-600 dark:text-pink-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-pink-500" />
-              <span>Purrpaw</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('rubii')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'rubii'
-                  ? 'bg-card text-violet-600 dark:text-violet-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Bot className="w-3.5 h-3.5 text-violet-500" />
-              <span>Rubii</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('khui')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'khui'
-                  ? 'bg-card text-amber-600 dark:text-amber-400 shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              <span>Khui AI</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('master')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'master'
-                  ? 'bg-card text-primary shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <FileCode className="w-3.5 h-3.5 text-primary" />
-              <span>Master MD</span>
-            </button>
+          {/* Navigation Tabs with Interactive Checkboxes */}
+          <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border flex-wrap gap-0.5">
+            {[
+              { id: 'purrpaw' as TabType, label: 'Purrpaw', icon: Sparkles, color: 'text-pink-500', activeText: 'text-pink-600 dark:text-pink-400' },
+              { id: 'rubii' as TabType, label: 'Rubii', icon: Bot, color: 'text-violet-500', activeText: 'text-violet-600 dark:text-violet-400' },
+              { id: 'khui' as TabType, label: 'Khui AI', icon: MessageSquare, color: 'text-amber-500', activeText: 'text-amber-600 dark:text-amber-400' },
+              { id: 'master' as TabType, label: 'Master MD', icon: FileCode, color: 'text-primary', activeText: 'text-primary' },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isEnabled = enabledPlatforms[tab.id];
+              const isActive = activeTab === tab.id;
+
+              return (
+                <div
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer select-none ${
+                    isActive
+                      ? `bg-card ${tab.activeText} shadow-sm border border-border`
+                      : isEnabled
+                      ? 'text-muted-foreground hover:text-foreground hover:bg-card/40'
+                      : 'text-muted-foreground/40 hover:text-muted-foreground line-through opacity-70'
+                  }`}
+                >
+                  <label
+                    className="flex items-center cursor-pointer"
+                    title={isEnabled ? `ติ๊กออกเพื่อไม่แปลงส่วนนี้ (${tab.label}) เพื่อลดภาระและประหยัด Token` : `ติ๊กถูกเพื่อเปิดใช้งานการแปลง ${tab.label}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={() => togglePlatform(tab.id)}
+                      className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                    />
+                  </label>
+                  <Icon className={`w-3.5 h-3.5 ${tab.color} ${!isEnabled ? 'opacity-40' : ''}`} />
+                  <span className={!isEnabled ? 'line-through text-muted-foreground/50' : ''}>{tab.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -446,7 +498,9 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
         {/* =========================================================================
             TAB 1: PURRPAW PLATFORM
         ========================================================================= */}
-        {activeTab === 'purrpaw' && (
+        {activeTab === 'purrpaw' && (!enabledPlatforms.purrpaw || !purrpawData ? (
+          <DisabledPlatformView platformName="Purrpaw AI" onEnable={() => togglePlatform('purrpaw')} />
+        ) : (
           <div className="space-y-3.5">
             <CodeBlock isEditable={!isReadOnly}
               label="1. ชื่อตัวละคร (Character Name)"
@@ -548,12 +602,14 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               required
             />
           </div>
-        )}
+        ))}
 
         {/* =========================================================================
             TAB 2: RUBII PLATFORM
         ========================================================================= */}
-        {activeTab === 'rubii' && (
+        {activeTab === 'rubii' && (!enabledPlatforms.rubii || !rubiiData ? (
+          <DisabledPlatformView platformName="Rubii AI" onEnable={() => togglePlatform('rubii')} />
+        ) : (
           <div className="space-y-3.5">
             <CodeBlock isEditable={!isReadOnly}
               label="ชื่อ (Name)"
@@ -585,12 +641,14 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               required
             />
           </div>
-        )}
+        ))}
 
         {/* =========================================================================
             TAB 3: KHUI AI PLATFORM
         ========================================================================= */}
-        {activeTab === 'khui' && (
+        {activeTab === 'khui' && (!enabledPlatforms.khui || !khuiData ? (
+          <DisabledPlatformView platformName="Khui AI" onEnable={() => togglePlatform('khui')} />
+        ) : (
           <div className="space-y-3.5">
             <CodeBlock isEditable={!isReadOnly}
               label="1. ชื่อตัวละคร"
@@ -659,12 +717,14 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               content={khuiData.tags}
             />
           </div>
-        )}
+        ))}
 
         {/* =========================================================================
             TAB 4: MASTER MARKDOWN (SEDCHAR SCHEMA)
         ========================================================================= */}
-        {activeTab === 'master' && (
+        {activeTab === 'master' && (!enabledPlatforms.master || !masterMarkdown ? (
+          <DisabledPlatformView platformName="Master Markdown" onEnable={() => togglePlatform('master')} />
+        ) : (
           <div className="space-y-3.5">
             <CodeBlock isEditable={!isReadOnly}
               label="Master Markdown Schema (SedChar Standard)"
@@ -673,7 +733,7 @@ export function PlatformPreview({ character, isReadOnly = false, onApplyParsedCh
               required
             />
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
