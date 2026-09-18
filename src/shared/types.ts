@@ -241,6 +241,7 @@ export interface KhuiOutput {
     name: string;
     description: string;
   }>;
+  scenarioPlotSummary: string;
   userRelationshipScenario: string;
   tags: string;
   charCount: number;

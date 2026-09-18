@@ -125,7 +125,8 @@ export function PlatformPreview({ character, onApplyParsedCharacter, onShowToast
             khuiData.subCharacters.map(s => `${s.name}— ${s.description}`).join('\n\n') +
             '\n\n'
           : '') +
-        `ความสัมพันธ์กับ {{user}} : สถานการณ์-เนื้อเรื่องย่อ\n${khuiData.userRelationshipScenario}\n\n` +
+        `สถานการณ์ / พล็อตและเรื่องย่อ\n${khuiData.scenarioPlotSummary}\n\n` +
+        `ความสัมพันธ์และบทบาทกับ {{user}}\n${khuiData.userRelationshipScenario}\n\n` +
         `แท็กตัวละคร\n${khuiData.tags}`;
     } else {
       textToCopy = masterMarkdown;

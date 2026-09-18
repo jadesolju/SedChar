@@ -13,6 +13,7 @@ import type { ThaiMasterCharacter } from '@/shared/types';
 import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
 import {
   Layers,
+  Copy,
   Zap,
   Bookmark,
   RefreshCw,
@@ -70,6 +71,7 @@ function MainWorkspace() {
     title: string;
     mode: 'read-only' | 'edit';
   } | null>(null);
+  const isReadOnly = sharedBanner?.mode === 'read-only';
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -194,25 +196,41 @@ function MainWorkspace() {
 
       {/* Shared Character Top Banner */}
       {sharedBanner && (
-        <div className="flex-shrink-0 bg-primary/10 border-b border-primary/25 px-4 py-2 flex items-center justify-between text-xs z-20">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" />
+        <div className="flex-shrink-0 bg-primary/10 border-b border-primary/25 px-4 py-2 flex items-center justify-between text-xs z-20 shadow-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Globe className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
             <span>
-              กำลังเปิดดูตัวละครที่แชร์: <strong className="text-primary">{sharedBanner.title}</strong>{' '}
-              <span className="text-muted-foreground">
+              กำลังเปิดดูตัวละครที่แชร์: <strong className="text-primary font-bold">{sharedBanner.title}</strong>{' '}
+              <span className="text-muted-foreground font-medium">
                 ({sharedBanner.mode === 'edit' ? 'โหมดแก้ไขได้' : 'โหมดอ่านอย่างเดียว'})
               </span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            
-            <button
-              type="button"
-              onClick={() => setSharedBanner(null)}
-              className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {sharedBanner.mode === 'read-only' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] px-2 py-0.5 rounded bg-muted text-foreground border border-border flex items-center gap-1 font-semibold">
+                  <Lock className="w-3 h-3 text-rose-500" />
+                  <span>โหมดอ่านอย่างเดียว</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveAsNewCopy}
+                  className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1 transition-all"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>บันทึกเป็นสำเนาของฉัน</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSharedBanner(null)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -352,6 +370,7 @@ function MainWorkspace() {
           {inputMode === 'structured' ? (
             <InputForm
               character={character}
+              isReadOnly={isReadOnly}
               onUpdateField={updateField}
               onAddTag={addTag}
               onRemoveTag={removeTag}
@@ -371,6 +390,7 @@ function MainWorkspace() {
             />
           ) : (
             <SingleBoxInput
+              isReadOnly={isReadOnly}
               rawMarkdown={rawMarkdown}
               onChangeRaw={setRawMarkdown}
               onApplyParse={importRawMarkdown}

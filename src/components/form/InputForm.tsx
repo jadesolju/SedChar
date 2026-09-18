@@ -16,9 +16,13 @@ import {
   Archive,
   Plus,
   Trash2,
+  ChevronDown,
+  ChevronUp,
+  Lock,
   Compass,
 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import type {
   ThaiMasterCharacter,
   CharacterFlagType,
@@ -80,7 +84,31 @@ export function InputForm({
   onReset,
   onLoadDefaultLocations,
 }: InputFormProps) {
-  const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
+    const { user, openAuthModal } = useAuth();
+  const maxSubCharacters = user ? 25 : 8;
+  const [expandedSubChars, setExpandedSubChars] = useState<Record<number, boolean>>({});
+  const [showGreetingDetails, setShowGreetingDetails] = useState<boolean>(false);
+
+  const toggleSubCharExpand = (idx: number) => {
+    setExpandedSubChars(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const handleAddSubCharWithLimit = () => {
+    if (!user && character.supportingCharacters.length >= 8) {
+      if (confirm('🔒 โหมด Guest จำกัดตัวละครเสริมสูงสุด 8 ตัว\nเข้าสู่ระบบเพื่อปลดล็อคสูงสุด 25 ตัวละครทันที ต้องการเข้าสู่ระบบหรือไม่?')) {
+        openAuthModal('signin');
+      }
+      return;
+    }
+    if (character.supportingCharacters.length >= maxSubCharacters) {
+      alert(`คุณเพิ่มตัวละครเสริมครบจำนวนสูงสุดแล้ว (${maxSubCharacters} ตัว)`);
+      return;
+    }
+    onAddSubCharacter();
+    setExpandedSubChars(prev => ({ ...prev, [character.supportingCharacters.length]: true }));
+  };
+
+const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
 
   const handleAIApply = (enhancedChar: ThaiMasterCharacter, notice: string) => {
     if (onApplyParsedCharacter) {
@@ -829,7 +857,7 @@ export function InputForm({
               {character.supportingCharacters.length < 5 && (
                 <button
                   type="button"
-                  onClick={() => onAddSubCharacter()}
+                  onClick={handleAddSubCharWithLimit}
                   className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
                 >
                   + เพิ่มตัวละครเสริม
@@ -837,103 +865,171 @@ export function InputForm({
               )}
             </div>
 
-            {character.supportingCharacters.map((sub, idx) => (
-              <div key={sub.id || idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-3 relative">
-                <div className="flex items-center justify-between pb-1 border-b border-border/60 pr-7">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={sub.isSelected !== false}
-                      onChange={(e) => onUpdateSubCharacter(idx, { isSelected: e.target.checked })}
-                      className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer"
-                    />
-                    <span>เปิดใช้งาน / รวมตัวละครนี้ใน System Prompt (Rubii / Khui)</span>
-                  </label>
-                  <span className="text-[10px] text-muted-foreground">ตัวที่ {idx + 1}</span>
+            {character.supportingCharacters.map((sub, idx) => {
+              const isExpanded = expandedSubChars[idx] ?? (idx === 0 || idx === character.supportingCharacters.length - 1);
+              return (
+                <div key={sub.id || idx} className="rounded-xl border border-border bg-muted/20 overflow-hidden transition-all">
+                  {/* Accordion Header */}
+                  <div className="p-3 bg-muted/40 border-b border-border/60 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          disabled={isReadOnly}
+                          checked={sub.isSelected !== false}
+                          onChange={(e) => onUpdateSubCharacter(idx, { isSelected: e.target.checked })}
+                          className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer disabled:opacity-50"
+                        />
+                        <span className="text-[11px] text-muted-foreground">ส่งออก Prompt</span>
+                      </label>
+                      <span className="text-xs font-bold text-foreground truncate">
+                        ตัวที่ {idx + 1}: {sub.name || 'ตัวละครไม่มีชื่อ'} {sub.relationship ? `(${sub.relationship})` : ''}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleSubCharExpand(idx)}
+                        className="px-2 py-1 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-card border border-border/60 cursor-pointer flex items-center gap-1"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <span>ย่อ</span>
+                            <ChevronUp className="w-3 h-3" />
+                          </>
+                        ) : (
+                          <>
+                            <span>แก้ไข</span>
+                            <ChevronDown className="w-3 h-3" />
+                          </>
+                        )}
+                      </button>
+
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveSubCharacter(idx)}
+                          title="ลบตัวละครเสริมนี้"
+                          className="p-1 rounded-md text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Accordion Body */}
+                  {isExpanded && (
+                    <div className="p-3.5 space-y-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-name-' + idx}
+                            type="text"
+                            value={sub.name}
+                            onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
+                            placeholder="เช่น ธันวา"
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                        <FieldRow label="เพศ" htmlFor={'sub-gender-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-gender-' + idx}
+                            type="text"
+                            value={sub.gender}
+                            onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
+                            placeholder="ชาย"
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                        <FieldRow label="อายุ" htmlFor={'sub-age-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-age-' + idx}
+                            type="text"
+                            value={sub.age}
+                            onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
+                            placeholder="30 ปี"
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <FieldRow label="ความสัมพันธ์กับตัวหลัก" htmlFor={'sub-rel-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-rel-' + idx}
+                            type="text"
+                            value={sub.relationship}
+                            onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
+                            placeholder="มือขวา, เพื่อนสนิท, ศัตรู..."
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                        <FieldRow label="หน้าที่หลักในเรื่อง" htmlFor={'sub-role-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-role-' + idx}
+                            type="text"
+                            value={sub.mainRole}
+                            onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
+                            placeholder="สนับสนุนข้อมูล, สร้างความขัดแย้ง..."
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <FieldRow label="บุคลิก/นิสัย" htmlFor={'sub-pers-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-pers-' + idx}
+                            type="text"
+                            value={sub.personality}
+                            onChange={e => onUpdateSubCharacter(idx, { personality: e.target.value })}
+                            placeholder="ใจเย็น ฉลาด กวนประสาท..."
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                        <FieldRow label="เงื่อนไขการปรากฏตัว" htmlFor={'sub-appear-' + idx}>
+                          <input
+                            readOnly={isReadOnly}
+                            id={'sub-appear-' + idx}
+                            type="text"
+                            value={sub.appearWhen}
+                            onChange={e => onUpdateSubCharacter(idx, { appearWhen: e.target.value })}
+                            placeholder="เมื่อมีภารกิจฉุกเฉิน, อยู่ในบาร์..."
+                            className="form-input text-xs"
+                          />
+                        </FieldRow>
+                      </div>
+
+                      <ExpandableTextarea readOnly={isReadOnly}
+                        id={'sub-desc-' + idx}
+                        label="คำอธิบายสั้น (Short Desc / Purrpaw / Khui)"
+                        rows={2}
+                        value={sub.shortDesc}
+                        onChange={v => onUpdateSubCharacter(idx, { shortDesc: v })}
+                        placeholder="คำอธิบายตัวละครแบบย่อ..."
+                      />
+
+                      <ExpandableTextarea readOnly={isReadOnly}
+                        id={'sub-prompt-' + idx}
+                        label="กฎเฉพาะ หรือ คำสั่งเพิ่มเติมสำหรับตัวละครนี้ (Custom Role Directive)"
+                        rows={2}
+                        value={sub.systemPrompt}
+                        onChange={v => onUpdateSubCharacter(idx, { systemPrompt: v })}
+                        placeholder="กฎการควบคุมตัวตนเพิ่มเติม (ระบบจะจัดโครงสร้าง Tag ให้อัตโนมัติ)..."
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveSubCharacter(idx)}
-                  className="absolute top-2.5 right-2.5 text-xs text-muted-foreground hover:text-rose-500 cursor-pointer"
-                >
-                  ✕
-                </button>
-
-                <div className="grid grid-cols-3 gap-2 pr-6">
-                  <FieldRow label="ชื่อ" htmlFor={'sub-name-' + idx}>
-                    <input
-                      id={'sub-name-' + idx}
-                      type="text"
-                      value={sub.name}
-                      onChange={e => onUpdateSubCharacter(idx, { name: e.target.value })}
-                      placeholder="เช่น ธันวา"
-                      className="form-input text-xs"
-                    />
-                  </FieldRow>
-                  <FieldRow label="เพศ" htmlFor={'sub-gender-' + idx}>
-                    <input
-                      id={'sub-gender-' + idx}
-                      type="text"
-                      value={sub.gender}
-                      onChange={e => onUpdateSubCharacter(idx, { gender: e.target.value })}
-                      placeholder="ชาย"
-                      className="form-input text-xs"
-                    />
-                  </FieldRow>
-                  <FieldRow label="อายุ" htmlFor={'sub-age-' + idx}>
-                    <input
-                      id={'sub-age-' + idx}
-                      type="text"
-                      value={sub.age}
-                      onChange={e => onUpdateSubCharacter(idx, { age: e.target.value })}
-                      placeholder="30 ปี"
-                      className="form-input text-xs"
-                    />
-                  </FieldRow>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <FieldRow label="ความสัมพันธ์กับตัวหลัก" htmlFor={'sub-rel-' + idx}>
-                    <input
-                      id={'sub-rel-' + idx}
-                      type="text"
-                      value={sub.relationship}
-                      onChange={e => onUpdateSubCharacter(idx, { relationship: e.target.value })}
-                      placeholder="มือขวาคนสนิท"
-                      className="form-input text-xs"
-                    />
-                  </FieldRow>
-                  <FieldRow label="บทบาทหลักในเรื่อง" htmlFor={'sub-role-' + idx}>
-                    <input
-                      id={'sub-role-' + idx}
-                      type="text"
-                      value={sub.mainRole}
-                      onChange={e => onUpdateSubCharacter(idx, { mainRole: e.target.value })}
-                      placeholder="คอยรับคำสั่งและรายงานสถานการณ์"
-                      className="form-input text-xs"
-                    />
-                  </FieldRow>
-                </div>
-
-                <ExpandableTextarea readOnly={isReadOnly}
-                  id={'sub-shortDesc-' + idx}
-                  label="คำบรรยายตัวละครเสริม (หน้ารายละเอียด)"
-                  rows={3}
-                  value={sub.shortDesc}
-                  onChange={v => onUpdateSubCharacter(idx, { shortDesc: v })}
-                  placeholder="ชายหนุ่มร่างสูง สวมสูทดำ นิ่งขรึม ภักดีต่อคิงสูงสุด..."
-                />
-
-                <ExpandableTextarea readOnly={isReadOnly}
-                  id={'sub-sysPrompt-' + idx}
-                  label="System Prompt สำหรับควบคุมตัวละครเสริม (บทบาทและตัวตน)"
-                  rows={4}
-                  value={sub.systemPrompt}
-                  onChange={v => onUpdateSubCharacter(idx, { systemPrompt: v })}
-                  placeholder="[Character: ธันวา] หน้าที่: มือขวา จงปฏิบัติตามคำสั่งของคิงอย่างเคร่งครัด..."
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </FormSection>
 
@@ -1004,37 +1100,56 @@ export function InputForm({
 
           {/* Open Greetings */}
           <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3.5">
-            <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <span>🎭</span> ฉากเปิดตัวละคร (Open Greeting)
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <span>🎭</span> ฉากเปิดตัวละคร (Open Greeting)
+              </h4>
+              <span className="text-[10px] text-muted-foreground">ใช้สำหรับข้อความแรกเมื่อเริ่มคุย</span>
+            </div>
 
-            <ExpandableTextarea readOnly={isReadOnly}
-              id="openGreetingNarrative"
-              label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
-              rows={4}
-              value={character.openGreetingNarrative}
-              onChange={v => onUpdateField('openGreetingNarrative', v)}
-              placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ..."
-            />
-
-            <ExpandableTextarea readOnly={isReadOnly}
-              id="openGreetingDialogue"
-              label="บทพูดเปิดตัว (Dialogue)"
-              rows={3}
-              value={character.openGreetingDialogue}
-              onChange={v => onUpdateField('openGreetingDialogue', v)}
-              placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
-            />
-
+            {/* Primary Full Greeting Input */}
             <ExpandableTextarea readOnly={isReadOnly}
               id="fullGreeting"
               label="ฉากเปิดรวมทั้งหมด (Full Open Greeting) *"
-              hint="ฉากเริ่มต้นเมื่อผู้ใช้เริ่มเปิดการสนทนา"
-              rows={7}
+              hint="กรอกบทบรรยายพร้อมบทพูดเปิดตัวได้ทันทีในช่องเดียว เพื่อความรวดเร็วและลดความซ้ำซ้อน"
+              rows={6}
               value={character.fullGreeting}
               onChange={v => onUpdateField('fullGreeting', v)}
-              placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
+              placeholder={"ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด ดวงตาคมกริบจ้องมองมาที่คุณ... 'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ ฉันมีงานสำคัญให้เธอทำ'"}
             />
+
+            {/* Optional Narrative & Dialogue Breakdown Drawer */}
+            <div className="pt-1 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => setShowGreetingDetails(!showGreetingDetails)}
+                className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <span>{showGreetingDetails ? '▲ ซ่อนการแยกกรอกบทบรรยาย/บทพูด' : '▼ แยกกรอก บทบรรยาย (Narrative) / บทพูด (Dialogue) แบบละเอียด (ตัวเลือกเสริม)'}</span>
+              </button>
+
+              {showGreetingDetails && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 animate-in fade-in duration-150">
+                  <ExpandableTextarea readOnly={isReadOnly}
+                    id="openGreetingNarrative"
+                    label="ส่วนบรรยายการกระทำ/บรรยากาศ (Narrative)"
+                    rows={3}
+                    value={character.openGreetingNarrative}
+                    onChange={v => onUpdateField('openGreetingNarrative', v)}
+                    placeholder="ร่างสูงนั่งเอนหลังพิงเก้าอี้หนังสีดำในห้องทำงานชั้นบนสุด..."
+                  />
+
+                  <ExpandableTextarea readOnly={isReadOnly}
+                    id="openGreetingDialogue"
+                    label="บทพูดเปิดตัว (Dialogue)"
+                    rows={3}
+                    value={character.openGreetingDialogue}
+                    onChange={v => onUpdateField('openGreetingDialogue', v)}
+                    placeholder={"'มาตรงเวลาดีนี่... เข้ามาใกล้ๆ สิ'"}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </FormSection>
 
