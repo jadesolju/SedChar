@@ -98,7 +98,7 @@ export function CodeBlock({
     <>
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs transition-shadow hover:shadow-sm">
         {/* Header Toolbar */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 bg-muted/40 border-b border-border gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-3.5 py-2.5 bg-muted/40 border-b border-border gap-2.5">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-bold text-foreground">
@@ -118,7 +118,7 @@ export function CodeBlock({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap flex-shrink-0">
             {/* Character counter */}
             {isProtected ? (
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center gap-1 font-semibold">
