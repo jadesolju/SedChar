@@ -98,8 +98,9 @@ export function CodeBlock({
     <>
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs transition-shadow hover:shadow-sm">
         {/* Header Toolbar */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 bg-muted/40 border-b border-border gap-2">
-          <div className="flex flex-col">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:px-3.5 sm:py-2.5 bg-muted/40 border-b border-border gap-2 sm:gap-2">
+          {/* Row 1 on Mobile: Field Label & Hint */}
+          <div className="flex flex-col min-w-0 w-full sm:w-auto">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-bold text-foreground">
                 {label}
@@ -118,7 +119,8 @@ export function CodeBlock({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Row 2 on Mobile: Actions & Counter */}
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto flex-shrink-0 pt-1.5 sm:pt-0 border-t border-border/40 sm:border-t-0">
             {/* Character counter */}
             {isProtected ? (
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center gap-1 font-semibold">
@@ -131,46 +133,49 @@ export function CodeBlock({
               </span>
             )}
 
-            {/* Fullscreen Expand Button */}
-            {!isProtected && (
-              <button
-                type="button"
-                onClick={() => setIsFullscreen(true)}
-                title="ขยายดูแบบเต็มจอ (Fullscreen View)"
-                className="p-1.5 rounded-lg border border-border/60 bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            )}
+            {/* Action Buttons Group */}
+            <div className="flex items-center gap-1.5">
+              {/* Fullscreen Expand Button */}
+              {!isProtected && (
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(true)}
+                  title="ขยายดูแบบเต็มจอ (Fullscreen View)"
+                  className="p-1.5 rounded-lg border border-border/60 bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
 
-            {/* Edit Toggle Button */}
-            {isEditable && !isProtected && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(!isEditing)}
-                title={isEditing ? 'สลับไปโหมดดูตัวอย่าง' : 'แก้ไขข้อความในช่องนี้โดยตรง'}
-                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isEditing
-                    ? 'bg-primary text-white shadow-xs font-bold'
-                    : 'bg-muted hover:bg-muted/80 text-foreground border border-border/60'
-                }`}
-              >
-                {isEditing ? (
-                  <>
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>ดูผลลัพธ์</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>แก้ไข</span>
-                  </>
-                )}
-              </button>
-            )}
+              {/* Edit Toggle Button */}
+              {isEditable && !isProtected && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(!isEditing)}
+                  title={isEditing ? 'สลับไปโหมดดูตัวอย่าง' : 'แก้ไขข้อความในช่องนี้โดยตรง'}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isEditing
+                      ? 'bg-primary text-white shadow-xs font-bold'
+                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border/60'
+                  }`}
+                >
+                  {isEditing ? (
+                    <>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>ดูผลลัพธ์</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>แก้ไข</span>
+                    </>
+                  )}
+                </button>
+              )}
 
-            {/* Copy Button */}
-            <CopyButton text={localValue} disabled={isProtected} />
+              {/* Copy Button */}
+              <CopyButton text={localValue} disabled={isProtected} />
+            </div>
           </div>
         </div>
 
