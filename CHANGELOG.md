@@ -4,6 +4,25 @@
 
 ---
 
+## [v0.4.4] — 2026-09-19 (Mobile UX Polish & Productivity Update 📱✨)
+
+### 📱 Streamlined Mobile UX & Single-Column Layout (ยกระดับการใช้งานบนมือถือให้สะอาดตาและกระชับ)
+- **Strict 1-Column Responsive Flow**: จัดระเบียบหน้าสร้าง/แก้ไขตัวละครบนอุปกรณ์เคลื่อนที่ให้อยู่ในรูปแบบคอลัมน์เดี่ยวที่เรียบง่าย อ่านสบายตา และลดการเลื่อนหน้าจอที่ไม่จำเป็น
+- **Adaptive Flag & Mode Selectors**: จัดเรียงตัวเลือก Flag (SFW/NSFW), โหมดการทำงาน และแท็บเครื่องมือบนมือถือให้อยู่ในแถว/กริดที่แตะได้สะดวก ไม่ตกขอบ
+- **Mobile Touch Target Optimization (`.touch-target`)**: เพิ่มคลาส Utility สำหรับปุ่มกดบนอุปกรณ์พกพา ให้มีขนาดขั้นต่ำอย่างน้อย 44px × 44px ตามมาตรฐาน UI/UX สากล
+
+### 📑 Responsive 2-Row CodeBlock Headers (แยกส่วนหัวของหน้า Preview บนมือถือ)
+- **Distinct 2-Row Mobile Layout**: ปรับส่วนหัวของการ์ดแสดงผล (`CodeBlock`) ในแท็บ Preview ทุกแพลตฟอร์ม (Purrpaw, Rubii, Khui AI, Master MD) บนมือถือ ให้แยกเป็น 2 แถวชัดเจน:
+  - *แถวที่ 1*: แสดงชื่อฟิลด์ (Title/Label) พร้อมคำแนะนำ (Hint/Subtitle) เต็มความกว้าง ไม่โดนเบียดหรือตกบรรทัด
+  - *แถวที่ 2*: แถบเครื่องมือแสดงตัวนับจำนวนตัวอักษร (Character Counter) และปุ่ม Action (ขยายเต็มจอ / แก้ไข / คัดลอก)
+- **Desktop Parity Preserved**: คง Layout แถวเดี่ยว (Single-Row Toolbar) แบบมาตรฐานไว้บนหน้าจอขนาดใหญ่ (Desktop / Tablet) เหมือนเดิม 100%
+
+### ⚡ Workspace Shortcuts & Navigation Enhancements (ทางลัดและการนำทางใน Workspace)
+- **Global Keyboard Shortcut (`Ctrl+S` / `Cmd+S`)**: รองรับคีย์ลัดบันทึกตัวละครได้อย่างรวดเร็ว โดยจะเปิดหน้าต่างคลังตัวละคร (Library Modal) เพื่อบันทึก หรือเข้าสู่โหมดบันทึกสำเนาใหม่ทันที
+- **Exit Read-Only Mode**: เพิ่มปุ่มลัด `ออกจากโหมดอ่านอย่างเดียว` (Exit Read-Only) ที่แถบด้านบน เพื่อให้ผู้ใช้สามารถรีเซ็ตกลับสู่ Workspace สำหรับสร้างตัวละครใหม่ได้อย่างสะดวกรวดเร็ว
+
+---
+
 ## [v0.4.3] — 2026-09-18 (Testing & Trial Release 🚀)
 
 ### 🎯 Selective Platform Checkbox & Token Optimization (ระบบเลือกเปิด/ปิดการแปลงผลเพื่อประหยัด Token)
