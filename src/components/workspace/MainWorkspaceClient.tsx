@@ -27,6 +27,7 @@ import {
   Save,
   Globe,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 
 function MainWorkspace() {
@@ -203,6 +204,23 @@ function MainWorkspace() {
     }
   };
 
+  // Keyboard shortcut (Ctrl+S / Cmd+S) - save or open library
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (isReadOnly) {
+          handleSaveAsNewCopy();
+        } else {
+          openLibraryModal();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReadOnly]);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden font-sans antialiased">
       {/* Toast Alert */}
@@ -229,11 +247,20 @@ function MainWorkspace() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {sharedBanner.mode === 'read-only' ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[11px] px-2 py-0.5 rounded bg-muted text-foreground border border-border flex items-center gap-1 font-semibold">
                   <Lock className="w-3 h-3 text-rose-500" />
-                  <span>โหมดอ่านอย่างเดียว</span>
+                  <span>อ่านอย่างเดียว</span>
                 </span>
+                <button
+                  type="button"
+                  onClick={handleExitReadOnly}
+                  className="touch-target px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  title="ออกจากโหมดอ่าน และคืนค่าตัวละครร่างเดิมของคุณ"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>ออกโหมดอ่าน</span>
+                </button>
               </div>
             ) : (
               <button

@@ -166,4 +166,13 @@
     font-family: 'JetBrains Mono', 'Noto Sans Thai', ui-monospace, monospace;
     @apply text-sm leading-relaxed whitespace-pre-wrap break-words;
   }
+
+  /* Touch-friendly minimum tap target size (WCAG 2.2 AA) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
