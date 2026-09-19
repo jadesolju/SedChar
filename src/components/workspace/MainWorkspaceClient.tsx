@@ -114,12 +114,13 @@ function MainWorkspace() {
     if (dataParam) {
       const decoded = decodeCharacterFromShareUrl(dataParam);
       if (decoded && decoded.character) {
-        applyParsedCharacter(decoded.character);
+        const effectiveMode = (decoded.mode as 'read-only' | 'edit') || mode;
+        applyParsedCharacter(decoded.character, effectiveMode === 'read-only');
         setSharedBanner({
           title: decoded.title || 'ตัวละครที่แชร์',
-          mode: decoded.mode || mode,
+          mode: effectiveMode,
         });
-        showToast(`โหลดตัวละคร "${decoded.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${decoded.mode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
+        showToast(`โหลดตัวละคร "${decoded.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${effectiveMode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
         return;
       }
     }
@@ -130,24 +131,26 @@ function MainWorkspace() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.character) {
-            applyParsedCharacter(data.character);
+            const effectiveMode = (data.permission as 'read-only' | 'edit') || mode;
+            applyParsedCharacter(data.character, effectiveMode === 'read-only');
             setSharedBanner({
               title: data.title || data.nickname || 'ตัวละครที่แชร์',
-              mode: data.permission || mode,
+              mode: effectiveMode,
             });
-            showToast(`โหลดตัวละครจาก Cloud "${data.title || 'ตัวละคร'}" เรียบร้อย`);
+            showToast(`โหลดตัวละคร "${data.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${effectiveMode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
           } else {
             // Fallback to local cache if offline
             const storedShare = localStorage.getItem(`sedchar_share_${shareId}`);
             if (storedShare) {
               const payload = JSON.parse(storedShare);
               if (payload.character) {
-                applyParsedCharacter(payload.character);
+                const effectiveMode = (payload.permission as 'read-only' | 'edit') || mode;
+                applyParsedCharacter(payload.character, effectiveMode === 'read-only');
                 setSharedBanner({
                   title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
-                  mode: payload.permission || mode,
+                  mode: effectiveMode,
                 });
-                showToast(`โหลดตัวละคร "${payload.title || 'ตัวละคร'}" เรียบร้อย`);
+                showToast(`โหลดตัวละคร "${payload.title || 'ตัวละคร'}" เรียบร้อย (สิทธิ์: ${effectiveMode === 'edit' ? 'แก้ไขได้' : 'อ่านอย่างเดียว'})`);
               }
             }
           }
@@ -158,10 +161,11 @@ function MainWorkspace() {
             try {
               const payload = JSON.parse(storedShare);
               if (payload.character) {
-                applyParsedCharacter(payload.character);
+                const effectiveMode = (payload.permission as 'read-only' | 'edit') || mode;
+                applyParsedCharacter(payload.character, effectiveMode === 'read-only');
                 setSharedBanner({
                   title: payload.title || payload.nickname || 'ตัวละครที่แชร์',
-                  mode: payload.permission || mode,
+                  mode: effectiveMode,
                 });
               }
             } catch {}

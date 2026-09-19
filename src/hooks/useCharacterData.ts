@@ -28,17 +28,17 @@ const BACKUP_STORAGE_KEY = 'sedchar_backup_user_draft';
 
 export function useCharacterData() {
   const [character, setCharacter] = useState<ThaiMasterCharacter>(() => {
-    if (typeof window === 'undefined') return SAMPLE_CHARACTER;
+    if (typeof window === 'undefined') return DEFAULT_CHARACTER;
     try {
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
-          return { ...SAMPLE_CHARACTER, ...parsed };
+          return { ...DEFAULT_CHARACTER, ...parsed };
         }
       }
     } catch { }
-    return SAMPLE_CHARACTER;
+    return DEFAULT_CHARACTER;
   });
 
   const [inputMode, setInputMode] = useState<'structured' | 'single'>(() => {
@@ -47,7 +47,19 @@ export function useCharacterData() {
     }
     return 'structured';
   });
-  const [rawMarkdown, setRawMarkdown] = useState<string>(() => characterToFullMarkdown(character));
+  const [rawMarkdown, setRawMarkdown] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return characterToFullMarkdown({ ...DEFAULT_CHARACTER, ...parsed });
+        }
+      }
+    } catch { }
+    return '';
+  });
   const isInitialMount = useRef(true);
 
   // Auto-save draft on character change (debounced)
@@ -251,11 +263,11 @@ export function useCharacterData() {
         }
       }
     } catch { }
-    // Fallback if no previous draft was stored: return to SAMPLE_CHARACTER
-    setCharacter(SAMPLE_CHARACTER);
-    setRawMarkdown(characterToFullMarkdown(SAMPLE_CHARACTER));
+    // Fallback if no previous draft was stored: return to DEFAULT_CHARACTER
+    setCharacter(DEFAULT_CHARACTER);
+    setRawMarkdown('');
     try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(SAMPLE_CHARACTER));
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch { }
   }, []);
 

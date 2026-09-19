@@ -14,12 +14,31 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { data, error } = await supabase
+    // 1. Direct query
+    let { data, error } = await supabase
       .from('characters')
       .select('id, title, nickname, tagline, flag_type, image_url, character_data, share_id, share_permission, is_shared, created_at')
       .or(`share_id.eq.${shareId},id.eq.${shareId}`)
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    // 2. Fallback prefix lookup (e.g. sh_<baseId>_<suffix>)
+    if (!data) {
+      const parts = shareId.split('_');
+      if (parts.length >= 3 && parts[0] === 'sh') {
+        const baseId = parts[1];
+        const res = await supabase
+          .from('characters')
+          .select('id, title, nickname, tagline, flag_type, image_url, character_data, share_id, share_permission, is_shared, created_at')
+          .ilike('share_id', `sh_${baseId}_%`)
+          .limit(1)
+          .maybeSingle();
+        if (res.data) {
+          data = res.data;
+          error = null;
+        }
+      }
+    }
 
     if (error || !data) {
       return NextResponse.json({ error: 'Shared character not found or link expired' }, { status: 404 });

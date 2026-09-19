@@ -93,12 +93,28 @@ export async function GET(req: NextRequest) {
     if (shareId) {
       try {
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        const { data } = await supabase
+        let { data } = await supabase
           .from('characters')
           .select('title, nickname, tagline, image_url, flag_type, character_data')
           .or(`share_id.eq.${shareId},id.eq.${shareId}`)
           .limit(1)
-          .single();
+          .maybeSingle();
+
+        if (!data) {
+          const parts = shareId.split('_');
+          if (parts.length >= 3 && parts[0] === 'sh') {
+            const baseId = parts[1];
+            const res = await supabase
+              .from('characters')
+              .select('title, nickname, tagline, image_url, flag_type, character_data')
+              .ilike('share_id', `sh_${baseId}_%`)
+              .limit(1)
+              .maybeSingle();
+            if (res.data) {
+              data = res.data;
+            }
+          }
+        }
 
         if (data) {
           title = data.title || data.nickname || data.character_data?.fullName || data.character_data?.nickname || title;

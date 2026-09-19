@@ -193,7 +193,7 @@ export function SingleBoxInput({
             className="px-2 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-2xs flex items-center gap-1"
           >
             <span>📋</span>
-            <span className="hidden sm:inline">ตัวอย่าง</span>
+            <span>ตัวอย่าง</span>
           </button>
           <button
             type="button"
