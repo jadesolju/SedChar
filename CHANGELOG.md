@@ -4,6 +4,23 @@
 
 ---
 
+## [v0.4.5] — 2026-09-20 (Design System, Modal Stacked Headers & Theming Fix 🎨📱)
+
+### 🎨 Mobile-First Single-Grid Modal Architecture (ระบบ Header ป๊อปอัปแบบคอลัมน์เดี่ยวบนมือถือ)
+- **Responsive Stacked Modal Headers**: ปรับโครงสร้างส่วนหัวของหน้าต่างป๊อปอัปทั้งหมด (`AIAssistantModal`, `CharacterLibraryModal`, `CodeBlock Fullscreen`) ให้แสดงผลแบบ 2 แถวบนมือถือ โดยแถวบนแสดงชื่อและคำอธิบายเต็มความกว้าง ไม่โดนเบียดให้คำหักบรรทัด และแถวล่างเป็นแถบเครื่องมือ/แท็บสลับโหมด
+- **Full-Width Action Grid on Mobile**: ปรับปุ่มเลือกแท็บในป๊อปอัปผู้ช่วย AI และคลังตัวละครให้เป็น Grid ขยายเต็มความกว้างบนมือถือ แตะได้สะดวกตามมาตรฐาน Touch Target
+- **Official Design Guidelines (`DESIGN.md`)**: บันทึกคู่มือและมาตรฐานการออกแบบ UI/UX สถาปัตยกรรม Pop-up/Modal และตารางระบบสี Semantic Theming Matrix ลงในโปรเจกต์
+
+### ☀️ Light Theme Text Contrast Fix (แก้ไขสีตัวอักษรในโหมดสว่าง)
+- **Semantic Text Color Compliance**: แก้ไขสีตัวอักษรของหัวข้อและคำอธิบายใน `AIAssistantModal` จากเดิมที่เคย Hardcode `text-white` ให้เปลี่ยนมาใช้ `text-foreground`
+- **100% Theme Adaptive**: ตัวอักษรแสดงผลเป็นสีดำเข้มคมชัดใน Light Theme และสีขาวนวลสบายตาใน Dark Theme อย่างสมบูรณ์แบบ
+
+### ⚡ Auto-Parser as Default Studio Experience (โหมดช่องเดียวรวดเป็นค่าเริ่มต้น)
+- **Unified Clean Start**: ปรับให้โหมด Single-Box Auto-Parser เป็นโหมดเริ่มต้นบนทุกอุปกรณ์ เพื่อประสบการณ์สร้างตัวละครที่รวดเร็ว ไม่ซับซ้อน
+- **Seamless Advanced Switcher**: สลับไปมาระหว่าง `⚡ ช่องเดียวรวด (Auto-Parser)` และ `⚙️ โหมดขั้นสูง (10 หมวดหมู่)` ได้อย่างอิสระทั้งบน Desktop และ Mobile
+
+---
+
 ## [v0.4.4] — 2026-09-19 (Mobile UX Polish & Productivity Update 📱✨)
 
 ### 📱 Streamlined Mobile UX & Single-Column Layout (ยกระดับการใช้งานบนมือถือให้สะอาดตาและกระชับ)
