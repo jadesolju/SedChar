@@ -60,3 +60,8 @@ desktop.ini
 
 .agents/
 .agents
+
+# Private Development & Business Roadmap (Local only - NEVER push)
+ROADMAP.md
+DEVELOPMENT_PLAN.md
+*.private.md
