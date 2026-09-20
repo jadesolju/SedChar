@@ -41,12 +41,7 @@ export function useCharacterData() {
     return DEFAULT_CHARACTER;
   });
 
-  const [inputMode, setInputMode] = useState<'structured' | 'single'>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return 'single';
-    }
-    return 'structured';
-  });
+  const [inputMode, setInputMode] = useState<'structured' | 'single'>('single');
   const [rawMarkdown, setRawMarkdown] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     try {

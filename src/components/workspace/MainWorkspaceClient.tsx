@@ -297,31 +297,31 @@ function MainWorkspace() {
             </span>
           </div>
 
-          {/* Desktop Mode Switcher */}
+          {/* Desktop Mode Switcher (Auto-Parser Default & Advanced Form Toggle) */}
           <div className="ml-3 hidden md:flex items-center p-0.5 rounded-lg bg-muted border border-border">
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('structured')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                inputMode === 'structured'
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-primary" />
-              <span>ช่องแยกตามหัวข้อ (10 หมวดหมู่)</span>
-            </button>
             <button
               type="button"
               onClick={() => handleModeSwitch('single')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 inputMode === 'single'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>ช่องเดียวรวด (Auto-Parser)</span>
+              <span>⚡ ช่องเดียวรวด (Auto-Parser)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('structured')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                inputMode === 'structured'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-primary" />
+              <span>⚙️ โหมดขั้นสูง (10 หมวดหมู่)</span>
             </button>
           </div>
         </div>
