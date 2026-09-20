@@ -138,66 +138,81 @@ export function AIAssistantModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header with Compact Model Layer */}
-        <div className="px-6 py-4 border-b border-border bg-muted/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-inner">
-              ✨
+        {/* Header with Compact Model Layer (Responsive Stacked on Mobile) */}
+        <div className="p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Row 1 on Mobile: Icon, Title & Mobile Close Button */}
+          <div className="flex items-start justify-between sm:justify-start gap-3 min-w-0 flex-1">
+            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500/20 to-purple-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-inner flex-shrink-0 mt-0.5 sm:mt-0">
+                ✨
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                  SedChar AI Co-Creator
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                  ระบบปัญญาประดิษฐ์เติมเต็มและแกะโครงสร้างตัวละครบทบาทสมมุติอัตโนมัติ
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                SedChar AI Co-Creator
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                ระบบปัญญาประดิษฐ์เติมเต็มและแกะโครงสร้างตัวละครบทบาทสมมุติอัตโนมัติ
-              </p>
-            </div>
+
+            {/* Close Button on Mobile */}
+            <button
+              onClick={onClose}
+              className="sm:hidden text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0 cursor-pointer"
+              title="ปิดหน้าต่าง"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Ultra Compact Model Layer Dropdown */}
+          {/* Row 2 on Mobile: Model Selector & Desktop Close Button */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto flex-shrink-0 pt-2 sm:pt-0 border-t border-border/40 sm:border-t-0">
             <CompactModelLayer
               selectedModelId={selectedModel}
               onSelectModel={setSelectedModel}
             />
             <button
               onClick={onClose}
-              className="text-muted-foreground hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 transition-colors"
+              className="hidden sm:flex text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+              title="ปิดหน้าต่าง"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Tab & Quota Strip */}
-        <div className="px-6 py-2.5 bg-card border-b border-border flex items-center justify-between text-xs">
-          <div className="flex gap-2">
+        {/* Tab & Quota Strip (Responsive 2-Row / Single-Grid on Mobile) */}
+        <div className="p-3 sm:px-6 sm:py-2.5 bg-card border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-2 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('enhance')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg font-semibold transition-all text-center flex items-center justify-center gap-1 cursor-pointer text-xs ${
                 activeTab === 'enhance'
-                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-neutral-800'
+                  ? 'bg-rose-500 text-white shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60 sm:border-0'
               }`}
             >
-              🪄 เติมเต็มข้อมูลที่ขาด (Enhance)
+              <span>🪄 เติมเต็มข้อมูล</span>
+              <span className="hidden sm:inline">ที่ขาด (Enhance)</span>
             </button>
             <button
               onClick={() => setActiveTab('parse')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg font-semibold transition-all text-center flex items-center justify-center gap-1 cursor-pointer text-xs ${
                 activeTab === 'parse'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-neutral-800'
+                  ? 'bg-purple-600 text-white shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60 sm:border-0'
               }`}
             >
-              ⚡ วางข้อความดิบแยกหมวด (Quick Parse)
+              <span>⚡ วางข้อความดิบ</span>
+              <span className="hidden sm:inline">แยกหมวด (Quick Parse)</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1.5 sm:pt-0 border-t border-border/40 sm:border-t-0">
             <span className="text-muted-foreground">โควตาวันนี้:</span>
             <span className={`px-2 py-0.5 rounded-md font-mono font-bold ${
-              quotaRemaining > 3 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+              quotaRemaining > 3 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30'
             }`}>
               {quotaRemaining} / {quotaMax} ครั้ง
             </span>
@@ -216,7 +231,7 @@ export function AIAssistantModal({
           {activeTab === 'enhance' ? (
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2">
-                <div className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                <div className="text-xs font-semibold text-foreground font-semibold flex items-center gap-2">
                   <span>🎯 สิ่งที่ AI จะดำเนินการ:</span>
                 </div>
                 <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
@@ -227,7 +242,7 @@ export function AIAssistantModal({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label className="block text-xs font-medium text-foreground font-semibold mb-1.5">
                   คำสั่งพิเศษเพิ่มเติมให้ AI (Optional):
                 </label>
                 <textarea
@@ -242,7 +257,7 @@ export function AIAssistantModal({
           ) : (
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2">
-                <div className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                <div className="text-xs font-semibold text-foreground font-semibold flex items-center gap-2">
                   <span>⚡ วิธีใช้นำเข้าด่วน:</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -251,7 +266,7 @@ export function AIAssistantModal({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label className="block text-xs font-medium text-foreground font-semibold mb-1.5">
                   วางข้อความดิบที่นี่:
                 </label>
                 <textarea
@@ -280,7 +295,7 @@ export function AIAssistantModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-white hover:bg-neutral-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
             ยกเลิก
           </button>

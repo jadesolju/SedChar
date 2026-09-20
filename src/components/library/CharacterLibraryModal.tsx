@@ -269,38 +269,52 @@ export function CharacterLibraryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-        {/* Top Header */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
-              <FolderOpen className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-foreground">
-                  คลังตัวละคร Cloud Library
-                </h2>
-                {activeLoadedRecord && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    เชื่อมกับ: {activeLoadedRecord.title}
-                  </span>
-                )}
+        {/* Top Header (Responsive Stacked on Mobile) */}
+        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/30 gap-3 sm:gap-4">
+          {/* Row 1 on Mobile: Icon, Title & Mobile Close Button */}
+          <div className="flex items-start justify-between sm:justify-start gap-3 min-w-0 flex-1">
+            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-sm flex-shrink-0 mt-0.5 sm:mt-0">
+                <FolderOpen className="w-5 h-5 text-white" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                บันทึกทับตัวเดิม, สร้างตัวใหม่, จัดการแชร์ และนำกลับมาแก้ไขได้ทันที
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm sm:text-base font-bold text-foreground">
+                    คลังตัวละคร Cloud Library
+                  </h2>
+                  {activeLoadedRecord && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      เชื่อมกับ: {activeLoadedRecord.title}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                  บันทึกทับตัวเดิม, สร้างตัวใหม่, จัดการแชร์ และนำกลับมาแก้ไขได้ทันที
+                </p>
+              </div>
             </div>
+
+            {/* Close Button on Mobile */}
+            <button
+              type="button"
+              onClick={closeLibraryModal}
+              className="sm:hidden w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0"
+              title="ปิดหน้าต่าง"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg bg-muted p-0.5 border border-border">
+          {/* Row 2 on Mobile: Tabs & Desktop Close Button */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto flex-shrink-0 pt-2 sm:pt-0 border-t border-border/40 sm:border-t-0">
+            <div className="grid grid-cols-2 sm:flex rounded-lg bg-muted p-0.5 border border-border w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab('list')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   activeTab === 'list'
-                    ? 'bg-card text-foreground shadow-xs'
+                    ? 'bg-card text-foreground shadow-xs font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -310,9 +324,9 @@ export function CharacterLibraryModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('save')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   activeTab === 'save'
-                    ? 'bg-card text-foreground shadow-xs'
+                    ? 'bg-card text-foreground shadow-xs font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -321,10 +335,12 @@ export function CharacterLibraryModal({
               </button>
             </div>
 
+            {/* Close Button on Desktop */}
             <button
               type="button"
               onClick={closeLibraryModal}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="ปิดหน้าต่าง"
             >
               <X className="w-4 h-4" />
             </button>

@@ -246,24 +246,35 @@ export function CodeBlock({
       {isFullscreen && !isProtected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
           <div className="relative w-full max-w-5xl h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/40 flex-shrink-0">
-              <div className="flex flex-col">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <span>{label}</span>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    {currentLength.toLocaleString('th-TH')} ตัวอักษร
-                  </span>
-                </h3>
-                {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+            {/* Modal Header (Responsive Stacked on Mobile) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/40 gap-3 sm:gap-4 flex-shrink-0">
+              <div className="flex items-start justify-between sm:justify-start gap-3 min-w-0 flex-1">
+                <div className="flex flex-col min-w-0">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
+                    <span>{label}</span>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                      {currentLength.toLocaleString('th-TH')} ตัวอักษร
+                    </span>
+                  </h3>
+                  {subtitle && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{subtitle}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="sm:hidden w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0"
+                  title="ปิดหน้าต่าง"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2 w-full sm:w-auto flex-shrink-0 pt-1.5 sm:pt-0 border-t border-border/40 sm:border-t-0">
                 <CopyButton text={localValue} />
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  title="ปิดหน้าต่าง"
                 >
                   <X className="w-4 h-4" />
                 </button>
