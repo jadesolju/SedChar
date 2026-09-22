@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('characters')
-        .select('*')
+        .select('id, user_id, title, nickname, tagline, flag_type, image_url, gallery_urls, share_id, share_permission, is_shared, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -222,7 +222,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Cloud items
         data.forEach((item) => {
-          map.set(item.id, item as SavedCharacterRecord);
+          const existingLocal = localList.find((l) => l.id === item.id);
+          map.set(item.id, {
+            ...item,
+            character_data: existingLocal?.character_data || (item as any).character_data,
+          } as SavedCharacterRecord);
         });
 
         // Add local items that might not have reached cloud yet
@@ -439,10 +443,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('LocalStorage save error:', storageErr);
     }
 
+    // Asynchronously save to Cloudflare R2 + Supabase metadata
+    fetch('/api/characters/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        character: char,
+        title: charTitle,
+        nickname: updatedRecord.nickname,
+        tagline: updatedRecord.tagline,
+        flag_type: updatedRecord.flag_type,
+        image_url: updatedRecord.image_url,
+        gallery_urls: updatedRecord.gallery_urls,
+        share_permission: updatedRecord.share_permission,
+        is_shared: updatedRecord.is_shared,
+        share_id: updatedRecord.share_id,
+        user_id: user?.id || 'guest',
+      }),
+    }).catch((e) => console.warn('Cloud save error:', e));
+
     if (user) {
+      const { character_data, ...metadataRow } = updatedRecord as any;
       supabase
         .from('characters')
-        .upsert(updatedRecord)
+        .upsert(metadataRow)
         .then(({ error }) => {
           if (error) console.warn('Supabase DB update note:', error.message);
         }, (e) => console.warn('Supabase DB update error:', e));
@@ -497,10 +522,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('LocalStorage quota or write error:', storageErr);
       }
 
+      // Asynchronously save to Cloudflare R2 + Supabase metadata
+      fetch('/api/characters/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newRecord.id,
+          character: char,
+          title: charTitle,
+          nickname: newRecord.nickname,
+          tagline: newRecord.tagline,
+          flag_type: newRecord.flag_type,
+          image_url: newRecord.image_url,
+          gallery_urls: newRecord.gallery_urls,
+          share_permission: newRecord.share_permission,
+          is_shared: newRecord.is_shared,
+          share_id: newRecord.share_id,
+          user_id: effectiveUserId,
+        }),
+      }).catch((e) => console.warn('Cloud save error:', e));
+
       if (user) {
+        const { character_data, ...metadataRow } = newRecord as any;
         supabase
           .from('characters')
-          .upsert(newRecord)
+          .upsert(metadataRow)
           .then(({ error }) => {
             if (error) console.warn('Supabase DB save note:', error.message);
           }, (e) => console.warn('Supabase DB save error:', e));
@@ -525,6 +571,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(key, JSON.stringify(updated));
     } catch {}
 
+    fetch('/api/characters/save?id=' + encodeURIComponent(id), { method: 'DELETE' }).catch(() => {});
     if (user) {
       try {
         await supabase.from('characters').delete().eq('id', id).eq('user_id', user.id);
@@ -551,7 +598,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Generate Cloud Database Share URL
     const shareUrl = `${origin}/?share=${encodeURIComponent(shareId)}&mode=${permission}`;
 
-    // 3. Update Supabase Database if logged in
+    // 3. Persist Share to Cloudflare R2 and Supabase
+    if (charRecord) {
+      fetch('/api/characters/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          character: charRecord.character_data,
+          permission,
+          title: charRecord.title,
+        }),
+      }).catch((e) => console.warn('Cloud share sync note:', e));
+    }
+
     if (charRecord && user) {
       try {
         await supabase

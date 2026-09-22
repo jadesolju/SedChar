@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       let { data } = await supabase
         .from('characters')
-        .select('title, nickname, tagline, image_url, flag_type, character_data')
+        .select('title, nickname, tagline, image_url, flag_type')
         .or(`share_id.eq.${shareId},id.eq.${shareId}`)
         .limit(1)
         .maybeSingle();
@@ -37,7 +37,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
           const baseId = parts[1];
           const res = await supabase
             .from('characters')
-            .select('title, nickname, tagline, image_url, flag_type, character_data')
+            .select('title, nickname, tagline, image_url, flag_type')
             .ilike('share_id', `sh_${baseId}_%`)
             .limit(1)
             .maybeSingle();
@@ -48,8 +48,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       }
 
       if (data) {
-        const charName = data.title || data.nickname || data.character_data?.fullName || data.character_data?.nickname || 'ตัวละคร AI Roleplay';
-        const charDesc = data.tagline || data.character_data?.shortIntro || 'ตัวละคร AI Roleplay สร้างจาก SedChar.AI รองรับ Purrpaw, Rubii และ Khui AI';
+        const charName = data.title || data.nickname || 'ตัวละคร AI Roleplay';
+        const charDesc = data.tagline || 'ตัวละคร AI Roleplay สร้างจาก SedChar.AI รองรับ Purrpaw, Rubii และ Khui AI';
         // Note: Do NOT append raw base64 data URIs to query string to prevent HTTP 414 URI Too Long.
         // The API route /api/characters/share/og?id=... already queries Supabase internally.
         const ogImageUrl = `${baseUrl}/api/characters/share/og?id=${encodeURIComponent(shareId)}`;

@@ -92,6 +92,49 @@ export function CharacterLibraryModal({
 
   // Copy Feedback
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [loadingCharId, setLoadingCharId] = useState<string | null>(null);
+
+  const ensureCharacterData = async (charRecord: any): Promise<ThaiMasterCharacter | null> => {
+    if (charRecord.character_data && Object.keys(charRecord.character_data).length > 0) {
+      return charRecord.character_data;
+    }
+    try {
+      const res = await fetch('/api/characters/load?id=' + encodeURIComponent(charRecord.id));
+      const data = await res.json();
+      if (data.success && data.character) {
+        charRecord.character_data = data.character;
+        return data.character;
+      }
+    } catch (err) {
+      console.warn('ensureCharacterData fetch note:', err);
+    }
+    return null;
+  };
+
+  const handleLoadCharacterItem = async (charRecord: any) => {
+    if (charRecord.character_data && Object.keys(charRecord.character_data).length > 0) {
+      onLoadCharacter(charRecord.character_data, charRecord.id, charRecord.title);
+      if (setActiveLibraryId) setActiveLibraryId(charRecord.id);
+      setActiveLoadedCharacterId(charRecord.id);
+      closeLibraryModal();
+      return;
+    }
+
+    setLoadingCharId(charRecord.id);
+    try {
+      const char = await ensureCharacterData(charRecord);
+      if (char) {
+        onLoadCharacter(char, charRecord.id, charRecord.title);
+        if (setActiveLibraryId) setActiveLibraryId(charRecord.id);
+        setActiveLoadedCharacterId(charRecord.id);
+        closeLibraryModal();
+      } else {
+        alert('ไม่สามารถโหลดข้อมูลตัวละครได้');
+      }
+    } finally {
+      setLoadingCharId(null);
+    }
+  };
 
   // File Upload Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -189,8 +232,14 @@ export function CharacterLibraryModal({
     }
   };
 
-  const handleCopyMarkdown = async (char: ThaiMasterCharacter, id: string) => {
-    const md = characterToFullMarkdown(char);
+  const handleCopyMarkdown = async (char: ThaiMasterCharacter, id: string, charRecord?: any) => {
+    let effectiveChar = char;
+    if ((!effectiveChar || Object.keys(effectiveChar).length === 0) && charRecord) {
+      const loaded = await ensureCharacterData(charRecord);
+      if (loaded) effectiveChar = loaded;
+    }
+    if (!effectiveChar) return;
+    const md = characterToFullMarkdown(effectiveChar);
     try {
       await navigator.clipboard.writeText(md);
       setCopiedId(id);
@@ -249,8 +298,14 @@ export function CharacterLibraryModal({
     } catch {}
   };
 
-  const handleExportSingleJson = (char: ThaiMasterCharacter, title: string) => {
-    exportCharacterJson(char, title);
+  const handleExportSingleJson = async (char: ThaiMasterCharacter, title: string, charRecord?: any) => {
+    let effectiveChar = char;
+    if ((!effectiveChar || Object.keys(effectiveChar).length === 0) && charRecord) {
+      const loaded = await ensureCharacterData(charRecord);
+      if (loaded) effectiveChar = loaded;
+    }
+    if (!effectiveChar) return;
+    exportCharacterJson(effectiveChar, title);
   };
 
   const filteredCharacters = savedCharacters.filter((c) => {
@@ -479,19 +534,15 @@ export function CharacterLibraryModal({
                             {/* Load into Editor Button */}
                             <button
                               type="button"
-                              onClick={() => {
-                                onLoadCharacter(
-                                  charRecord.character_data,
-                                  charRecord.id,
-                                  charRecord.title
-                                );
-                                if (setActiveLibraryId) setActiveLibraryId(charRecord.id);
-                                setActiveLoadedCharacterId(charRecord.id);
-                                closeLibraryModal();
-                              }}
+                              onClick={() => handleLoadCharacterItem(charRecord)}
+                              disabled={loadingCharId === charRecord.id}
                               className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 shadow-xs"
                             >
-                              <FileEdit className="w-3 h-3" />
+                              {loadingCharId === charRecord.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <FileEdit className="w-3 h-3" />
+                              )}
                               <span>โหลดใช้งาน</span>
                             </button>
 

@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
         let { data } = await supabase
           .from('characters')
-          .select('title, nickname, tagline, image_url, flag_type, character_data')
+          .select('title, nickname, tagline, image_url, flag_type')
           .or(`share_id.eq.${shareId},id.eq.${shareId}`)
           .limit(1)
           .maybeSingle();
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
             const baseId = parts[1];
             const res = await supabase
               .from('characters')
-              .select('title, nickname, tagline, image_url, flag_type, character_data')
+              .select('title, nickname, tagline, image_url, flag_type')
               .ilike('share_id', `sh_${baseId}_%`)
               .limit(1)
               .maybeSingle();
@@ -117,18 +117,14 @@ export async function GET(req: NextRequest) {
         }
 
         if (data) {
-          title = data.title || data.nickname || data.character_data?.fullName || data.character_data?.nickname || title;
-          nickname = data.nickname || data.character_data?.nickname || nickname;
-          tagline = data.tagline || data.character_data?.shortIntro || tagline;
+          title = data.title || data.nickname || title;
+          nickname = data.nickname || nickname;
+          tagline = data.tagline || tagline;
           if (data.image_url) {
             imageUrl = data.image_url;
-          } else if (data.character_data?.imageUrl) {
-            imageUrl = data.character_data.imageUrl;
-          } else if (data.character_data?.image) {
-            imageUrl = data.character_data.image;
           }
-          if (data.flag_type || data.character_data?.flagType) {
-            flagType = data.flag_type || data.character_data?.flagType || 'none';
+          if (data.flag_type) {
+            flagType = data.flag_type;
           }
         }
       } catch (e) {
