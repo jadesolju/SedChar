@@ -28,10 +28,11 @@
 - **Hybrid AI Engine**: ประมวลผลร่วมกันระหว่าง Google Gemini AI และ Universal Local Regex Parser ทำงานได้ลื่นไหลแม้ขณะออฟไลน์
 - **Two-Way Synchronization**: ซิงค์ข้อมูลระหว่างโหมด *"ช่องแยก 10 หมวดหมู่ (Structured Form)"* และโหมด *"ช่องเดียวรวด (Single Box)"* อย่างแม่นยำ
 
-### 2. 🎯 Selective Platform Checkbox & Token Optimization (ระบบเลือกเปิด/ปิดการแปลงผล)
-- **Interactive Checkboxes**: มีช่อง Checkbox บนแต่ละแท็บแพลตฟอร์ม (`Purrpaw`, `Rubii`, `Khui AI`, `Master MD`)
-- **Skip & Lazy Processing**: ข้ามการประมวลผลสำหรับแพลตฟอร์มที่ไม่ได้ติ๊กเลือก ช่วยลดภาระการทำงานเบื้องหลังของระบบ และ **ประหยัด AI Token** อย่างแท้จริง
-- **One-Click Enable**: หน้าจอแจ้งสถานะพร้อมปุ่มลัดเพื่อเปิดใช้งานการแปลงสำหรับแพลตฟอร์มนั้นได้ทันที
+### 2. 🎯 Checkbox-Driven AI Token Scoping & Zero-Egress Architecture (ระบบควบคุม Token ด้วย Checkbox)
+- **AI Payload Scoping**: ในหน้าต่าง **AI Enhance (Co-Creator)** สามารถติ๊กเลือกเฉพาะหมวดหมู่ (1-10 หมวด) และเลือกตัวละครเสริมที่ต้องการส่งให้ AI ช่วยลดขนาด Prompt และ **ประหยัด AI Token ลงได้ถึง 40-70%**
+- **Zero Data Loss Guarantee**: ระบบ Smart Merge Engine จะรักษาข้อมูลเดิมที่คุณกรอกไว้ 100% และเติมเต็มเฉพาะช่องที่ยังว่างหรือเลือกไว้เท่านั้น
+- **Instant In-Browser Formatter ($0 AI Token)**: การแปลงโครงสร้างคำสั่งของ Purrpaw, Rubii, Khui AI และ Master MD ประมวลผลในเบราว์เซอร์ด้วย JavaScript โดยไม่มีค่าใช้จ่าย Token และมี Checkbox ควบคุมการแสดงผล/ส่งออกแต่ละแท็บ
+- **Lean AI Fallback & Server Quota Guard**: จำกัด Fallback สูงสุดเพียง 1 โมเดล พร้อม Timeout 12 วินาที และระบบตรวจสอบความปลอดภัย/Rate Limit ฝั่งเซิร์ฟเวอร์
 
 ### 3. 📝 Unified Markdown Persona Engine (โครงสร้าง Markdown มาตรฐาน)
 - **Purrpaw & Rubii Standardization**: รวมโครงสร้างคำสั่ง System Prompt & Persona Prompt ของทั้งสองแพลตฟอร์มให้อยู่ในรูปแบบ Markdown คุณภาพสูงตัวเดียวกัน

@@ -27,7 +27,7 @@ export function SingleBoxInput({
   onLoadSample,
   onClear,
 }: SingleBoxInputProps) {
-  const { user, quotaRemaining, quotaMax, consumeQuota, openAuthModal } = useAuth();
+  const { user, session, quotaRemaining, quotaMax, consumeQuota, openAuthModal } = useAuth();
 
   const [targetPlatform, setTargetPlatform] = useState<TargetPlatformType>('all');
 
@@ -104,7 +104,10 @@ export function SingleBoxInput({
       // 1. Try Google Gemini API Endpoint
       const res = await fetch('/api/ai/parse', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ rawText: rawMarkdown, targetPlatform }),
       });
 

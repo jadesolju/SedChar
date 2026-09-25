@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseMarkdownToCharacter } from '@/shared/thaiTagParser';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { DEFAULT_CHARACTER } from '@/shared/types';
+import { verifyServerQuotaAndRateLimit, validateInputPayload } from '@/lib/aiServerGuard';
+import { logAITelemetry, estimateTokenCount } from '@/lib/telemetry';
 
 function safeExtractJson(raw: string): any {
   let text = raw.trim();
@@ -69,108 +71,85 @@ function normalizeArray(val: any): string[] {
     });
 }
 
-const DIRECT_GEMINI_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-flash-lite-latest',
-  'gemini-3.5-flash',
-  'gemini-flash-latest',
-  'gemini-2.5-flash'
-];
+const PRIMARY_GEMINI_MODEL = 'gemini-2.5-flash';
+const FALLBACK_OPENROUTER_MODEL = 'openai/gpt-4o-mini';
 
-const DEFAULT_OPENROUTER_FALLBACKS = [
-  'google/gemini-3.5-flash-lite',
-  'openai/gpt-4.1-mini',
-  'openai/gpt-4.1-nano',
-  'x-ai/grok-4.3',
-  'x-ai/grok-4.20',
-  'qwen/qwen3.8-flash',
-  'qwen/qwen3.7-flash',
-  'google/gemma-4-31b-it',
-  'google/gemma-4-26b-a4b-it',
-  'google/gemma-3-27b-it',
-  'z-ai/glm-5.3-flash',
-  'z-ai/glm-4.7-flash',
-  'google/gemini-2.5-flash',
-  'openai/gpt-4o-mini',
-  'qwen/qwen-2.5-72b-instruct',
-  'meta-llama/llama-3.3-70b-instruct'
-];
+async function callDirectGeminiSingle(apiKey: string, prompt: string, model: string = PRIMARY_GEMINI_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-async function callDirectGemini(apiKey: string, prompt: string, requestedModel?: string): Promise<{ text: string; model: string }> {
-  const models = requestedModel && DIRECT_GEMINI_MODELS.includes(requestedModel)
-    ? [requestedModel, ...DIRECT_GEMINI_MODELS.filter(m => m !== requestedModel)]
-    : DIRECT_GEMINI_MODELS;
+  try {
+    const cleanModel = model.replace(/^google\//, '').replace(/^direct:/, '');
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${apiKey}`;
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+          topP: 0.9,
+          topK: 40,
+        },
+      }),
+      signal: controller.signal,
+    });
 
-  for (const model of models) {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-      const response = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.2,
-            topP: 0.9,
-            topK: 40,
-          },
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return { text, model: `direct:${model}` };
-      }
-    } catch (err: any) {
-      console.warn(`Direct Gemini ${model} failed:`, err.message);
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Gemini HTTP ${response.status}: ${errText.slice(0, 150)}`);
     }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini empty output');
+    return { text, model: `direct:${cleanModel}` };
+  } finally {
+    clearTimeout(timer);
   }
-  throw new Error('Direct Gemini call failed');
 }
 
-async function callOpenRouter(apiKey: string, prompt: string, requestedModel?: string): Promise<{ text: string; model: string }> {
-  const modelsToTry = requestedModel && requestedModel !== 'auto'
-    ? [requestedModel, ...DEFAULT_OPENROUTER_FALLBACKS.filter(m => m !== requestedModel)]
-    : DEFAULT_OPENROUTER_FALLBACKS;
+async function callOpenRouterSingle(apiKey: string, prompt: string, model: string = FALLBACK_OPENROUTER_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  for (const model of modelsToTry) {
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://sedchar.vercel.app',
-          'X-Title': 'SedChar Studio'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert AI parser. You MUST respond with ONLY valid JSON strictly matching the requested format. Do not include markdown code block formatting or explanations.'
-            },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.2,
-          response_format: { type: 'json_object' }
-        }),
-      });
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://sedchar.vercel.app',
+        'X-Title': 'SedChar Studio'
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert AI parser. You MUST respond with ONLY valid JSON strictly matching the requested format. Do not include markdown code block formatting or explanations.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal,
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text && text.trim()) {
-          return { text, model: `openrouter:${model}` };
-        }
-      }
-    } catch (err: any) {
-      console.warn(`OpenRouter model ${model} error:`, err.message);
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenRouter HTTP ${response.status}: ${errText.slice(0, 150)}`);
     }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (!text || !text.trim()) throw new Error('OpenRouter empty output');
+    return { text, model: `openrouter:${model}` };
+  } finally {
+    clearTimeout(timer);
   }
-  throw new Error('OpenRouter calls failed');
 }
 
 const JSON_SCHEMA_TEMPLATE = `{
@@ -218,25 +197,25 @@ const JSON_SCHEMA_TEMPLATE = `{
   "sexualStyle": "string",
   "kinksPreferences": "string",
   "aftercareStyle": "string",
-  "dailyRoutine": "string",
-  "toneSetting": "string",
-  "subCharRules": "string",
-  "subCharAllowed": "string",
-  "shortIntro": "string",
-  "punchline": "string",
-  "momentIntro": "string",
-  "categoryTags": ["string"],
   "openGreetingNarrative": "string",
   "openGreetingDialogue": "string",
   "fullGreeting": "string",
+  "plotSummary": "string",
+  "shortIntro": "string",
+  "punchline": "string",
+  "momentIntro": "string",
+  "dailyRoutine": "string",
+  "toneSetting": "string",
   "systemRules": ["string"],
+  "subCharRules": "string",
+  "subCharAllowed": "string",
+  "categoryTags": ["string"],
   "supportingCharacters": [
     {
       "id": "string",
       "name": "string",
       "gender": "string",
       "age": "string",
-      "personality": "string",
       "relationship": "string",
       "mainRole": "string",
       "appearWhen": "string",
@@ -270,15 +249,30 @@ ${JSON_SCHEMA_TEMPLATE}
 `;
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  let requestedModel = 'auto';
+
   try {
+    const guard = await verifyServerQuotaAndRateLimit(req);
+    if (!guard.allowed) {
+      return NextResponse.json({ error: guard.error || 'Too many requests' }, { status: guard.statusCode || 429 });
+    }
+
     const { rawText, model, targetPlatform } = await req.json();
+    requestedModel = model || 'auto';
 
     if (!rawText || typeof rawText !== 'string' || !rawText.trim()) {
       return NextResponse.json({ error: 'Missing rawText' }, { status: 400 });
     }
 
+    const sizeCheck = validateInputPayload(rawText, 15000);
+    if (!sizeCheck.valid) {
+      return NextResponse.json({ error: sizeCheck.error }, { status: 400 });
+    }
+
     const geminiKey = process.env.GEMINI_API_KEY;
     const openRouterKey = process.env.OPENROUTER_API_KEY;
+
     let platformGuidance = '';
     if (targetPlatform === 'purrpaw') {
       platformGuidance = '\n\nNOTE: Target platform is Purrpaw AI. Ensure rich 10-category profile, locations, subcharacters, and full greeting are faithfully structured.';
@@ -287,36 +281,60 @@ export async function POST(req: NextRequest) {
     } else if (targetPlatform === 'khui') {
       platformGuidance = '\n\nNOTE: Target platform is Khui AI. Ensure concise system prompt, character profile, scenario plot summary, and user relationship are separated cleanly.';
     }
+
     const prompt = PARSE_PROMPT_PREFIX + platformGuidance + '\n\n' + rawText;
-
     let aiResult: { text: string; model: string } | null = null;
+    let fallbackTriggered = false;
 
-    // 1. If explicit OpenRouter model is selected or OpenRouter key is available:
-    if (model && model.includes('/')) {
+    if (requestedModel && requestedModel !== 'auto' && requestedModel.includes('/')) {
       if (openRouterKey) {
         try {
-          aiResult = await callOpenRouter(openRouterKey, prompt, model);
+          aiResult = await callOpenRouterSingle(openRouterKey, prompt, requestedModel);
         } catch (e: any) {
-          console.warn(`OpenRouter explicit model ${model} failed, attempting fallbacks:`, e.message);
+          console.warn(`Primary model ${requestedModel} failed, fallback triggered:`, e.message);
+          fallbackTriggered = true;
+          if (geminiKey) {
+            try {
+              aiResult = await callDirectGeminiSingle(geminiKey, prompt, PRIMARY_GEMINI_MODEL);
+            } catch (fbErr: any) {
+              console.warn('Fallback Gemini call failed:', fbErr.message);
+            }
+          } else if (requestedModel !== FALLBACK_OPENROUTER_MODEL) {
+            try {
+              aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+            } catch (fbErr: any) {
+              console.warn('Fallback OpenRouter call failed:', fbErr.message);
+            }
+          }
         }
       }
-    }
-
-    // 2. Direct Gemini Key if available
-    if (!aiResult && geminiKey) {
-      try {
-        aiResult = await callDirectGemini(geminiKey, prompt, model);
-      } catch (e: any) {
-        console.warn('Direct Gemini call failed:', e.message);
-      }
-    }
-
-    // 3. OpenRouter fallback cascade
-    if (!aiResult && openRouterKey) {
-      try {
-        aiResult = await callOpenRouter(openRouterKey, prompt, model);
-      } catch (e: any) {
-        console.warn('OpenRouter fallback cascade failed:', e.message);
+    } else {
+      if (geminiKey) {
+        try {
+          aiResult = await callDirectGeminiSingle(geminiKey, prompt, PRIMARY_GEMINI_MODEL);
+        } catch (e: any) {
+          console.warn('Primary Gemini call failed, attempting 1 fast fallback:', e.message);
+          fallbackTriggered = true;
+          if (openRouterKey) {
+            try {
+              aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+            } catch (fbErr: any) {
+              console.warn('Fast fallback OpenRouter call failed:', fbErr.message);
+            }
+          }
+        }
+      } else if (openRouterKey) {
+        try {
+          aiResult = await callOpenRouterSingle(openRouterKey, prompt, 'google/gemini-2.5-flash');
+        } catch (e: any) {
+          console.warn('Primary OpenRouter call failed:', e.message);
+          fallbackTriggered = true;
+          try {
+            aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+          } catch (fbErr: any) {
+            console.warn('Fallback OpenRouter call failed:', fbErr.message);
+          }
+        }
       }
     }
 
@@ -387,17 +405,53 @@ export async function POST(req: NextRequest) {
           locations: Array.isArray(parsedJson.locations) ? parsedJson.locations : [],
         };
 
+        const duration = Date.now() - startTime;
+        logAITelemetry({
+          operation: 'parse',
+          modelRequested: requestedModel,
+          modelUsed: aiResult.model,
+          fallbackTriggered,
+          promptTokensEst: estimateTokenCount(prompt),
+          completionTokensEst: estimateTokenCount(aiResult.text),
+          durationMs: duration,
+          inputLength: rawText.length,
+          outputLength: JSON.stringify(result).length,
+          success: true,
+        });
+
         return NextResponse.json({ success: true, character: result, model: aiResult.model });
       } catch (jsonErr: any) {
-        console.warn('JSON parsing from AI failed, falling back to regex parser:', jsonErr.message);
+        console.warn('JSON parsing from AI failed, falling back to local regex parser:', jsonErr.message);
       }
     }
 
-    // 4. Ultimate Fallback: Local Regex & Rule-Based Parser
     const fallbackCharacter = parseMarkdownToCharacter(rawText);
+    const duration = Date.now() - startTime;
+    logAITelemetry({
+      operation: 'local_parse',
+      modelRequested: requestedModel,
+      modelUsed: 'local-regex-parser',
+      fallbackTriggered: true,
+      promptTokensEst: 0,
+      completionTokensEst: 0,
+      durationMs: duration,
+      inputLength: rawText.length,
+      outputLength: JSON.stringify(fallbackCharacter).length,
+      success: true,
+    });
+
     return NextResponse.json({ success: true, character: fallbackCharacter, model: 'local-regex-parser' });
 
   } catch (err: any) {
+    const duration = Date.now() - startTime;
+    logAITelemetry({
+      operation: 'parse',
+      modelRequested: requestedModel,
+      fallbackTriggered: false,
+      durationMs: duration,
+      success: false,
+      error: err.message,
+    });
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
 }

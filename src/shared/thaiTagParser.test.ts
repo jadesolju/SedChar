@@ -98,7 +98,7 @@ MBTI: ENTP
     expect(purrpaw.historyPersonalityPrompt).toContain('ข้อมูลพื้นฐาน - Character Profile');
     expect(purrpaw.locations.length).toBeGreaterThan(0);
     // Purrpaw location prompt should be in English
-    expect(purrpaw.locations[0].prompt).toMatch(/[a-zA-Z]/);
+    expect(purrpaw.locations[0]?.prompt).toMatch(/[a-zA-Z]/);
 
     const khui = generateKhuiOutput(SAMPLE_CHARACTER);
     expect(khui.name).toBe(SAMPLE_CHARACTER.fullName);
