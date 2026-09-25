@@ -13,6 +13,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ecf8e?style=flat-square&logo=supabase)](https://supabase.com/)
 [![Vitest](https://img.shields.io/badge/Vitest-3.2-6e9f18?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-MIT-rose?style=flat-square)](LICENSE)
+[![Author](https://img.shields.io/badge/Author-jadesolju-pink?style=flat-square&logo=github)](https://github.com/jadesolju/SedChar)
 
 [ฟีเจอร์เด่น](#-ฟีเจอร์หลัก) • [10 หมวดหมู่คำสั่ง](#-โครงสร้างคำสั่ง-10-หมวดหมู่หลัก) • [แพลตฟอร์มที่รองรับ](#-แพลตฟอร์มที่รองรับ) • [ความปลอดภัยและการแชร์](#-ความปลอดภัยและระบบ-read-only-sharing) • [การติดตั้ง](#-การติดตั้งและเริ่มใช้งาน)
 
@@ -114,6 +115,14 @@ npm run build
 ```
 
 ---
+
+
+---
+
+## 👤 ผู้พัฒนาและเจ้าของโครงการ (Owner & Creator)
+- **Creator & Lead Maintainer**: [jadesolju](https://github.com/jadesolju/SedChar) (`afillly002@gmail.com`)
+- **Official Repository**: [https://github.com/jadesolju/SedChar](https://github.com/jadesolju/SedChar)
+- **Project Scope**: SedChar Studio — Thai Character Architecture & Multi-Platform Prompt Engine
 
 ## 📄 License
 MIT License — พัฒนาและออกแบบโดยทีมงาน SedChar.AI
