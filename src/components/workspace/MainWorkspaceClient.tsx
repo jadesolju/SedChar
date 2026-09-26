@@ -31,6 +31,8 @@ import {
   RotateCcw,
   Menu,
   ExternalLink,
+  User as UserIcon,
+  Users,
 } from 'lucide-react';
 
 function MainWorkspace() {
@@ -313,7 +315,9 @@ function MainWorkspace() {
                     onClick={() => setIsNavMenuOpen(false)}
                     className="p-2.5 rounded-xl bg-primary/10 border border-primary/30 text-foreground flex items-center gap-3 transition-all hover:bg-primary/15 cursor-pointer"
                   >
-                    <span className="text-xl">🐱</span>
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center flex-shrink-0 font-bold">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-primary flex items-center gap-1.5">
                         <span>Single-Char Studio</span>
@@ -325,17 +329,19 @@ function MainWorkspace() {
                     </div>
                   </Link>
 
-                  {/* Rubii Multi-Char Studio */}
+                  {/* Multi-Char Studio */}
                   <Link
                     href="/rubii/multi"
                     onClick={() => setIsNavMenuOpen(false)}
                     className="p-2.5 rounded-xl border border-border/80 hover:border-purple-500/50 hover:bg-purple-500/10 text-foreground flex items-center gap-3 transition-all cursor-pointer group"
                   >
-                    <span className="text-xl">🎭</span>
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center flex-shrink-0 font-bold">
+                      <Users className="w-4 h-4" />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold group-hover:text-purple-300 flex items-center gap-1.5">
-                        <span>Rubii Multi-Char Studio</span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">PREVIEW</span>
+                      <div className="text-xs font-bold group-hover:text-purple-600 dark:group-hover:text-purple-400 flex items-center gap-1.5 text-foreground">
+                        <span>Multi-Char Studio</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 font-bold">PREVIEW</span>
                       </div>
                       <div className="text-[10px] text-muted-foreground truncate">
                         วางโครงเรื่องหลายตัวละคร (10 ตัว) + กฎโลก

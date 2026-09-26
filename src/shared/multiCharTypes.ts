@@ -111,10 +111,10 @@ export const DEFAULT_MAIN_CHARACTER_DRAFT: Omit<MainCharacterDraft, 'id'> = {
 };
 
 export const DEFAULT_MULTI_PROJECT_DRAFT: MultiCharacterProjectDraft = {
-  id: 'proj_rubii_default',
+  id: 'proj_multi_default',
   schemaVersion: 1,
   platform: 'rubii',
-  title: 'โปรเจกต์ Rubii Multi-Char ใหม่',
+  title: 'โปรเจกต์ Multi-Char ใหม่',
   status: 'draft',
   worldSetting: DEFAULT_WORLD_SETTING,
   lore: DEFAULT_LORE_DRAFT,

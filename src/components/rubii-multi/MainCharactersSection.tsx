@@ -1,6 +1,19 @@
 'use client';
 import React, { useState } from 'react';
-import { Users, Plus, Trash2, Shield, Heart, Key, Ban, Sparkles, User, AlertTriangle } from 'lucide-react';
+import {
+  Users,
+  Plus,
+  Trash2,
+  Heart,
+  Key,
+  Ban,
+  Sparkles,
+  User,
+  AlertTriangle,
+  Target,
+  MessageSquare,
+  Shield,
+} from 'lucide-react';
 import type { MainCharacterDraft } from '@/shared/multiCharTypes';
 import { MAX_FREE_MAIN_CHARACTERS } from '@/hooks/useMultiCharacterProject';
 
@@ -18,7 +31,7 @@ export function MainCharactersSection({
   onRemoveCharacter,
 }: MainCharactersSectionProps) {
   const [selectedCharId, setSelectedCharId] = useState<string>(() => mainCharacters[0]?.id || '');
-  const activeChar = mainCharacters.find(c => c.id === selectedCharId) || mainCharacters[0];
+  const activeChar = mainCharacters.find((c) => c.id === selectedCharId) || mainCharacters[0];
   const isFull = mainCharacters.length >= MAX_FREE_MAIN_CHARACTERS;
 
   const handleAdd = () => {
@@ -31,15 +44,22 @@ export function MainCharactersSection({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Section Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 flex-shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
               <span>4. Main Characters (ตัวละครหลัก)</span>
-              <span className={"text-[10px] px-2.5 py-0.5 rounded-full font-bold border " + (isFull ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-rose-500/15 text-rose-300 border-rose-500/30")}>
+              <span
+                className={
+                  'text-[10px] px-2.5 py-0.5 rounded-full font-bold border ' +
+                  (isFull
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                    : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20')
+                }
+              >
                 {mainCharacters.length}/{MAX_FREE_MAIN_CHARACTERS} ตัว (Free Tier)
               </span>
             </h2>
@@ -53,7 +73,12 @@ export function MainCharactersSection({
           type="button"
           onClick={handleAdd}
           disabled={isFull}
-          className={"px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 " + (isFull ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed" : "bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white cursor-pointer")}
+          className={
+            'px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 self-start sm:self-auto ' +
+            (isFull
+              ? 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+              : 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white cursor-pointer')
+          }
         >
           <Plus className="w-4 h-4" />
           <span>เพิ่มตัวละครหลัก</span>
@@ -67,7 +92,7 @@ export function MainCharactersSection({
           <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between px-1">
             <span>รายชื่อตัวละคร ({mainCharacters.length})</span>
             {isFull && (
-              <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-1">
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 <span>ครบโควตา 10 ตัว</span>
               </span>
@@ -81,14 +106,29 @@ export function MainCharactersSection({
                 <div
                   key={char.id}
                   onClick={() => setSelectedCharId(char.id)}
-                  className={"p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 " + (isSelected ? "bg-rose-500/15 border-rose-500/50 shadow-xs" : "bg-card/70 border-border hover:bg-muted/40 hover:border-border/80")}
+                  className={
+                    'p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ' +
+                    (isSelected
+                      ? 'bg-rose-500/10 border-rose-500/50 shadow-xs'
+                      : 'bg-card/70 border-border hover:bg-muted/40 hover:border-border/80')
+                  }
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={"w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 " + (isSelected ? "bg-rose-500 text-white" : "bg-muted text-muted-foreground")}>
+                    <div
+                      className={
+                        'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ' +
+                        (isSelected ? 'bg-rose-500 text-white' : 'bg-muted text-muted-foreground')
+                      }
+                    >
                       {index + 1}
                     </div>
                     <div className="min-w-0">
-                      <div className={"text-xs font-bold truncate " + (isSelected ? "text-rose-200" : "text-foreground")}>
+                      <div
+                        className={
+                          'text-xs font-bold truncate ' +
+                          (isSelected ? 'text-rose-600 dark:text-rose-300' : 'text-foreground')
+                        }
+                      >
                         {char.name || `ตัวละครหลักที่ ${index + 1}`}
                       </div>
                       <div className="text-[10px] text-muted-foreground truncate">
@@ -104,7 +144,7 @@ export function MainCharactersSection({
                         e.stopPropagation();
                         onRemoveCharacter(char.id);
                       }}
-                      className="w-6 h-6 rounded-md hover:bg-rose-500/20 text-muted-foreground hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer"
+                      className="w-7 h-7 rounded-lg hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer"
                       title="ลบตัวละคร"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -116,129 +156,132 @@ export function MainCharactersSection({
           </div>
         </div>
 
-        {/* Selected Character Editor Column */}
+        {/* Character Editor Form Column */}
         {activeChar && (
           <div className="lg:col-span-8 p-4 sm:p-5 rounded-2xl border border-border bg-card/60 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-rose-400" />
-                <h3 className="text-sm font-bold text-foreground">
-                  แก้ไขข้อมูลร่าง: {activeChar.name || 'ตัวละครใหม่'}
-                </h3>
+                <User className="w-4 h-4 text-rose-500" />
+                <span className="text-xs font-bold text-foreground">
+                  แก้ไขข้อมูลตัวละคร: <span className="text-rose-600 dark:text-rose-400">{activeChar.name || 'ไม่มีชื่อ'}</span>
+                </span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground font-mono">
-                ID: {activeChar.id}
-              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Name & Title */}
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">ชื่อตัวละครหลัก (Name)</label>
+                <label className="text-[11px] font-semibold text-foreground">
+                  ชื่อตัวละคร (Character Name)
+                </label>
                 <input
                   type="text"
                   value={activeChar.name}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { name: e.target.value })}
-                  placeholder="เช่น ซ้อเหมย / วาเลน..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground font-semibold outline-hidden"
+                  placeholder="เช่น ออเรเลีย..."
+                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground font-bold outline-hidden"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">ชื่อเต็ม / ฉายา / ตำแหน่ง (Alias / Title)</label>
+                <label className="text-[11px] font-semibold text-foreground">
+                  ฉายา / ตำแหน่ง (Alias & Title)
+                </label>
                 <input
                   type="text"
                   value={activeChar.aliasOrTitle}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { aliasOrTitle: e.target.value })}
-                  placeholder="เช่น หลิน เหมยฮวา / นายหญิงคลังเงิน..."
+                  placeholder="เช่น ผู้บัญชาการอัศวินกุหลาบเงิน..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground outline-hidden"
                 />
               </div>
 
-              {/* Gender & Age */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">เพศ (Gender)</label>
-                <input
-                  type="text"
-                  value={activeChar.gender}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { gender: e.target.value })}
-                  placeholder="เช่น หญิง / ชาย / Non-binary..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground outline-hidden"
-                />
-              </div>
+              <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-foreground">เพศ</label>
+                  <input
+                    type="text"
+                    value={activeChar.gender}
+                    onChange={(e) => onUpdateCharacter(activeChar.id, { gender: e.target.value })}
+                    placeholder="เช่น หญิง / ชาย"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">อายุ (Age) & MBTI</label>
-                <div className="flex gap-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-foreground">อายุ</label>
                   <input
                     type="text"
                     value={activeChar.age}
                     onChange={(e) => onUpdateCharacter(activeChar.id, { age: e.target.value })}
-                    placeholder="เช่น 29 ปี"
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden"
+                    placeholder="เช่น 26 ปี"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden"
                   />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-foreground">MBTI (ถ้ามี)</label>
                   <input
                     type="text"
                     value={activeChar.mbti || ''}
                     onChange={(e) => onUpdateCharacter(activeChar.id, { mbti: e.target.value })}
-                    placeholder="MBTI (ENFJ)"
-                    className="w-24 px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden uppercase font-mono"
+                    placeholder="เช่น ISTJ, ENTP"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden"
                   />
                 </div>
               </div>
 
-              {/* Story Role & Core Personality */}
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-foreground">
-                  🎭 บทบาทในเรื่อง & คาแรคเตอร์หลัก (Story Role & Archetype)
+                  บทบาทในเรื่องราว (Story Role)
                 </label>
                 <input
                   type="text"
                   value={activeChar.storyRole}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { storyRole: e.target.value })}
-                  placeholder="เช่น นายหญิงคลังเงินสายเปย์ / คู่ปรับผู้บัญชาการทหาร..."
+                  placeholder="เช่น ผู้พิทักษ์และคู่พันธสัญญา / ฝ่ายกบฏจอมวางแผน..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground outline-hidden"
                 />
               </div>
 
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-rose-500" />
                   <span>แก่นบุคลิกภาพ & จุดเด่นนิสัย (Core Personality Brief)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.corePersonality}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { corePersonality: e.target.value })}
-                  placeholder="เช่น ปากหวานก้นเปรี้ยว มารยาหญิงแพรวพราว ปากร้ายใจเย็น แต่หลงแมวและสายเปย์..."
+                  placeholder="เช่น สุขุม เคร่งครัดในหน้าที่ ปากแข็งแต่จิตใจอ่อนโยน รักษาคำพูดอย่างยิ่งยวด..."
                   className="w-full px-3 py-2 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
 
               {/* Primary Goal & User Relationship */}
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">
-                  🎯 เป้าหมายหรือความปรารถนาหลัก (Primary Goal)
+                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-amber-500" />
+                  <span>เป้าหมายหรือความปรารถนาหลัก (Primary Goal)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.primaryGoalOrDesire}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { primaryGoalOrDesire: e.target.value })}
-                  placeholder="เช่น ผูกมัดหัวใจของ {{user}} ไว้ด้วยความหรูหรา..."
+                  placeholder="เช่น ปกป้องความสงบสุขของพลเมือง และค้นหาความจริง..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Heart className="w-3.5 h-3.5 text-pink-400" />
+                  <Heart className="w-3.5 h-3.5 text-pink-500" />
                   <span>ความสัมพันธ์กับ {'{{user}}'} (Relationship with User)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.relationshipWithUser}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { relationshipWithUser: e.target.value })}
-                  placeholder="เช่น มองเป็นสมบัติล้ำค่ายิ่งกว่าทองคำ..."
+                  placeholder="เช่น มองเป็นบุคคลสำคัญที่ต้องคุ้มครอง แต่ค่อยๆ เปิดใจ..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
@@ -246,14 +289,14 @@ export function MainCharactersSection({
               {/* Relations with other cast */}
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <Users className="w-3.5 h-3.5 text-blue-500" />
                   <span>ความสัมพันธ์กับตัวละครอื่นในเรื่อง (Relations with other Cast)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.relationsWithOtherCast}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { relationsWithOtherCast: e.target.value })}
-                  placeholder="เช่น ร่วมมือกับวาเลนในเรื่องผลประโยชน์ แต่แอบชิงดีชิงเด่นเรื่องความสนใจของ User..."
+                  placeholder="เช่น ไม่ไว้ใจกิลด์วิศวกรเงา แต่ยอมร่วมมือชั่วคราวเมื่อสถานการณ์คับขัน..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
@@ -261,55 +304,57 @@ export function MainCharactersSection({
               {/* Secrets & Absolute Rules */}
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <Key className="w-3.5 h-3.5 text-amber-500" />
                   <span>ข้อมูลลับ / สิ่งที่รู้เฉพาะตัว (Exclusive Secret / Knowledge)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.exclusiveSecretOrKnowledge}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { exclusiveSecretOrKnowledge: e.target.value })}
-                  placeholder="เช่น รู้รหัสคลังเงินใต้ดิน และรู้ความลับของตระกูล..."
+                  placeholder="เช่น แอบเก็บตัวอย่างผลึกเวทจากแล็บ 7 ไว้เพื่อสืบหาคนทรยศ..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Ban className="w-3.5 h-3.5 text-rose-400" />
+                  <Ban className="w-3.5 h-3.5 text-rose-500" />
                   <span>กฎเหล็ก / สิ่งที่จะไม่ทำเด็ดขาด (Absolute Rules)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.absoluteRules}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { absoluteRules: e.target.value })}
-                  placeholder="เช่น ไม่ทำร้ายร่างกาย User เด็ดขาด..."
+                  placeholder="เช่น ไม่ยอมหักหลังหน้าที่ และไม่ทำร้ายผู้บริสุทธิ์เด็ดขาด..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
 
               {/* Appearance & Speaking Style */}
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">
-                  👗 รูปลักษณ์ภายนอกย่อ (Appearance Brief)
+                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                  <span>รูปลักษณ์ภายนอกย่อ (Appearance Brief)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.appearanceBrief}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { appearanceBrief: e.target.value })}
-                  placeholder="เช่น กี่เพ้าดำขลิบทองแหวกอกลึก สูง 170 ซม. ผมลอนสีน้ำตาล..."
+                  placeholder="เช่น ชุดเกราะเงินประดับผ้าคลุมสีน้ำเงินกรมท่า ผมสีบลอนด์เงิน สูง 172 ซม...."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground">
-                  🗣️ สไตล์การพูด & คำติดปาก (Speaking Style & Catchphrase)
+                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                  <span>สไตล์การพูด & คำติดปาก (Speaking Style & Catchphrase)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={activeChar.speakingStyle}
                   onChange={(e) => onUpdateCharacter(activeChar.id, { speakingStyle: e.target.value })}
-                  placeholder="เช่น พูดคะขา จ๊ะจ๋า หวานหยาดเยิ้ม คำติดปาก: เป็นเด็กดีของซ้อนะ..."
+                  placeholder="เช่น สุภาพ ทางการ หนักแน่น ลงท้ายด้วยความเคารพแต่แฝงความเด็ดขาด..."
                   className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
                 />
               </div>

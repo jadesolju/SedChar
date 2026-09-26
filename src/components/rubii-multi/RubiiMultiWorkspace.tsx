@@ -12,11 +12,9 @@ import {
   X,
   ArrowLeft,
   RotateCcw,
-  Sparkle,
-  Eye,
-  Check,
-  Save,
-  Layers
+  Shield,
+  Layers,
+  Sparkle
 } from 'lucide-react';
 import { useMultiCharacterProject } from '@/hooks/useMultiCharacterProject';
 import { WorldSettingSection } from './WorldSettingSection';
@@ -30,12 +28,12 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 type TabId = 'world' | 'lore' | 'routes' | 'mainChars' | 'castRules' | 'preview';
 
 const TABS = [
-  { id: 'world', label: '1. World Setting', desc: 'กฎของโลก, ฉาก, ยุคสมัย', icon: Globe, color: 'text-purple-400' },
-  { id: 'lore', label: '2. Lore & Timeline', desc: 'ไทม์ไลน์, ภูมิหลัง, ความลับ', icon: BookOpen, color: 'text-amber-400' },
-  { id: 'routes', label: '3. Routes & Branches', desc: 'เส้นทางเรื่อง, เงื่อนไข', icon: GitFork, color: 'text-blue-400' },
-  { id: 'mainChars', label: '4. Main Characters', desc: 'ตัวละครหลัก (10 ตัวใน Free)', icon: Users, color: 'text-rose-400' },
-  { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎฉากรวม', icon: Sparkles, color: 'text-emerald-400' },
-  { id: 'preview', label: '6. Rubii Draft Export', desc: 'สรุปรวมร่างโปรเจกต์', icon: FileText, color: 'text-pink-400' },
+  { id: 'world', label: '1. World Setting', desc: 'กฎของโลก, ฉาก, ยุคสมัย', icon: Globe, color: 'text-purple-600 dark:text-purple-400' },
+  { id: 'lore', label: '2. Lore & Timeline', desc: 'ไทม์ไลน์, ภูมิหลัง, ความลับ', icon: BookOpen, color: 'text-amber-600 dark:text-amber-400' },
+  { id: 'routes', label: '3. Routes & Branches', desc: 'เส้นทางเรื่อง, เงื่อนไข', icon: GitFork, color: 'text-blue-600 dark:text-blue-400' },
+  { id: 'mainChars', label: '4. Main Characters', desc: 'ตัวละครหลัก (10 ตัวใน Free)', icon: Users, color: 'text-rose-600 dark:text-rose-400' },
+  { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎฉากรวม', icon: Sparkles, color: 'text-emerald-600 dark:text-emerald-400' },
+  { id: 'preview', label: '6. Master Draft Export', desc: 'สรุปรวมร่างโปรเจกต์', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
 ];
 
 export function RubiiMultiWorkspace() {
@@ -74,7 +72,7 @@ export function RubiiMultiWorkspace() {
 
   const handleLoadSample = () => {
     loadSampleProject();
-    showToast('โหลดตัวอย่างโปรเจกต์ "มหานครกรงทอง (ซ้อเหมย & วาเลน)" เรียบร้อย!');
+    showToast('โหลดตัวอย่างจักรวาล "Aethelgard: มหานครเวทจักรกล" เรียบร้อย!');
   };
 
   const handleReset = () => {
@@ -101,41 +99,40 @@ export function RubiiMultiWorkspace() {
 
           {/* Project Logo & Title */}
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg flex-shrink-0">🎭</span>
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 flex-shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-bold text-foreground truncate">
-                  Rubii Multi-Char Studio
+                  Multi-Char Studio
                 </span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
                   Preview
-                </span>
-                <span className="hidden sm:inline-block text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                  Rubii Only
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Header Actions */}
+        {/* Action Buttons Right */}
         <div className="flex items-center gap-2">
-          {/* Sample Loader */}
+          {/* Load Sample Universe */}
           <button
             type="button"
             onClick={handleLoadSample}
-            className="px-2.5 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="โหลดตัวอย่างโปรเจกต์หลายตัวละคร"
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="โหลดตัวอย่างโครงสร้าง Multi-Character Universe"
           >
-            <Sparkle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">โหลดตัวอย่าง</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden sm:inline">ตัวอย่าง Multi-Char</span>
           </button>
 
           {/* Reset */}
           <button
             type="button"
             onClick={handleReset}
-            className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-rose-500/20 text-muted-foreground hover:text-rose-400 transition-all flex items-center justify-center cursor-pointer shadow-xs"
+            className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center justify-center cursor-pointer shadow-xs"
             title="ล้างโปรเจกต์ทั้งหมด"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -160,7 +157,9 @@ export function RubiiMultiWorkspace() {
         <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-border bg-card/40 p-3 space-y-1.5 flex-shrink-0 overflow-y-auto custom-scrollbar">
           <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
             <span>โครงสร้างโปรเจกต์</span>
-            <span className="text-[10px] text-rose-400 font-bold font-mono">{mainCharCount}/{maxMainChars} ตัวหลัก</span>
+            <span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold font-mono bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+              {mainCharCount}/{maxMainChars} ตัวหลัก
+            </span>
           </div>
 
           {TABS.map((tab) => {
@@ -174,7 +173,7 @@ export function RubiiMultiWorkspace() {
                 className={"w-full p-2.5 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer " + (isActive ? "bg-card border-rose-500/50 shadow-md ring-1 ring-rose-500/20" : "bg-transparent border-transparent hover:bg-muted/40 hover:border-border/60 text-muted-foreground hover:text-foreground")}
               >
                 <div className={"w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 " + (isActive ? "bg-rose-500/15 border border-rose-500/30" : "bg-muted/60")}>
-                  <Icon className={"w-4 h-4 " + (isActive ? "text-rose-400" : tab.color)} />
+                  <Icon className={"w-4 h-4 " + (isActive ? "text-rose-600 dark:text-rose-400" : tab.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className={"text-xs font-bold truncate " + (isActive ? "text-foreground" : "text-foreground/90")}>
@@ -191,7 +190,8 @@ export function RubiiMultiWorkspace() {
           <div className="mt-auto pt-4 border-t border-border px-2">
             <div className="p-3 rounded-xl bg-muted/40 border border-border text-[11px] text-muted-foreground space-y-1">
               <div className="font-bold text-foreground flex items-center gap-1.5">
-                <span>🛡️ Rubii Multi-Char Engine</span>
+                <Shield className="w-3.5 h-3.5 text-rose-500" />
+                <span>Multi-Char Draft Isolation</span>
               </div>
               <p className="text-[10px] leading-relaxed">
                 บันทึก Draft อัตโนมัติแยกคีย์ ปลอดภัย ไม่ทับ Single-Char
@@ -202,7 +202,7 @@ export function RubiiMultiWorkspace() {
 
         {/* Mobile Drawer (When Open) */}
         {isMobileDrawerOpen && (
-          <div className="fixed inset-0 z-40 md:hidden bg-black/80 backdrop-blur-xs animate-in fade-in flex flex-col">
+          <div className="fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in flex flex-col">
             <div className="p-4 bg-card border-b border-border flex items-center justify-between">
               <span className="font-bold text-sm text-foreground">เลือกแท็บแก้ไข</span>
               <button
@@ -214,7 +214,7 @@ export function RubiiMultiWorkspace() {
               </button>
             </div>
 
-            <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+            <div className="flex-1 p-4 space-y-2 overflow-y-auto bg-background">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -226,7 +226,7 @@ export function RubiiMultiWorkspace() {
                       setActiveTab(tab.id as TabId);
                       setIsMobileDrawerOpen(false);
                     }}
-                    className={"w-full p-3 rounded-2xl border text-left flex items-center gap-3 cursor-pointer " + (isActive ? "bg-rose-500/15 border-rose-500/50" : "bg-card border-border")}
+                    className={"w-full p-3 rounded-2xl border text-left flex items-center gap-3 cursor-pointer " + (isActive ? "bg-rose-500/10 border-rose-500/50" : "bg-card border-border")}
                   >
                     <Icon className={"w-5 h-5 " + tab.color} />
                     <div>
@@ -300,8 +300,8 @@ export function RubiiMultiWorkspace() {
 
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl bg-neutral-900 border border-rose-500/40 text-white text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <Sparkle className="w-4 h-4 text-amber-400" />
+        <div className="fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl bg-card border border-rose-500/40 text-foreground text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <Sparkle className="w-4 h-4 text-amber-500" />
           <span>{toastMsg}</span>
         </div>
       )}
