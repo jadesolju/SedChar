@@ -16,16 +16,10 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: `${baseUrl}/og-image.png`,
-        width: 1200,
-        height: 630,
-        alt: 'Multi-Char Studio — SedChar.AI',
-      },
-      {
         url: `${baseUrl}/shedchar_logo.png`,
-        width: 512,
-        height: 512,
-        alt: 'SedChar.AI Logo',
+        width: 1254,
+        height: 1254,
+        alt: 'Multi-Char Studio — SedChar.AI',
       },
     ],
   },
@@ -33,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Multi-Char Studio — จักรวาลหลายตัวละคร | SedChar.AI',
     description: 'ออกแบบและวางโครงสร้างจักรวาลเนื้อเรื่องหลายตัวละคร (Multi-Character Roleplay Studio) สำหรับ Rubii & Chatbot AI',
-    images: [`${baseUrl}/og-image.png`],
+    images: [`${baseUrl}/shedchar_logo.png`],
   },
 };
 

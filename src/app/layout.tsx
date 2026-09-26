@@ -40,15 +40,9 @@ export const metadata: Metadata = {
     description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร พร้อม Multi-Char Studio',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'SedChar.AI — Thai Roleplay Character Studio',
-      },
-      {
         url: '/shedchar_logo.png',
-        width: 512,
-        height: 512,
+        width: 1254,
+        height: 1254,
         alt: 'SedChar.AI Logo',
       },
     ],
@@ -57,7 +51,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
     description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร พร้อม Multi-Char Studio',
-    images: ['/og-image.png'],
+    images: ['/shedchar_logo.png'],
   },
   robots: {
     index: true,

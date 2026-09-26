@@ -131,7 +131,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   }
 
   // 3. Default Homepage Metadata
-  const defaultOgImage = `${baseUrl}/og-image.png`;
+  const defaultOgImage = `${baseUrl}/shedchar_logo.png`;
   return {
     title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
     description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
@@ -145,15 +145,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       images: [
         {
           url: defaultOgImage,
-          width: 1200,
-          height: 630,
-          alt: 'SedChar.AI — Thai Roleplay Character Studio',
-        },
-        {
-          url: `${baseUrl}/shedchar_logo.png`,
-          width: 512,
-          height: 512,
-          alt: 'SedChar.AI Logo',
+          width: 1254,
+          height: 1254,
+          alt: 'SedChar.AI Mascot',
         },
       ],
     },
