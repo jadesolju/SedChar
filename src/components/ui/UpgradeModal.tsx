@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Loader2,
   FolderOpen,
+  Crown,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -21,7 +22,7 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
-  const { user, userRole, setUserRole } = useAuth();
+  const { user, userRole } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -56,12 +57,12 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
       <div className="fixed inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg bg-card border border-border rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-lg bg-card border border-border rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Header (2-Row on Mobile per DESIGN.md) */}
-        <div className="flex-shrink-0 flex items-start justify-between p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/30">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+        <div className="flex-shrink-0 flex items-start justify-between p-4 sm:px-6 sm:py-3.5 border-b border-border bg-muted/30">
+          <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
+              <Crown className="w-4 h-4 text-amber-300" />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
@@ -87,28 +88,56 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar">
-          {/* Price Box */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-purple-500/10 border border-rose-500/30 flex items-center justify-between">
-            <div>
-              <div className="text-[11px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
-                โปรโมชั่นเปิดตัวพิเศษ
+          {/* Cute Hero Visual with Mascot Image */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-tr from-rose-500/20 via-pink-500/10 to-purple-500/20 border border-rose-500/30 p-4 sm:p-5 flex items-center justify-between gap-3 shadow-inner">
+            <div className="flex-1 min-w-0 z-10">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-xs">
+                <Sparkles className="w-3 h-3 text-amber-300" />
+                <span>SPECIAL PROMOTION</span>
               </div>
-              <div className="text-2xl sm:text-3xl font-black text-foreground mt-0.5 flex items-baseline gap-1">
-                <span>฿29</span>
+              <h3 className="text-base sm:text-lg font-black text-foreground mt-1.5 leading-tight">
+                ปลดล็อกพลังเต็มขั้น <br />
+                <span className="bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 bg-clip-text text-transparent">
+                  SedChar Premium
+                </span>
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                สร้างคาแรคเตอร์ได้ไม่สะดุด พร้อมระบบประมวลผลความเร็วสูง
+              </p>
+            </div>
+
+            {/* Mascot Image */}
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 flex items-center justify-center">
+              <img
+                src="/premium-mascot.png"
+                alt="SedChar Premium Mascot"
+                className="w-full h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </div>
+
+          {/* Price Box */}
+          <div className="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                ราคาโปรโมชั่นพิเศษ (ชำระครั้งเดียว)
+              </div>
+              <div className="text-2xl sm:text-3xl font-black text-foreground mt-0.5 flex items-baseline gap-1.5">
+                <span className="text-rose-600 dark:text-rose-400">฿29</span>
                 <span className="text-xs font-normal text-muted-foreground line-through">฿199</span>
                 <span className="text-xs font-medium text-muted-foreground">/ ตลอดชีพ</span>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] px-2 py-1 rounded-lg bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/30 inline-block">
+              <span className="text-[10px] px-2 py-1 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/20 inline-block">
                 ประหยัด 85%
               </span>
             </div>
           </div>
 
           {/* Features Comparison List */}
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="text-xs font-bold text-foreground uppercase tracking-wider">
               สิทธิพิเศษที่คุณจะได้รับทันที:
             </div>
