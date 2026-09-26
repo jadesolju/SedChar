@@ -24,6 +24,7 @@ type ArrayField =
   | 'categoryTags';
 
 const DRAFT_STORAGE_KEY = 'sedchar_active_draft';
+const RAW_DRAFT_STORAGE_KEY = 'sedchar_raw_markdown_draft';
 const BACKUP_STORAGE_KEY = 'sedchar_backup_user_draft';
 
 export function useCharacterData() {
@@ -45,6 +46,9 @@ export function useCharacterData() {
   const [rawMarkdown, setRawMarkdown] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     try {
+      const rawSaved = localStorage.getItem(RAW_DRAFT_STORAGE_KEY);
+      if (rawSaved && rawSaved.trim()) return rawSaved;
+
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -70,10 +74,13 @@ export function useCharacterData() {
           return;
         }
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(character));
+        if (rawMarkdown) {
+          localStorage.setItem(RAW_DRAFT_STORAGE_KEY, rawMarkdown);
+        }
       } catch { }
     }, 400);
     return () => clearTimeout(timer);
-  }, [character]);
+  }, [character, rawMarkdown]);
 
   // Update a single string field
   const updateField = useCallback(<K extends keyof ThaiMasterCharacter>(

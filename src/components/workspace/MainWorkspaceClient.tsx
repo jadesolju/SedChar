@@ -174,10 +174,18 @@ function MainWorkspace() {
     }
   }, [applyParsedCharacter]);
 
-  // Synchronize Markdown when toggling between tabs
+  // Synchronize Markdown and Form data safely when toggling between tabs
   const handleModeSwitch = (mode: 'structured' | 'single') => {
-    if (mode === 'single') {
-      syncToMarkdown();
+    if (mode === 'structured') {
+      // If user typed freeform text in single box and structured character is still empty, auto-parse to populate 10 categories
+      if (rawMarkdown && rawMarkdown.trim() && !character.nickname && !character.fullName && !character.coreTraits) {
+        importRawMarkdown(rawMarkdown);
+      }
+    } else if (mode === 'single') {
+      // If structured character has substantive data, sync it back to clean Markdown
+      if (character.nickname || character.fullName || character.coreTraits || character.age || character.occupation) {
+        syncToMarkdown();
+      }
     }
     setInputMode(mode);
   };
