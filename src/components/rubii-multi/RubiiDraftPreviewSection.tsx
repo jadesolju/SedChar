@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useRef } from 'react';
 import {
   FileText,
@@ -9,13 +9,251 @@ import {
   Upload,
   ChevronDown,
   Sparkles,
+  FileCode2,
 } from 'lucide-react';
-import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
+import type {
+  MultiCharacterProjectDraft,
+  WorldSettingDraft,
+  LoreDraft,
+  RouteDraft,
+  MainCharacterDraft,
+  LoreTimelineItem,
+} from '@/shared/multiCharTypes';
+import {
+  DEFAULT_MULTI_PROJECT_DRAFT,
+  DEFAULT_WORLD_SETTING,
+  DEFAULT_LORE_DRAFT,
+} from '@/shared/multiCharTypes';
+import type { SubCharacter } from '@/shared/types';
+import { DEFAULT_SUB_CHARACTER } from '@/shared/types';
 
-interface RubiiDraftPreviewSectionProps {
+export interface RubiiDraftPreviewSectionProps {
   project: MultiCharacterProjectDraft;
   onImportJson?: (importedData: MultiCharacterProjectDraft) => void;
   showToast?: (msg: string) => void;
+}
+
+function extractKeyValue(text: string | undefined, keyPattern: string): string {
+  if (!text) return '';
+  const regex = new RegExp('(?:^|\\n)\\s*[-*]?\\s*\\*\\*(?:' + keyPattern + ')[:：]?\\*\\*\\s*(.*)', 'i');
+  const match = text.match(regex);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  const regexFallback = new RegExp('(?:^|\\n)\\s*[-*]?\\s*(?:' + keyPattern + ')[:：]\\s*(.*)', 'i');
+  const matchFallback = text.match(regexFallback);
+  return matchFallback && matchFallback[1] ? matchFallback[1].trim() : '';
+}
+
+/**
+ * Parses Multi-Char Markdown or Plain Text draft into a structured MultiCharacterProjectDraft
+ */
+export function parseMultiCharMarkdownOrText(content: string): MultiCharacterProjectDraft {
+  if (!content || !content.trim()) {
+    return { ...DEFAULT_MULTI_PROJECT_DRAFT, id: 'proj_' + Math.random().toString(36).substring(2, 9) };
+  }
+
+  const cleanText = content.replace(/\r\n/g, '\n').trim();
+
+  // Extract Project Title
+  let title = 'โปรเจกต์ Multi-Char นำเข้า';
+  const titleMatch = cleanText.match(/^#\s*(?:\[Multi-Char Project Draft\]:)?\s*(.*)/m);
+  if (titleMatch && titleMatch[1]) {
+    title = titleMatch[1].trim();
+  }
+
+  // Section Slicing by "## "
+  const section1Match = cleanText.match(/##\s*1\.\s*World Setting[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+  const section2Match = cleanText.match(/##\s*2\.\s*Lore[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+  const section3Match = cleanText.match(/##\s*3\.\s*Route[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+  const section4Match = cleanText.match(/##\s*4\.\s*(?:ตัวละครหลัก|Main Cast)[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+  const section5Match = cleanText.match(/##\s*5\.\s*(?:ตัวละครเสริม|Supporting Characters)[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+  const section6Match = cleanText.match(/##\s*6\.\s*(?:กติกาฉากรวม|Turn-Taking)[^\n]*\n([\s\S]*?)(?=(?:##\s*\d|\Z))/i);
+
+  // If no standard markdown headers found, treat as loose plain text
+  if (!section1Match && !section2Match && !section3Match && !section4Match && !section5Match && !section6Match) {
+    const lines = cleanText.split('\n').filter((l) => l.trim().length > 0);
+    const firstLine = lines[0] || 'โปรเจกต์ Plain Text';
+    return {
+      ...DEFAULT_MULTI_PROJECT_DRAFT,
+      id: 'proj_' + Math.random().toString(36).substring(2, 9),
+      title: firstLine.substring(0, 50),
+      worldSetting: {
+        ...DEFAULT_WORLD_SETTING,
+        projectName: firstLine.substring(0, 50),
+      },
+      lore: {
+        ...DEFAULT_LORE_DRAFT,
+        worldBackstory: cleanText,
+      },
+      castInteractionRules: '',
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  // 1. World Setting Parsing
+  const sec1Text = section1Match && section1Match[1] ? section1Match[1] : '';
+  const worldSetting: WorldSettingDraft = {
+    projectName: title,
+    genreTone: extractKeyValue(sec1Text, 'แนวเรื่อง & โทนหลัก|แนวเรื่อง|โทนหลัก|Genre'),
+    eraTimePeriod: extractKeyValue(sec1Text, 'ยุคสมัย / เวลา|ยุคสมัย|เวลา|Era'),
+    mainLocation: extractKeyValue(sec1Text, 'สถานที่หลัก|สถานที่|Location'),
+    worldRulesOrMagicSystem: extractKeyValue(sec1Text, 'กฎของโลก / ระบบพลัง|กฎของโลก|ระบบพลัง|Magic System|World Rules'),
+    factionsOrOrganizations: extractKeyValue(sec1Text, 'ฝ่าย / องค์กรสำคัญ|ฝ่าย|องค์กร|Factions'),
+    atmosphereTheme: extractKeyValue(sec1Text, 'บรรยากาศโดยรวม|บรรยากาศ|Atmosphere|Theme'),
+  };
+
+  // 2. Lore & Timeline Parsing
+  const sec2Text = section2Match && section2Match[1] ? section2Match[1] : '';
+  const timelineEvents: LoreTimelineItem[] = [];
+  
+  // Extract timeline events
+  const timelineBlockMatch = sec2Text.match(/###\s*ลำดับไทม์ไลน์เหตุการณ์:?([\s\S]*?)(?=(?:[-*]\s*\*\*|\n\n##|\Z))/i);
+  if (timelineBlockMatch && timelineBlockMatch[1]) {
+    const rawTimeline = timelineBlockMatch[1];
+    const eventRegex = /(?:^|\n)\s*(\d+)\.\s*\[(.*?)\]\s*([^\n(]+)(?:\((ความลับ|Secret)\))?\s*\n\s*([^\n]+)/gi;
+    let match: RegExpExecArray | null;
+    while ((match = eventRegex.exec(rawTimeline)) !== null) {
+      timelineEvents.push({
+        id: 'ev_' + Math.random().toString(36).substring(2, 9),
+        timeLabel: (match[2] || '').trim(),
+        eventTitle: (match[3] || '').trim(),
+        description: (match[5] || '').trim(),
+        knownByCharacters: [],
+        isSecret: Boolean(match[4]),
+      });
+    }
+  }
+
+  const lore: LoreDraft = {
+    worldBackstory: extractKeyValue(sec2Text, 'ภูมิหลังของโลก|ภูมิหลัง|Backstory'),
+    coreConflict: extractKeyValue(sec2Text, 'ความขัดแย้งหลัก|ความขัดแย้ง|Core Conflict'),
+    timelineEvents,
+    commonKnowledge: extractKeyValue(sec2Text, 'ความรู้สาธารณะ|Common Knowledge'),
+    taboosOrMyths: extractKeyValue(sec2Text, 'ข้อห้ามเด็ดขาด|ข้อห้าม|Taboos'),
+  };
+
+  // 3. Routes Parsing
+  const sec3Text = section3Match && section3Match[1] ? section3Match[1] : '';
+  const routes: RouteDraft[] = [];
+  if (sec3Text) {
+    const routeChunks = sec3Text.split(/(?=###\s*Route\s*\d+:?)/i).filter((c) => c.trim().length > 0);
+    for (const chunk of routeChunks) {
+      const nameMatch = chunk.match(/###\s*Route\s*\d+:?\s*([^\n]+)/i);
+      if (nameMatch && nameMatch[1]) {
+        routes.push({
+          id: 'rt_' + Math.random().toString(36).substring(2, 9),
+          routeName: nameMatch[1].trim(),
+          summary: extractKeyValue(chunk, 'ภาพรวม|Summary'),
+          involvedCharacterIds: [],
+          entryCondition: extractKeyValue(chunk, 'เงื่อนไขเข้า|Entry Condition'),
+          exitOrBranchCondition: extractKeyValue(chunk, 'เงื่อนไขแตกแขนง|Branch Condition'),
+          possibleEndings: extractKeyValue(chunk, 'ตอนจบที่เป็นไปได้|Possible Endings|Endings'),
+          relationshipDynamics: '',
+        });
+      }
+    }
+  }
+
+  // 4. Main Characters Parsing
+  const sec4Text = section4Match && section4Match[1] ? section4Match[1] : '';
+  const mainCharacters: MainCharacterDraft[] = [];
+  if (sec4Text) {
+    const charChunks = sec4Text.split(/(?=###\s*\[?ตัวละครหลัก\s*\d+\]?:?)/i).filter((c) => c.trim().length > 0);
+    for (const chunk of charChunks) {
+      const headerMatch = chunk.match(/###\s*\[?ตัวละครหลัก\s*\d+\]?:?\s*([^(\n]+)(?:\(([^)]+)\))?/i);
+      if (headerMatch && headerMatch[1]) {
+        const rawName = headerMatch[1].trim();
+        const alias = headerMatch[2] ? headerMatch[2].trim() : '';
+
+        const genderAgeLine = extractKeyValue(chunk, 'เพศ / อายุ|เพศ|อายุ|Gender / Age');
+        let gender = '';
+        let age = '';
+        let mbti = '';
+        if (genderAgeLine) {
+          const parts = genderAgeLine.split('|').map((p) => p.trim());
+          if (parts[0]) gender = parts[0];
+          if (parts[1]) age = parts[1];
+          if (parts[2]) {
+            const mbtiMatch = parts[2].match(/MBTI:\s*([A-Za-z]+)/i);
+            if (mbtiMatch && mbtiMatch[1]) mbti = mbtiMatch[1];
+          }
+        }
+
+        mainCharacters.push({
+          id: 'mc_' + Math.random().toString(36).substring(2, 9),
+          name: rawName || 'ตัวละครหลัก',
+          aliasOrTitle: alias,
+          gender,
+          age,
+          mbti,
+          flagType: 'none',
+          storyRole: extractKeyValue(chunk, 'บทบาทในเรื่อง|บทบาท|Story Role'),
+          corePersonality: extractKeyValue(chunk, 'แก่นบุคลิกภาพ|บุคลิกภาพ|Core Personality'),
+          primaryGoalOrDesire: extractKeyValue(chunk, 'เป้าหมายหลัก|เป้าหมาย|Primary Goal'),
+          relationshipWithUser: extractKeyValue(chunk, 'ความสัมพันธ์กับ \\{\\{user\\}\\}|ความสัมพันธ์กับผู้ใช้|Relationship with User'),
+          relationsWithOtherCast: extractKeyValue(chunk, 'ความสัมพันธ์กับตัวละครอื่น|Relationship with Cast'),
+          exclusiveSecretOrKnowledge: extractKeyValue(chunk, 'ข้อมูลลับเฉพาะตัว|ความลับ|Exclusive Secret'),
+          absoluteRules: extractKeyValue(chunk, 'กฎเหล็กที่จะไม่ทำเด็ดขาด|กฎเหล็ก|Absolute Rules'),
+          appearanceBrief: extractKeyValue(chunk, 'รูปลักษณ์ภายนอก|รูปลักษณ์|Appearance'),
+          speakingStyle: extractKeyValue(chunk, 'สไตล์การพูด|Speaking Style'),
+          nsfwBrief: '',
+        });
+      }
+    }
+  }
+
+  // 5. Supporting Characters Parsing
+  const sec5Text = section5Match && section5Match[1] ? section5Match[1] : '';
+  const supportingCharacters: SubCharacter[] = [];
+  if (sec5Text) {
+    const lines = sec5Text.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const subMatch = trimmed.match(/(?:\[ตัวละครเสริม\s*\d+\]:?|[-*])\s*([^|]+)\s*\|\s*เพศ:\s*([^|]+)\s*\|\s*บทบาท:\s*([^|]+)\s*\|\s*นิสัย:\s*([^|]+)\s*\|\s*ปรากฏเมื่อ:\s*(.+)/i);
+      if (subMatch) {
+        supportingCharacters.push({
+          ...DEFAULT_SUB_CHARACTER,
+          id: 'sc_' + Math.random().toString(36).substring(2, 9),
+          name: (subMatch[1] || '').trim(),
+          gender: (subMatch[2] || '').trim(),
+          mainRole: (subMatch[3] || '').trim(),
+          personality: (subMatch[4] || '').trim(),
+          appearWhen: (subMatch[5] || '').trim(),
+        });
+      } else if (trimmed.includes('|')) {
+        const parts = trimmed.split('|').map((s) => s.trim().replace(/^\[.*?\]:?/, ''));
+        supportingCharacters.push({
+          ...DEFAULT_SUB_CHARACTER,
+          id: 'sc_' + Math.random().toString(36).substring(2, 9),
+          name: parts[0] || 'ตัวละครเสริม',
+          gender: parts[1] || '',
+          mainRole: parts[2] || '',
+          personality: parts[3] || '',
+          appearWhen: parts[4] || '',
+        });
+      }
+    }
+  }
+
+  // 6. Cast Interaction Rules Parsing
+  const sec6Text = section6Match && section6Match[1] ? section6Match[1].trim() : '';
+
+  return {
+    id: 'proj_' + Math.random().toString(36).substring(2, 9),
+    schemaVersion: 1,
+    platform: 'rubii',
+    title: worldSetting.projectName || title || 'โปรเจกต์ Multi-Char นำเข้า',
+    status: 'draft',
+    worldSetting,
+    lore,
+    routes: routes.length > 0 ? routes : DEFAULT_MULTI_PROJECT_DRAFT.routes,
+    mainCharacters: mainCharacters.length > 0 ? mainCharacters : DEFAULT_MULTI_PROJECT_DRAFT.mainCharacters,
+    supportingCharacters,
+    castInteractionRules: sec6Text,
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export function compileRubiiProjectMarkdown(p: MultiCharacterProjectDraft): string {
@@ -101,6 +339,8 @@ export function RubiiDraftPreviewSection({
   const [copiedMd, setCopiedMd] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [currentImportAccept, setCurrentImportAccept] = useState<string>('.json,.md,.txt');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const markdownText = compileRubiiProjectMarkdown(project);
@@ -155,21 +395,56 @@ export function RubiiDraftPreviewSection({
     } catch {}
   };
 
+  const triggerImportPicker = (acceptType: string) => {
+    setCurrentImportAccept(acceptType);
+    setIsImportOpen(false);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 50);
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isJsonFile = file.name.endsWith('.json') || file.type === 'application/json';
+    const isMdFile = file.name.endsWith('.md') || file.name.endsWith('.markdown');
+    const isTxtFile = file.name.endsWith('.txt');
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
-        const parsed = JSON.parse(text);
+        if (!text || !text.trim()) {
+          alert('ไฟล์ที่เลือกไม่มีข้อมูล');
+          return;
+        }
+
+        if (isJsonFile || text.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(text);
+            if (onImportJson) {
+              onImportJson(parsed);
+              showToast(`นำเข้าโปรเจกต์ JSON "${parsed.worldSetting?.projectName || parsed.title || 'Multi-Char'}" เรียบร้อย!`);
+            }
+            return;
+          } catch (jsonErr: any) {
+            if (isJsonFile) {
+              alert('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + (jsonErr.message || 'รูปแบบไม่ถูกต้อง'));
+              return;
+            }
+          }
+        }
+
+        // Parse as Markdown / Plain Text
+        const parsedProject = parseMultiCharMarkdownOrText(text);
         if (onImportJson) {
-          onImportJson(parsed);
-          showToast(`นำเข้าโปรเจกต์ "${parsed.worldSetting?.projectName || parsed.title || 'Multi-Char'}" เรียบร้อย!`);
+          onImportJson(parsedProject);
+          const formatLabel = isMdFile ? 'Markdown (.md)' : isTxtFile ? 'Plain Text (.txt)' : 'ข้อความ';
+          showToast(`นำเข้าข้อมูลจาก ${formatLabel} "${parsedProject.worldSetting?.projectName || parsedProject.title || 'Multi-Char'}" สำเร็จ!`);
         }
       } catch (err: any) {
-        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + (err.message || 'รูปแบบไฟล์ไม่ถูกต้อง'));
+        alert('เกิดข้อผิดพลาดในการนำเข้าไฟล์: ' + (err.message || 'ไม่สามารถแปลงข้อมูลได้'));
       }
     };
     reader.readAsText(file);
@@ -178,11 +453,11 @@ export function RubiiDraftPreviewSection({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Hidden File Input for JSON Import */}
+      {/* Hidden File Input for Import */}
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json,application/json"
+        accept={currentImportAccept}
         className="hidden"
         onChange={handleFileUpload}
       />
@@ -194,30 +469,79 @@ export function RubiiDraftPreviewSection({
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-              <span>6. Master Draft Preview & Export</span>
+              <span>6. Master Draft Preview & Suite</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300 border border-pink-500/20 font-bold">
-                Export & Download Suite
+                Export & Import Suite
               </span>
             </h2>
             <p className="text-xs text-muted-foreground">
-              ดาวน์โหลดหรือคัดลอกโครงร่างโปรเจกต์เป็นไฟล์ JSON, Markdown หรือ Plain Text
+              นำเข้า, ส่งออก, ดาวน์โหลด หรือคัดลอกโครงร่างโปรเจกต์เป็นไฟล์ JSON, Markdown หรือ Plain Text
             </p>
           </div>
         </div>
 
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          {/* Import JSON Button */}
+          {/* Import Dropdown */}
           {onImportJson && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              title="นำเข้าไฟล์โปรเจกต์ .json"
-            >
-              <Upload className="w-3.5 h-3.5 text-blue-500" />
-              <span>นำเข้า JSON</span>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsImportOpen(!isImportOpen)}
+                className="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                title="นำเข้าไฟล์โปรเจกต์ (.json, .md, .txt)"
+              >
+                <Upload className="w-3.5 h-3.5 text-blue-500" />
+                <span>นำเข้าไฟล์</span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </button>
+
+              {isImportOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsImportOpen(false)}
+                  />
+                  <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-56 p-1.5 rounded-2xl bg-card border border-border shadow-2xl z-30 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      type="button"
+                      onClick={() => triggerImportPicker('.json,application/json')}
+                      className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                    >
+                      <FileJson className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold">JSON Data (.json)</div>
+                        <div className="text-[10px] text-muted-foreground">นำเข้า Schema เต็มรูปแบบ 100%</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => triggerImportPicker('.md,.markdown,text/markdown')}
+                      className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold">Markdown (.md)</div>
+                        <div className="text-[10px] text-muted-foreground">แปลงหัวข้อ Draft / Obsidian / Note</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => triggerImportPicker('.txt,text/plain')}
+                      className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                    >
+                      <FileCode2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold">Plain Text (.txt)</div>
+                        <div className="text-[10px] text-muted-foreground">ข้อความล้วนแปลงเข้าสตูดิโอ</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           {/* Copy Markdown */}
