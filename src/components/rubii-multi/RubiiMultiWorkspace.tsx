@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -28,6 +28,10 @@ import { CastRulesSection } from './CastRulesSection';
 import { RubiiDraftPreviewSection } from './RubiiDraftPreviewSection';
 import { MultiCharLibraryModal } from './MultiCharLibraryModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { UpgradeModal } from '@/components/ui/UpgradeModal';
+import { useAuth } from '@/context/AuthContext';
 
 type TabId = 'world' | 'lore' | 'routes' | 'mainChars' | 'castRules' | 'preview';
 
@@ -41,6 +45,7 @@ const TABS = [
 ];
 
 export function RubiiMultiWorkspace() {
+  const { userRole } = useAuth();
   const {
     project,
     activeLibraryProjectId,
@@ -74,6 +79,7 @@ export function RubiiMultiWorkspace() {
   const [activeTab, setActiveTab] = useState<TabId>('world');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -165,6 +171,22 @@ export function RubiiMultiWorkspace() {
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
+          {/* Promotion Button for Free Tier */}
+          {userRole === 'free' && (
+            <button
+              type="button"
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/30 hover:border-rose-500 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+              title="อัปเกรดเป็น Premium เพียง 29 บาท (ชำระด้วยบัตร หรือ PromptPay QR)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>โปรโมชั่น 29.-</span>
+            </button>
+          )}
+
+          {/* User Auth Menu */}
+          <UserMenu onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)} />
+
           <ThemeToggle />
 
           {/* Mobile Drawer Button */}
@@ -197,9 +219,21 @@ export function RubiiMultiWorkspace() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as TabId)}
-                className={"w-full p-2.5 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer " + (isActive ? "bg-card border-rose-500/50 shadow-md ring-1 ring-rose-500/20" : "bg-transparent border-transparent hover:bg-muted/40 hover:border-border/60 text-muted-foreground hover:text-foreground")}
+                className={
+                  'w-full text-left p-2.5 rounded-2xl border transition-all flex items-center gap-3 cursor-pointer ' +
+                  (isActive
+                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300 shadow-xs'
+                    : 'bg-card/40 border-transparent hover:bg-muted text-muted-foreground hover:text-foreground')
+                }
               >
-                <div className={"w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 " + (isActive ? "bg-rose-500/15 border border-rose-500/30" : "bg-muted/60")}>
+                <div
+                  className={
+                    'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border ' +
+                    (isActive
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-400'
+                      : 'bg-muted/80 border-border')
+                  }
+                >
                   <Icon className={"w-4 h-4 " + (isActive ? "text-rose-600 dark:text-rose-400" : tab.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -372,6 +406,13 @@ export function RubiiMultiWorkspace() {
         onLoadFromLibrary={loadProjectFromLibrary}
         onDeleteFromLibrary={deleteProjectFromLibrary}
         showToast={showToast}
+      />
+
+      {/* Auth Modal & Upgrade Modal */}
+      <AuthModal />
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
       />
 
       {/* Toast Notification */}

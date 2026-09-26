@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -52,16 +52,6 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
   if (!user) {
     return (
       <div className="flex items-center gap-1.5">
-        {onOpenUpgradeModal && (
-          <button
-            type="button"
-            onClick={onOpenUpgradeModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/30 hover:border-rose-500 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">โปรโมชั่น 29.-</span>
-          </button>
-        )}
         <button
           type="button"
           onClick={() => openAuthModal('signin')}

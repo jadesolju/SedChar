@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { RubiiMultiWorkspace } from '@/components/rubii-multi/RubiiMultiWorkspace';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Multi-Char Studio | SedChar.AI',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function MultiCharacterStudioPage() {
-  return <RubiiMultiWorkspace />;
+  return (
+    <AuthProvider>
+      <RubiiMultiWorkspace />
+    </AuthProvider>
+  );
 }
