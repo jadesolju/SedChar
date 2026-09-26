@@ -1,21 +1,25 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import Link from 'next/link';
 import {
-  FolderOpen,
-  ShieldCheck,
-  KeyRound,
-  LogOut,
-  Crown,
-  Gem,
   Sparkles,
-  User as UserIcon,
-  ChevronDown,
+  Crown,
+  LogOut,
+  FolderOpen,
+  KeyRound,
+  ShieldCheck,
   Coins,
+  ChevronDown,
+  User as UserIcon,
+  Gem,
 } from 'lucide-react';
+import Link from 'next/link';
 
-export function UserMenu() {
+interface UserMenuProps {
+  onOpenUpgradeModal?: () => void;
+}
+
+export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
   const {
     user,
     userRole,
@@ -47,19 +51,31 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <button
-        type="button"
-        onClick={() => openAuthModal('signin')}
-        className="
-          flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-          bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700
-          text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95
-        "
-      >
-        <Sparkles className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">เข้าสู่ระบบ / สมัครสมาชิก</span>
-        <span className="sm:hidden">เข้าสู่ระบบ</span>
-      </button>
+      <div className="flex items-center gap-1.5">
+        {onOpenUpgradeModal && (
+          <button
+            type="button"
+            onClick={onOpenUpgradeModal}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/30 hover:border-rose-500 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden sm:inline">โปรโมชั่น 29.-</span>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => openAuthModal('signin')}
+          className="
+            flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+            bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700
+            text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95
+          "
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">เข้าสู่ระบบ / สมัครสมาชิก</span>
+          <span className="sm:hidden">เข้าสู่ระบบ</span>
+        </button>
+      </div>
     );
   }
 
@@ -151,6 +167,27 @@ export function UserMenu() {
               </span>
             </div>
           </div>
+
+          {/* Upgrade Promo for Free Tier */}
+          {userRole === 'free' && onOpenUpgradeModal && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onOpenUpgradeModal();
+              }}
+              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-500/30 hover:border-rose-500/60 transition-all cursor-pointer text-left mb-1.5"
+            >
+              <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-xs flex items-center gap-1.5 text-foreground">
+                  <span>อัปเกรด Premium</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500 text-white font-bold">29.-</span>
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate">AI 50 ครั้ง/วัน + บัตร/PromptPay</div>
+              </div>
+            </button>
+          )}
 
           {/* Menu Items */}
           <div className="space-y-1 text-xs">

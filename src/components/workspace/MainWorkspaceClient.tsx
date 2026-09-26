@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
+import { UpgradeModal } from '@/components/ui/UpgradeModal';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
 import {
@@ -62,7 +63,7 @@ function MainWorkspace() {
     syncToMarkdown,
   } = useCharacterData();
 
-  const { user, openAuthModal, openLibraryModal, saveToLibrary, overwriteCharacterInLibrary, activeLoadedCharacterId, setActiveLoadedCharacterId, savedCharacters } = useAuth();
+  const { user, openAuthModal, openLibraryModal, saveToLibrary, overwriteCharacterInLibrary, activeLoadedCharacterId, setActiveLoadedCharacterId, savedCharacters, userRole, setUserRole } = useAuth();
   const activeRecord = activeLoadedCharacterId ? savedCharacters.find(c => c.id === activeLoadedCharacterId) : null;
 
 
@@ -72,6 +73,7 @@ function MainWorkspace() {
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
 
   // Sharing Mode state
@@ -101,6 +103,18 @@ function MainWorkspace() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      const sessionId = urlParams.get('session_id');
+      setUserRole('premium');
+      showToast('🎉 ชำระเงิน 29 บาทสำเร็จ! บัญชีของคุณได้รับการอัปเกรดเป็น Premium เรียบร้อยแล้ว');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      if (sessionId) {
+        fetch('/api/stripe/verify-session?session_id=' + sessionId).catch(() => {});
+      }
+    } else if (urlParams.get('payment') === 'cancelled') {
+      showToast('ยกเลิกการชำระเงินเรียบร้อย คุณยังสามารถอัปเกรดได้ทุกเมื่อ');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     let dataParam = urlParams.get('data');
     let mode = (urlParams.get('mode') as 'read-only' | 'edit') || 'read-only';
 
@@ -410,7 +424,18 @@ function MainWorkspace() {
             <span>บันทึกลงคลัง</span>
           </button>
 
-          <UserMenu />
+          {userRole === 'free' && (
+            <button
+              type="button"
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/30 hover:border-rose-500 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+              title="อัปเกรดเป็น Premium เพียง 29 บาท (ชำระด้วยบัตร หรือ PromptPay QR)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>โปร 29.-</span>
+            </button>
+          )}
+          <UserMenu onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)} />
           <ThemeToggle />
         </div>
       </header>
@@ -518,6 +543,10 @@ function MainWorkspace() {
 
       {/* Modals */}
       <AuthModal />
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
       <CharacterLibraryModal
         currentCharacter={character}
         onLoadCharacter={handleLoadFromLibrary}
