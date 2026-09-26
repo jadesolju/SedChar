@@ -2,7 +2,7 @@
 import { RubiiMultiWorkspace } from '@/components/rubii-multi/RubiiMultiWorkspace';
 import { AuthProvider } from '@/context/AuthContext';
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app';
+const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   title: 'Multi-Char Studio | SedChar.AI',
@@ -16,13 +16,13 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/premium-mascot.png',
+        url: `${baseUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'Multi-Char Studio — SedChar.AI',
       },
       {
-        url: '/shedchar_logo.png',
+        url: `${baseUrl}/shedchar_logo.png`,
         width: 512,
         height: 512,
         alt: 'SedChar.AI Logo',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Multi-Char Studio — จักรวาลหลายตัวละคร | SedChar.AI',
     description: 'ออกแบบและวางโครงสร้างจักรวาลเนื้อเรื่องหลายตัวละคร (Multi-Character Roleplay Studio) สำหรับ Rubii & Chatbot AI',
-    images: ['/premium-mascot.png'],
+    images: [`${baseUrl}/og-image.png`],
   },
 };
 

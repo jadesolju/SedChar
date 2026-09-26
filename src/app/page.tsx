@@ -131,13 +131,13 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   }
 
   // 3. Default Homepage Metadata
-  const defaultOgImage = `${baseUrl}/premium-mascot.png`;
+  const defaultOgImage = `${baseUrl}/og-image.png`;
   return {
-    title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
-    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
+    title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
+    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
     openGraph: {
-      title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
-      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
+      title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
+      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
       url: baseUrl,
       siteName: 'SedChar.AI',
       locale: 'th_TH',
@@ -147,7 +147,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
           url: defaultOgImage,
           width: 1200,
           height: 630,
-          alt: 'SedChar.AI Mascot & Studio',
+          alt: 'SedChar.AI — Thai Roleplay Character Studio',
         },
         {
           url: `${baseUrl}/shedchar_logo.png`,
@@ -159,8 +159,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
-      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
+      title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
+      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
       images: [defaultOgImage],
     },
   };

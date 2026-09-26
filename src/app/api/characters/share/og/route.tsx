@@ -1,4 +1,4 @@
-import { ImageResponse } from 'next/og';
+﻿import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -14,15 +14,15 @@ interface FlagEntry {
 }
 
 const flagLabels: Record<string, FlagEntry> = {
-  green: { label: 'ธงเขียว (ปลอดภัย)', color: '#10b981', emoji: '🟢' },
-  yellow: { label: 'ธงเหลือง (เฝ้าระวัง)', color: '#f59e0b', emoji: '🟡' },
-  red: { label: 'ธงแดง (อันตราย)', color: '#ef4444', emoji: '🔴' },
-  black: { label: 'ธงดำ (วิกฤต/มืดมน)', color: '#71717a', emoji: '⚫' },
-  watermelon: { label: 'แตงโม (เขียวนอกแดงใน)', color: '#f43f5e', emoji: '🍉' },
-  'reverse-watermelon': { label: 'แตงโมกลับด้าน (แดงนอกเขียวใน)', color: '#10b981', emoji: '🍉' },
+  green: { label: 'เธเธเน€เธเธตเธขเธง (เธเธฅเธญเธ”เธ เธฑเธข)', color: '#10b981', emoji: '๐ข' },
+  yellow: { label: 'เธเธเน€เธซเธฅเธทเธญเธ (เน€เธเนเธฒเธฃเธฐเธงเธฑเธ)', color: '#f59e0b', emoji: '๐ก' },
+  red: { label: 'เธเธเนเธ”เธ (เธญเธฑเธเธ•เธฃเธฒเธข)', color: '#ef4444', emoji: '๐”ด' },
+  black: { label: 'เธเธเธ”เธณ (เธงเธดเธเธคเธ•/เธกเธทเธ”เธกเธ)', color: '#71717a', emoji: 'โซ' },
+  watermelon: { label: 'เนเธ•เธเนเธก (เน€เธเธตเธขเธงเธเธญเธเนเธ”เธเนเธ)', color: '#f43f5e', emoji: '๐' },
+  'reverse-watermelon': { label: 'เนเธ•เธเนเธกเธเธฅเธฑเธเธ”เนเธฒเธ (เนเธ”เธเธเธญเธเน€เธเธตเธขเธงเนเธ)', color: '#10b981', emoji: '๐' },
 };
 
-const defaultFlag: FlagEntry = { label: 'ตัวละครบทบาท', color: '#f43f5e', emoji: '🎭' };
+const defaultFlag: FlagEntry = { label: 'เธ•เธฑเธงเธฅเธฐเธเธฃเธเธ—เธเธฒเธ—', color: '#f43f5e', emoji: '๐ญ' };
 
 /**
  * Pre-fetches an external image with a strict timeout (1.8s) and converts to Base64 Data URI.
@@ -83,9 +83,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const shareId = searchParams.get('id');
 
-    let title = searchParams.get('title') || 'ตัวละคร AI Roleplay';
+    let title = searchParams.get('title') || 'เธ•เธฑเธงเธฅเธฐเธเธฃ AI Roleplay';
     let nickname = searchParams.get('nickname') || '';
-    let tagline = searchParams.get('tagline') || 'โมเดลและโครงสร้างบทบาทสำหรับ Purrpaw, Rubii และ Khui AI';
+    let tagline = searchParams.get('tagline') || 'เนเธกเน€เธ”เธฅเนเธฅเธฐเนเธเธฃเธเธชเธฃเนเธฒเธเธเธ—เธเธฒเธ—เธชเธณเธซเธฃเธฑเธ Purrpaw, Rubii เนเธฅเธฐ Khui AI';
     let flagType = searchParams.get('flag') || 'none';
     let imageUrl = searchParams.get('image') || searchParams.get('imageUrl') || searchParams.get('img') || '';
 
@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
                   fontSize: '22px',
                 }}
               >
-                🎭
+                ๐ญ
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px' }}>
@@ -238,7 +238,7 @@ export async function GET(req: NextRequest) {
               {nickname && nickname !== title && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '18px', color: '#f43f5e', fontWeight: 700 }}>
-                    ชื่อเล่น: {nickname}
+                    เธเธทเนเธญเน€เธฅเนเธ: {nickname}
                   </span>
                 </div>
               )}
@@ -276,7 +276,7 @@ export async function GET(req: NextRequest) {
                   fontWeight: 700,
                 }}
               >
-                🐾 Purrpaw
+                ๐พ Purrpaw
               </div>
               <div
                 style={{
@@ -292,7 +292,7 @@ export async function GET(req: NextRequest) {
                   fontWeight: 700,
                 }}
               >
-                💎 Rubii AI
+                ๐’ Rubii AI
               </div>
               <div
                 style={{
@@ -308,7 +308,7 @@ export async function GET(req: NextRequest) {
                   fontWeight: 700,
                 }}
               >
-                💬 Khui AI
+                ๐’ฌ Khui AI
               </div>
             </div>
           </div>
@@ -373,7 +373,7 @@ export async function GET(req: NextRequest) {
                     marginBottom: '24px',
                   }}
                 >
-                  🎭
+                  ๐ญ
                 </div>
 
                 <div
@@ -413,10 +413,10 @@ export async function GET(req: NextRequest) {
                   }}
                 >
                   <span style={{ fontSize: '13px', color: '#d4d4d8', fontWeight: 500 }}>
-                    ✨ Model & Persona Design
+                    โจ Model & Persona Design
                   </span>
                   <span style={{ fontSize: '12px', color: '#a1a1aa' }}>
-                    Purrpaw • Rubii • Khui AI
+                    Purrpaw โ€ข Rubii โ€ข Khui AI
                   </span>
                 </div>
               </div>

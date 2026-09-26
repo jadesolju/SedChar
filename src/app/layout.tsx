@@ -1,16 +1,16 @@
 ﻿import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app';
+const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'SedChar.AI — Thai Roleplay Character Studio',
+    default: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
     template: '%s | SedChar.AI',
   },
-  description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI และ Multi-Char Studio',
-  keywords: ['character', 'roleplay', 'thai', 'rubii', 'purrpaw', 'khui', 'AI', 'chatbot', 'pwa', 'SedChar', 'Multi-Character'],
+  description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร พร้อม Multi-Char Studio',
+  keywords: ['SedChar', 'SedChar.AI', 'character studio', 'roleplay ai', 'thai roleplay', 'rubii', 'purrpaw', 'khui ai', 'multi character', 'ai chatbot'],
   authors: [{ name: 'SedChar.AI', url: baseUrl }],
   creator: 'SedChar.AI',
   publisher: 'SedChar.AI',
@@ -36,11 +36,11 @@ export const metadata: Metadata = {
     locale: 'th_TH',
     url: baseUrl,
     siteName: 'SedChar.AI',
-    title: 'SedChar.AI — Thai Roleplay Character Studio',
-    description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI',
+    title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
+    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร พร้อม Multi-Char Studio',
     images: [
       {
-        url: '/premium-mascot.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'SedChar.AI — Thai Roleplay Character Studio',
@@ -55,9 +55,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SedChar.AI — Thai Roleplay Character Studio',
-    description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI',
-    images: ['/premium-mascot.png'],
+    title: 'SedChar.AI — สตูดิโอสร้างและแปลงตัวละคร AI ภาษาไทย',
+    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based ภาษาไทย สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร พร้อม Multi-Char Studio',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
