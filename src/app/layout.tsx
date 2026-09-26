@@ -1,11 +1,24 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'SedChar.AI (Demo) — Thai Character Parser',
-  description: 'แปลงข้อมูลตัวละครภาษาไทย Tag-Based สำหรับ Rubii, Purrpaw, Khui AI รองรับ 12,000–25,000 ตัวอักษร',
-  keywords: ['character', 'roleplay', 'thai', 'rubii', 'purrpaw', 'khui', 'AI', 'chatbot', 'pwa'],
-  authors: [{ name: 'SedChar.AI' }],
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: 'SedChar.AI — Thai Roleplay Character Studio',
+    template: '%s | SedChar.AI',
+  },
+  description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI และ Multi-Char Studio',
+  keywords: ['character', 'roleplay', 'thai', 'rubii', 'purrpaw', 'khui', 'AI', 'chatbot', 'pwa', 'SedChar', 'Multi-Character'],
+  authors: [{ name: 'SedChar.AI', url: baseUrl }],
+  creator: 'SedChar.AI',
+  publisher: 'SedChar.AI',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   manifest: '/manifest.json',
   icons: {
     icon: '/shedchar_logo.png',
@@ -18,6 +31,45 @@ export const metadata: Metadata = {
     title: 'SedChar.AI',
   },
   applicationName: 'SedChar.AI',
+  openGraph: {
+    type: 'website',
+    locale: 'th_TH',
+    url: baseUrl,
+    siteName: 'SedChar.AI',
+    title: 'SedChar.AI — Thai Roleplay Character Studio',
+    description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI',
+    images: [
+      {
+        url: '/premium-mascot.png',
+        width: 1200,
+        height: 630,
+        alt: 'SedChar.AI — Thai Roleplay Character Studio',
+      },
+      {
+        url: '/shedchar_logo.png',
+        width: 512,
+        height: 512,
+        alt: 'SedChar.AI Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SedChar.AI — Thai Roleplay Character Studio',
+    description: 'เครื่องมือ Workspace & Asset Management สำหรับนักสร้างคาแรคเตอร์ AI Roleplay แปลงและออกแบบตัวละคร Tag-Based สำหรับ Rubii, Purrpaw, Khui AI',
+    images: ['/premium-mascot.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {

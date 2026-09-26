@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
 import { MainWorkspaceClient } from '@/components/workspace/MainWorkspaceClient';
@@ -63,6 +63,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
             description: charDesc,
             url: shareUrl,
             siteName: 'SedChar.AI',
+            locale: 'th_TH',
+            type: 'website',
             images: [
               {
                 url: ogImageUrl,
@@ -71,7 +73,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
                 alt: charName,
               },
             ],
-            type: 'website',
           },
           twitter: {
             card: 'summary_large_image',
@@ -105,6 +106,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
             title: `${charName} — ตัวละคร SedChar.AI`,
             description: charDesc,
             siteName: 'SedChar.AI',
+            locale: 'th_TH',
+            type: 'website',
             images: [
               {
                 url: ogImageUrl,
@@ -113,7 +116,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
                 alt: charName,
               },
             ],
-            type: 'website',
           },
           twitter: {
             card: 'summary_large_image',
@@ -129,28 +131,36 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   }
 
   // 3. Default Homepage Metadata
-  const defaultOgImage = `${baseUrl}/shedchar_logo.png`;
+  const defaultOgImage = `${baseUrl}/premium-mascot.png`;
   return {
-    title: 'SedChar.AI — Thai Roleplay Character Studio',
-    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI',
+    title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
+    description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
     openGraph: {
-      title: 'SedChar.AI — Thai Roleplay Character Studio',
-      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI',
+      title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
+      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
+      url: baseUrl,
       siteName: 'SedChar.AI',
+      locale: 'th_TH',
+      type: 'website',
       images: [
         {
           url: defaultOgImage,
+          width: 1200,
+          height: 630,
+          alt: 'SedChar.AI Mascot & Studio',
+        },
+        {
+          url: `${baseUrl}/shedchar_logo.png`,
           width: 512,
           height: 512,
           alt: 'SedChar.AI Logo',
         },
       ],
-      type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'SedChar.AI — Thai Roleplay Character Studio',
-      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI',
+      title: 'SedChar.AI — Single-Char Studio | Thai Roleplay Character Creator',
+      description: 'สตูดิโอสร้าง ออกแบบ และแปลงตัวละคร Tag-Based สำหรับ Rubii, Purrpaw และ Khui AI รองรับ 12,000–25,000 ตัวอักษร',
       images: [defaultOgImage],
     },
   };
