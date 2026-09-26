@@ -174,17 +174,8 @@ function MainWorkspace() {
     }
   }, [applyParsedCharacter]);
 
-  // True Live Two-Way Synchronization between Single Box and 10 Categories Form
+  // Freeform Mode Switch: Never forcibly overwrite or re-format user raw text in single box
   const handleModeSwitch = (mode: 'structured' | 'single') => {
-    if (mode === 'structured') {
-      // When entering Advanced Mode: parse current single box raw text so 10 categories are immediately updated
-      if (rawMarkdown && rawMarkdown.trim()) {
-        importRawMarkdown(rawMarkdown);
-      }
-    } else if (mode === 'single') {
-      // When returning to Single Box Mode: compile latest form edits into clean Master Markdown immediately
-      syncToMarkdown();
-    }
     setInputMode(mode);
   };
 

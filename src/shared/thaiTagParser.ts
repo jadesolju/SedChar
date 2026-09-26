@@ -24,8 +24,7 @@ export function extractPunchyHook(char: ThaiMasterCharacter): string {
     const firstLine = char.shortIntro.split('\n')[0]; return (firstLine || char.shortIntro).trim();
   }
 
-  const name = char.fullName || char.nickname || 'ตัวละคร';
-  return `"${name}: ในโลกใบนี้ มีเพียงเจ้าเท่านั้นที่ข้าไม่มีวันปล่อยมือ"`;
+  return '';
 }
 
 import type {
