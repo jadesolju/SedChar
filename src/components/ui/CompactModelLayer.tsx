@@ -23,12 +23,12 @@ export interface AIModelOption {
 export const AI_MODELS_REGISTRY: AIModelOption[] = [
   {
     id: 'auto',
-    name: 'Auto Multi-AI Smart Cascade',
+    name: 'Auto Multi-AI (Gemini 3.5 Flash Lite)',
     shortName: 'Auto Cascade',
     provider: 'Auto',
     category: 'fast',
     tag: '⚡ Best',
-    speed: '~150ms',
+    speed: '~120ms',
   },
   {
     id: 'google/gemini-3.5-flash-lite',
@@ -37,7 +37,7 @@ export const AI_MODELS_REGISTRY: AIModelOption[] = [
     provider: 'Google',
     category: 'fast',
     tag: '⚡ Ultra Fast',
-    speed: '~120ms',
+    speed: '~110ms',
   },
   {
     id: 'openai/gpt-4.1-mini',
@@ -78,11 +78,11 @@ export const AI_MODELS_REGISTRY: AIModelOption[] = [
   {
     id: 'qwen/qwen3.8-flash',
     name: 'Qwen 3.8 Flash Asia',
-    shortName: 'Qwen 3.8',
+    shortName: 'Qwen 3.8 Flash',
     provider: 'Qwen',
     category: 'asia',
-    tag: '🇹🇭 Asian Nuance',
-    speed: '~220ms',
+    tag: '🇹🇭 Thai Pro',
+    speed: '~180ms',
   },
   {
     id: 'qwen/qwen3.7-flash',
@@ -90,8 +90,8 @@ export const AI_MODELS_REGISTRY: AIModelOption[] = [
     shortName: 'Qwen 3.7',
     provider: 'Qwen',
     category: 'asia',
-    tag: '🇹🇭 Thai',
-    speed: '~250ms',
+    tag: '🇹🇭 Fast',
+    speed: '~200ms',
   },
   {
     id: 'google/gemma-4-31b-it',
@@ -142,12 +142,12 @@ export const AI_MODELS_REGISTRY: AIModelOption[] = [
 
 const DEFAULT_MODEL_OPTION: AIModelOption = {
   id: 'auto',
-  name: 'Auto Multi-AI Smart Cascade',
+  name: 'Auto Multi-AI (Gemini 3.5 Flash Lite)',
   shortName: 'Auto Cascade',
   provider: 'Auto',
   category: 'fast',
   tag: '⚡ Best',
-  speed: '~150ms',
+  speed: '~120ms',
 };
 
 export function getProviderIcon(provider: AIModelOption['provider'], size = 14) {
@@ -208,13 +208,13 @@ export function CompactModelLayer({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-neutral-700/70 hover:border-rose-500/50 text-neutral-200 transition-all shadow-sm hover:shadow-rose-500/10 active:scale-95 group"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-neutral-700/70 hover:border-rose-500/50 text-neutral-200 transition-all shadow-sm hover:shadow-rose-500/10 active:scale-95 group cursor-pointer"
         title={`Active AI Model Layer: ${current.name}`}
       >
         <span className="flex-shrink-0 flex items-center justify-center w-4 h-4">
           {getProviderIcon(current.provider, 13)}
         </span>
-        <span className="font-medium text-neutral-300 group-hover:text-white truncate max-w-[130px]">
+        <span className="font-medium text-neutral-300 group-hover:text-white truncate max-w-[140px]">
           {current.shortName}
         </span>
         <span className="px-1.5 py-0.2 text-[9px] font-semibold rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
@@ -225,15 +225,15 @@ export function CompactModelLayer({
         </span>
       </button>
 
-      {/* Micro-Dropdown Menu */}
+      {/* Micro-Dropdown Menu: Left-aligned, high Z-index, responsive max-width to prevent clipping */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1.5 w-72 max-h-80 bg-neutral-950/95 backdrop-blur-xl border border-neutral-800/90 rounded-xl shadow-2xl shadow-black/90 p-2 z-50 flex flex-col gap-1.5 animate-fadeIn">
+        <div className="absolute left-0 top-full mt-1.5 w-80 max-w-[calc(100vw-2.5rem)] max-h-84 bg-neutral-950/98 backdrop-blur-2xl border border-neutral-800/90 rounded-2xl shadow-2xl shadow-black/95 p-2.5 z-[9999] flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-border/50">
           {/* Header & Category Filters */}
-          <div className="flex items-center justify-between px-1 pb-1.5 border-b border-neutral-800/70">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1">
-              <span>⚡ AI Model Layer</span>
+          <div className="flex items-center justify-between px-1.5 pb-1.5 border-b border-neutral-800/80">
+            <span className="text-[11px] font-bold tracking-wide text-neutral-300 flex items-center gap-1.5">
+              <span>⚡ AI Model Engine</span>
             </span>
-            <span className="text-[10px] text-rose-400 font-mono">OpenRouter Active</span>
+            <span className="text-[10px] text-emerald-400 font-mono font-medium">Gemini 3.5 Lite Ready</span>
           </div>
 
           {/* Quick Filter Tabs */}
@@ -249,9 +249,9 @@ export function CompactModelLayer({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveCategory(tab.id as any)}
-                className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
                   activeCategory === tab.id
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                    ? 'bg-rose-500 text-white shadow-xs'
                     : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
                 }`}
               >
@@ -261,7 +261,7 @@ export function CompactModelLayer({
           </div>
 
           {/* List of Models */}
-          <div className="overflow-y-auto max-h-56 space-y-1 pr-1 custom-scrollbar">
+          <div className="overflow-y-auto max-h-60 space-y-1 pr-1 custom-scrollbar">
             {filteredModels.map(model => {
               const isSelected = model.id === selectedModelId;
               return (
@@ -272,27 +272,27 @@ export function CompactModelLayer({
                     onSelectModel(model.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between p-1.5 rounded-lg text-left transition-all ${
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-gradient-to-r from-rose-500/20 to-purple-500/20 border border-rose-500/40 text-white'
-                      : 'hover:bg-neutral-900/80 border border-transparent text-neutral-300 hover:text-white'
+                      ? 'bg-gradient-to-r from-rose-500/25 to-purple-500/25 border border-rose-500/50 text-white shadow-xs'
+                      : 'hover:bg-neutral-900/90 border border-transparent text-neutral-300 hover:text-white'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
-                      {getProviderIcon(model.provider, 14)}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                      {getProviderIcon(model.provider, 15)}
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-medium truncate">{model.name}</div>
-                      <div className="text-[9px] text-neutral-400 flex items-center gap-1.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold truncate">{model.name}</div>
+                      <div className="text-[10px] text-neutral-400 flex items-center gap-1.5">
                         <span>{model.provider}</span>
                         <span>•</span>
                         <span className="font-mono text-neutral-400">{model.speed}</span>
                       </div>
                     </div>
                   </div>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${
-                    isSelected ? 'bg-rose-500 text-white font-bold' : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
+                  <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold flex-shrink-0 ml-1.5 ${
+                    isSelected ? 'bg-rose-500 text-white' : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
                   }`}>
                     {model.tag}
                   </span>

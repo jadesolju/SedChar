@@ -71,8 +71,10 @@ function normalizeArray(val: any): string[] {
     });
 }
 
-const PRIMARY_GEMINI_MODEL = 'gemini-2.5-flash';
-const FALLBACK_OPENROUTER_MODEL = 'openai/gpt-4o-mini';
+// Default to Gemini 3.5 Flash Lite as requested for ultra-fast, high-precision processing
+const PRIMARY_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const FALLBACK_OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite';
+const SECONDARY_FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
 async function callDirectGeminiSingle(apiKey: string, prompt: string, model: string = PRIMARY_GEMINI_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
   const controller = new AbortController();
@@ -88,8 +90,8 @@ async function callDirectGeminiSingle(apiKey: string, prompt: string, model: str
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 0.2,
-          topP: 0.9,
+          temperature: 0.1,
+          topP: 0.85,
           topK: 40,
         },
       }),
@@ -128,11 +130,11 @@ async function callOpenRouterSingle(apiKey: string, prompt: string, model: strin
         messages: [
           {
             role: 'system',
-            content: 'You are an expert AI parser. You MUST respond with ONLY valid JSON strictly matching the requested format. Do not include markdown code block formatting or explanations.'
+            content: 'You are an elite Thai Character AI Parser. You MUST respond with ONLY valid JSON strictly matching the requested format. Follow field boundary rules strictly.'
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.2,
+        temperature: 0.1,
         response_format: { type: 'json_object' }
       }),
       signal: controller.signal,
@@ -153,55 +155,55 @@ async function callOpenRouterSingle(apiKey: string, prompt: string, model: strin
 }
 
 const JSON_SCHEMA_TEMPLATE = `{
-  "nickname": "string",
-  "fullName": "string",
-  "age": "string",
-  "gender": "string",
-  "status": "string",
-  "birthdate": "string",
-  "weightHeight": "string",
-  "mbti": "string",
-  "sexualOrientation": "string",
-  "car": "string",
-  "perfume": "string",
-  "address": "string",
-  "wealthStatus": "string",
-  "occupation": "string",
-  "fashionStyle": "string",
-  "appearanceDesc": "string",
-  "visualFeatures": "string",
+  "nickname": "string (ชื่อเล่นสั้นๆ เช่น ชาลี, ลี, ส้มจิ๊ด - ห้ามใส่ชื่อเต็มหรือสแลชยาว)",
+  "fullName": "string (ชื่อเต็ม หรือชื่อจริง)",
+  "age": "string (เฉพาะตัวเลขอายุ เช่น 22 ปี - ห้ามใส่วันเกิด ส่วนสูง หรือเพศในช่องนี้)",
+  "gender": "string (เฉพาะเพศ เช่น ชาย (Cisgender Male), หญิง - ห้ามใส่อายุหรือวันเกิดในช่องนี้)",
+  "status": "string (สถานะความสัมพันธ์ เช่น โสด, มีแฟนแล้ว - ห้ามใส่อาชีพหรือการศึกษาในช่องนี้)",
+  "birthdate": "string (วันเกิดและราศี เช่น 8 สิงหาคม (ราศีสิงห์) - ห้ามทิ้งไว้ในช่องอายุ)",
+  "weightHeight": "string (น้ำหนักและส่วนสูง เช่น 195 ซม. / 82 กก. - ห้ามทิ้งไว้ในช่องอายุ)",
+  "mbti": "string (เช่น ISTP-A)",
+  "sexualOrientation": "string (เช่น Heterosexual / Pansexual)",
+  "car": "string (รถ ยานพาหนะ เช่น มอเตอร์ไซค์แต่ง)",
+  "perfume": "string (กลิ่นน้ำหอม กลิ่นตัว หรือกลิ่นเฉพาะตัว เช่น กลิ่นน้ำมันเครื่องผสมกลิ่นควันบุหรี่จางๆ - ห้ามใส่เสื้อผ้าการแต่งกายในช่องนี้)",
+  "address": "string (ที่พัก ที่อยู่อาศัย เช่น ห้องเช่าเก่าๆ ใกล้อู่ซ่อมรถ)",
+  "wealthStatus": "string (ฐานะทางการเงิน เช่น ปานกลางค่อนไปทางจน, ร่ำรวย)",
+  "occupation": "string (อาชีพ การศึกษา บทบาทหน้าที่ เช่น นักศึกษา ปวส. 2 คณะช่างยนต์, ช่างซ่อมรถ)",
+  "fashionStyle": "string (สไตล์การแต่งตัว เสื้อผ้า ชุดประจำ เช่น เสื้อช็อปสีน้ำเงินเข้ม, เสื้อกล้ามดำ, กางเกงยีนส์)",
+  "appearanceDesc": "string (รูปลักษณ์ภายนอก หน้าตา ทรงผม)",
+  "visualFeatures": "string (จุดเด่นทางกายภาพ รอยสัก แผลเป็น)",
   "visualTags": ["string"],
   "nsfwMaleSize": "string",
   "nsfwFemaleChest": "string",
   "nsfwFemaleVagina": "string",
-  "coreTraits": "string",
+  "coreTraits": "string (บุคลิกหลัก อุปนิสัย)",
   "personalityTags": ["string"],
   "likes": ["string"],
   "dislikes": ["string"],
-  "generalBehaviors": "string",
-  "userExclusiveBehaviors": "string",
-  "mindset": "string",
-  "coreBelief": "string",
-  "perception": "string",
-  "expression": "string",
-  "behaviorUnderEmotion": "string",
-  "emotionalTriggers": "string",
-  "flawsWeaknesses": "string",
-  "userStoryRole": "string",
-  "initialRelationship": "string",
-  "userAttitude": "string",
-  "relationshipBackstory": "string",
-  "absoluteAntiBehaviors": "string",
-  "hiddenSoftSide": "string",
-  "darkSide": "string",
+  "generalBehaviors": "string (พฤติกรรมทั่วไป คำพูดติดปาก)",
+  "userExclusiveBehaviors": "string (พฤติกรรมเฉพาะเมื่ออยู่กับ User)",
+  "mindset": "string (กรอบความคิด ปรัชญา)",
+  "coreBelief": "string (ความเชื่อหลัก)",
+  "perception": "string (มุมมองต่อโลกและผู้คน)",
+  "expression": "string (การแสดงออกทางสีหน้าและสายตา)",
+  "behaviorUnderEmotion": "string (พฤติกรรมเวลาโกรธ เขิน เสียใจ)",
+  "emotionalTriggers": "string (จุดกระตุ้นอารมณ์ จุดเดือด)",
+  "flawsWeaknesses": "string (จุดอ่อน ปมในใจ ข้อเสีย)",
+  "userStoryRole": "string (บทบาทของ User ในความสัมพันธ์)",
+  "initialRelationship": "string (ความสัมพันธ์เริ่มต้น)",
+  "userAttitude": "string (ทัศนคติที่มีต่อ User)",
+  "relationshipBackstory": "string (ปมเบื้องหลังความสัมพันธ์)",
+  "absoluteAntiBehaviors": "string (พฤติกรรมที่ไม่มีวันทำเด็ดขาด)",
+  "hiddenSoftSide": "string (มุมอ่อนโยนที่ซ่อนไว้)",
+  "darkSide": "string (ด้านมืด มุมลับอันตราย)",
   "sexualStyle": "string",
   "kinksPreferences": "string",
   "aftercareStyle": "string",
   "openGreetingNarrative": "string",
   "openGreetingDialogue": "string",
-  "fullGreeting": "string",
-  "plotSummary": "string",
-  "shortIntro": "string",
+  "fullGreeting": "string (ฉากเปิด / บทสนทนาแรกแบบเต็ม)",
+  "plotSummary": "string (พล็อตเรื่องย่อ)",
+  "shortIntro": "string (คำโปรยสั้น)",
   "punchline": "string",
   "momentIntro": "string",
   "dailyRoutine": "string",
@@ -233,17 +235,33 @@ const JSON_SCHEMA_TEMPLATE = `{
   "flagType": "none | white | green | yellow | red | black | watermelon | reverse-watermelon"
 }`;
 
-const PARSE_PROMPT_PREFIX = `You are SedChar-Parser v3, an elite Thai Character Extraction & Enrichment Engine for Thai AI roleplay platforms (Rubii, Purrpaw, Khui AI).
+const PARSE_PROMPT_PREFIX = `You are SedChar-Parser v3.5, an ultra-precise Thai Character Extraction Engine.
 
-## TASK
-Extract ALL details faithfully from the raw input and enrich missing fields into the complete JSON schema below:
+## STRICT FIELD BOUNDARY & SEPARATION RULES (CRITICAL):
+1. **NO FIELD POLLUTION / SPLIT COMPOSITE LINES**:
+   - If raw input contains pipe '|' or composite items (e.g. "เพศ: ชาย | อายุ: 22 ปี (เกิด 8 สิงหาคม) | ส่วนสูง: 195 ซม. / 82 กก."):
+     - gender = "ชาย (Cisgender Male)" (ONLY gender!)
+     - age = "22 ปี" (ONLY age number/unit!)
+     - birthdate = "8 สิงหาคม (ราศีสิงห์)" (Extract to birthdate, NEVER leave in age!)
+     - weightHeight = "195 ซม. / 82 กก." (Extract to weightHeight, NEVER leave in age!)
+2. **NICKNAME vs FULL NAME**:
+   - nickname: Extract only the short primary callsign (e.g. "ชาลี" or "ลี").
+   - fullName: Full name with alias (e.g. "ชาลี (Charlie) / ลี (Lee)").
+3. **STATUS vs OCCUPATION**:
+   - status: Relationship status ONLY (e.g. "โสด", "มีแฟนแล้ว"). If the raw text mentions study/school/job like "นักศึกษา ปวส. 2 ช่างยนต์", put it in occupation, NOT status!
+   - occupation: Job, student status, or work (e.g. "นักศึกษา ปวส. 2 คณะช่างยนต์, ช่างซ่อมรถ").
+4. **PERFUME vs FASHION STYLE**:
+   - perfume: Fragrance / Scent / Body smell ONLY (e.g. "กลิ่นน้ำมันเครื่องผสมกลิ่นควันบุหรี่จางๆ"). NEVER put clothing or outfits in perfume!
+   - fashionStyle: Outfits, clothes, dress style (e.g. "เสื้อช็อปสีน้ำเงินเข้ม, เสื้อยืดดำ, กางเกงยีนส์").
+5. **ADDRESS vs WEALTH**:
+   - address: Residence / living location (e.g. "ห้องเช่าเก่าๆ").
+   - wealthStatus: Financial status (e.g. "ปานกลางค่อนไปทางจน").
+6. **CLEAN VALUES**:
+   - NEVER output '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ'. Use "" for empty fields.
+   - Return ONLY valid JSON matching schema keys below.
+
+## JSON SCHEMA TEMPLATE:
 ${JSON_SCHEMA_TEMPLATE}
-
-## CRITICAL RULES
-1. NEVER output '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ' as values. If a field is empty or not provided, return "" (empty string) or [] (empty array).
-2. NEVER drop, truncate, or summarize user information. Extract EVERY SINGLE DETAIL faithfully.
-3. Keep Thai roleplay language natural, authentic, and rich.
-4. Return ONLY valid JSON matching the schema keys.
 
 ## RAW CHARACTER INPUT:
 `;
@@ -299,9 +317,9 @@ export async function POST(req: NextRequest) {
             } catch (fbErr: any) {
               console.warn('Fallback Gemini call failed:', fbErr.message);
             }
-          } else if (requestedModel !== FALLBACK_OPENROUTER_MODEL) {
+          } else if (requestedModel !== SECONDARY_FALLBACK_MODEL) {
             try {
-              aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+              aiResult = await callOpenRouterSingle(openRouterKey, prompt, SECONDARY_FALLBACK_MODEL);
             } catch (fbErr: any) {
               console.warn('Fallback OpenRouter call failed:', fbErr.message);
             }
@@ -309,30 +327,31 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
+      // Auto Mode: Primary = Direct Gemini 3.5 Flash Lite -> Fallback = OpenRouter Gemini 3.5 Flash Lite
       if (geminiKey) {
         try {
           aiResult = await callDirectGeminiSingle(geminiKey, prompt, PRIMARY_GEMINI_MODEL);
         } catch (e: any) {
-          console.warn('Primary Gemini call failed, attempting 1 fast fallback:', e.message);
+          console.warn('Primary Gemini 3.5 Flash Lite failed, attempting fallback:', e.message);
           fallbackTriggered = true;
           if (openRouterKey) {
             try {
               aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
             } catch (fbErr: any) {
-              console.warn('Fast fallback OpenRouter call failed:', fbErr.message);
+              console.warn('Fallback OpenRouter call failed:', fbErr.message);
             }
           }
         }
       } else if (openRouterKey) {
         try {
-          aiResult = await callOpenRouterSingle(openRouterKey, prompt, 'google/gemini-2.5-flash');
+          aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
         } catch (e: any) {
           console.warn('Primary OpenRouter call failed:', e.message);
           fallbackTriggered = true;
           try {
-            aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+            aiResult = await callOpenRouterSingle(openRouterKey, prompt, SECONDARY_FALLBACK_MODEL);
           } catch (fbErr: any) {
-            console.warn('Fallback OpenRouter call failed:', fbErr.message);
+            console.warn('Secondary Fallback OpenRouter call failed:', fbErr.message);
           }
         }
       }

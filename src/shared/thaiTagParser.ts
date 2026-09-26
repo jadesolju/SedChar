@@ -180,15 +180,19 @@ export function parseMarkdownToCharacter(raw: string): ThaiMasterCharacter {
     } catch {}
   }
 
-  const normalizedRaw = raw
+  // Pre-process pipe delimiters into newlines so composite lines like "อายุ: 22 ปี | วันเกิด: 8 สิงหาคม" parse cleanly
+  const pipeNormalized = raw.replace(/\s*\|\s*(?=[ก-๙a-zA-Z0-9_\s\[\]]+[:：=])/g, '\n');
+  const normalizedRaw = pipeNormalized
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1');
 
   const matchFirst = (patterns: RegExp[]): string => {
     for (const p of patterns) {
-      const m = raw.match(p) || normalizedRaw.match(p);
+      const m = pipeNormalized.match(p) || normalizedRaw.match(p);
       if (m && m[1]) {
-        const cleaned = cleanString(m[1]);
+        // Strip trailing pipe delimiters if any remained
+        let rawVal = m[1].split(/\s*\|\s*/)[0];
+        const cleaned = cleanString(rawVal);
         if (cleaned) return cleaned;
       }
     }

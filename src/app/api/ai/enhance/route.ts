@@ -91,8 +91,9 @@ function isEmptyValue(val: any): boolean {
   return false;
 }
 
-const PRIMARY_GEMINI_MODEL = 'gemini-2.5-flash';
-const FALLBACK_OPENROUTER_MODEL = 'openai/gpt-4o-mini';
+const PRIMARY_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const FALLBACK_OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite';
+const SECONDARY_FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
 async function callDirectGeminiSingle(apiKey: string, prompt: string, model: string = PRIMARY_GEMINI_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
   const controller = new AbortController();
@@ -185,14 +186,14 @@ const CATEGORY_FIELD_MAP: Record<string, (keyof ThaiMasterCharacter)[]> = {
   subchars: ['supportingCharacters', 'locations'],
 };
 
-const ENHANCE_SYSTEM_PROMPT = `You are SedChar-Enhancer v3, an elite Thai AI Roleplay Character Designer specializing in immersive character architecture for platforms like Rubii, Purrpaw, and Khui AI.
+const ENHANCE_SYSTEM_PROMPT = `You are SedChar-Enhancer v3.5, an elite Thai AI Roleplay Character Designer.
 
-## TASK
-You will receive character profile data to enhance and enrich.
-1. PRESERVE every existing non-empty field exactly as written by the user. Do not erase, contradict, or degrade existing details.
-2. ENRICH and FLESH OUT every empty, thin, or missing field with rich, nuanced, psychological Thai roleplay details.
-3. NEVER return '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ' as values. If a field is empty, enrich it with authentic Thai character content or use "" / [].
-4. Output ONLY valid JSON containing the enhanced fields.
+## TASK & STRICT SCOPING RULES:
+1. PRESERVE every existing non-empty field exactly as written by the user. NEVER overwrite, erase, or contradict existing user data.
+2. ENRICH ONLY the fields belonging to the requested categories.
+3. NEVER return '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ' as values.
+4. NEVER invent or replace character names. NEVER hallucinate random names like "น้ำเหนือ", "กวินทร์", or placeholder names.
+5. Output ONLY valid JSON containing the enhanced fields strictly adhering to the schema.
 `;
 
 export async function POST(req: NextRequest) {
@@ -219,19 +220,23 @@ export async function POST(req: NextRequest) {
 
     let scopedCharacter: any = { ...character };
 
+    // Filter sub-characters if activeSubCharIds specified
     if (Array.isArray(activeSubCharIds) && Array.isArray(character.supportingCharacters)) {
       scopedCharacter.supportingCharacters = character.supportingCharacters.filter(
         (sc: any) => activeSubCharIds.includes(sc.id)
       );
     }
 
-    let scopedKeysNotice = '';
-    if (Array.isArray(selectedCategories) && selectedCategories.length > 0 && selectedCategories.length < 10) {
-      const allowedKeys = new Set<string>();
+    // Build strict allowed keys whitelist
+    const allowedKeys = new Set<string>();
+    const isSelective = Array.isArray(selectedCategories) && selectedCategories.length > 0 && selectedCategories.length < 10;
+    
+    if (isSelective) {
       selectedCategories.forEach(cat => {
         const fields = CATEGORY_FIELD_MAP[cat];
         if (fields) fields.forEach(f => allowedKeys.add(f));
       });
+      // Contextual read-only keys for coherent prompt generation
       ['nickname', 'fullName', 'age', 'gender'].forEach(k => allowedKeys.add(k));
 
       const filtered: any = {};
@@ -241,13 +246,32 @@ export async function POST(req: NextRequest) {
         }
       });
       scopedCharacter = filtered;
-      scopedKeysNotice = `\n\nNOTE: Focus enhancement specifically on the following categories: ${selectedCategories.join(', ')}. Return ONLY the fields belonging to these categories.`;
+    } else {
+      // All categories allowed
+      Object.values(CATEGORY_FIELD_MAP).flat().forEach(f => allowedKeys.add(f));
     }
+
+    const scopedKeysNotice = isSelective
+      ? `\n\nNOTE: The user has ONLY selected these categories to enhance: ${selectedCategories.join(', ')}. Return ONLY the fields for these categories. DO NOT generate or modify fields for unselected categories.`
+      : '';
+
+    const charName = character.nickname || character.fullName || 'ตัวละครหลัก';
+    const identityAnchor = `
+## CRITICAL CHARACTER IDENTITY (LOCKED CONTEXT):
+- Locked Character Name: ${character.nickname || '-'} (Full Name: ${character.fullName || '-'})
+- Gender: ${character.gender || '-'} | Age: ${character.age || '-'}
+- Occupation: ${character.occupation || '-'}
+- Core Traits: ${character.coreTraits || '-'}
+- Initial Relationship: ${character.initialRelationship || '-'}
+
+RULE: The character identity is strictly "${charName}". NEVER invent or change the character name (NEVER generate random names like "น้ำเหนือ" or "กวินทร์"). All enhanced fields MUST be 100% consistent with this persona.
+`;
 
     const geminiKey = process.env.GEMINI_API_KEY;
     const openRouterKey = process.env.OPENROUTER_API_KEY;
 
-    const prompt = `${ENHANCE_SYSTEM_PROMPT}${scopedKeysNotice}
+    const prompt = `${ENHANCE_SYSTEM_PROMPT}
+${identityAnchor}${scopedKeysNotice}
 
 ${instructions ? `## USER SPECIAL INSTRUCTIONS:\n${instructions}\n` : ''}
 
@@ -273,9 +297,9 @@ ${JSON.stringify(scopedCharacter, null, 2)}
             } catch (fbErr: any) {
               console.warn('Fallback Gemini enhance failed:', fbErr.message);
             }
-          } else if (requestedModel !== FALLBACK_OPENROUTER_MODEL) {
+          } else if (requestedModel !== SECONDARY_FALLBACK_MODEL) {
             try {
-              aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+              aiResult = await callOpenRouterSingle(openRouterKey, prompt, SECONDARY_FALLBACK_MODEL);
             } catch (fbErr: any) {
               console.warn('Fallback OpenRouter enhance failed:', fbErr.message);
             }
@@ -287,26 +311,26 @@ ${JSON.stringify(scopedCharacter, null, 2)}
         try {
           aiResult = await callDirectGeminiSingle(geminiKey, prompt, PRIMARY_GEMINI_MODEL);
         } catch (e: any) {
-          console.warn('Primary Gemini enhance failed, attempting 1 fast fallback:', e.message);
+          console.warn('Primary Gemini 3.5 Flash Lite failed, attempting fallback:', e.message);
           fallbackTriggered = true;
           if (openRouterKey) {
             try {
               aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
             } catch (fbErr: any) {
-              console.warn('Fast fallback OpenRouter enhance failed:', fbErr.message);
+              console.warn('Fallback OpenRouter enhance failed:', fbErr.message);
             }
           }
         }
       } else if (openRouterKey) {
         try {
-          aiResult = await callOpenRouterSingle(openRouterKey, prompt, 'google/gemini-2.5-flash');
+          aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
         } catch (e: any) {
           console.warn('Primary OpenRouter enhance failed:', e.message);
           fallbackTriggered = true;
           try {
-            aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
+            aiResult = await callOpenRouterSingle(openRouterKey, prompt, SECONDARY_FALLBACK_MODEL);
           } catch (fbErr: any) {
-            console.warn('Fallback OpenRouter enhance failed:', fbErr.message);
+            console.warn('Secondary Fallback OpenRouter enhance failed:', fbErr.message);
           }
         }
       }
@@ -318,6 +342,7 @@ ${JSON.stringify(scopedCharacter, null, 2)}
 
     const parsedJson = safeExtractJson(aiResult.text);
 
+    // Strict Selective Merge: ONLY update fields from selected categories!
     const merged: ThaiMasterCharacter = {
       ...DEFAULT_CHARACTER,
       ...character,
@@ -337,6 +362,12 @@ ${JSON.stringify(scopedCharacter, null, 2)}
     ];
 
     stringKeys.forEach(key => {
+      // If selective categories active, do NOT touch keys that were NOT checked!
+      if (isSelective && !allowedKeys.has(key)) {
+        (merged as any)[key] = character[key] ? normalizeString(character[key]) : '';
+        return;
+      }
+
       const currentVal = character[key];
       if (isEmptyValue(currentVal)) {
         const enrichedVal = normalizeString(parsedJson[key]);
@@ -353,6 +384,11 @@ ${JSON.stringify(scopedCharacter, null, 2)}
     ];
 
     arrayKeys.forEach(key => {
+      if (isSelective && !allowedKeys.has(key)) {
+        (merged as any)[key] = Array.isArray(character[key]) ? normalizeArray(character[key]) : [];
+        return;
+      }
+
       const currentArr = character[key];
       if (!Array.isArray(currentArr) || currentArr.length === 0) {
         const enrichedArr = normalizeArray(parsedJson[key]);
@@ -364,15 +400,19 @@ ${JSON.stringify(scopedCharacter, null, 2)}
       }
     });
 
-    if (Array.isArray(parsedJson.supportingCharacters) && parsedJson.supportingCharacters.length > 0) {
-      if (!Array.isArray(character.supportingCharacters) || character.supportingCharacters.length === 0) {
-        merged.supportingCharacters = parsedJson.supportingCharacters;
+    if (!isSelective || allowedKeys.has('supportingCharacters')) {
+      if (Array.isArray(parsedJson.supportingCharacters) && parsedJson.supportingCharacters.length > 0) {
+        if (!Array.isArray(character.supportingCharacters) || character.supportingCharacters.length === 0) {
+          merged.supportingCharacters = parsedJson.supportingCharacters;
+        }
       }
     }
 
-    if (Array.isArray(parsedJson.locations) && parsedJson.locations.length > 0) {
-      if (!Array.isArray(character.locations) || character.locations.length === 0) {
-        merged.locations = parsedJson.locations;
+    if (!isSelective || allowedKeys.has('locations')) {
+      if (Array.isArray(parsedJson.locations) && parsedJson.locations.length > 0) {
+        if (!Array.isArray(character.locations) || character.locations.length === 0) {
+          merged.locations = parsedJson.locations;
+        }
       }
     }
 
