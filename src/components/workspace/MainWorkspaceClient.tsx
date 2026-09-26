@@ -1,3 +1,4 @@
+import Link from 'next/link';
 'use client';
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -28,6 +29,8 @@ import {
   Globe,
   Sparkles,
   RotateCcw,
+  Menu,
+  ExternalLink,
 } from 'lucide-react';
 
 function MainWorkspace() {
@@ -67,6 +70,7 @@ function MainWorkspace() {
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
 
   // Sharing Mode state
   const [sharedBanner, setSharedBanner] = useState<{
@@ -277,8 +281,72 @@ function MainWorkspace() {
       )}
 
       {/* Global Navbar */}
-      <header className="flex-shrink-0 h-13 flex items-center justify-between px-3.5 sm:px-5 border-b border-border bg-card/85 backdrop-blur-md z-10">
-        <div className="flex items-center gap-2.5 sm:gap-3">
+      <header className="flex-shrink-0 h-13 flex items-center justify-between px-3.5 sm:px-5 border-b border-border bg-card/85 backdrop-blur-md z-30 relative">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Hamburger App Switcher Menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
+              className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              title="เมนูสลับพื้นที่ทำงาน (App Switcher)"
+            >
+              {isNavMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+
+            {/* Navigation Dropdown Drawer */}
+            {isNavMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40 bg-black/40 backdrop-blur-2xs"
+                  onClick={() => setIsNavMenuOpen(false)}
+                />
+                <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 rounded-2xl bg-card border border-border shadow-2xl z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2 py-1.5 border-b border-border text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                    <span>SedChar App Suite</span>
+                    <span className="text-[10px] text-primary font-mono font-medium">Workspace</span>
+                  </div>
+
+                  {/* Single Char Studio */}
+                  <Link
+                    href="/"
+                    onClick={() => setIsNavMenuOpen(false)}
+                    className="p-2.5 rounded-xl bg-primary/10 border border-primary/30 text-foreground flex items-center gap-3 transition-all hover:bg-primary/15 cursor-pointer"
+                  >
+                    <span className="text-xl">🐱</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-primary flex items-center gap-1.5">
+                        <span>Single-Char Studio</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary text-primary-foreground font-semibold">Active</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        สร้างบอทเดี่ยว ส่งออก Purrpaw, Rubii, Khui
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Rubii Multi-Char Studio */}
+                  <Link
+                    href="/rubii/multi"
+                    onClick={() => setIsNavMenuOpen(false)}
+                    className="p-2.5 rounded-xl border border-border/80 hover:border-purple-500/50 hover:bg-purple-500/10 text-foreground flex items-center gap-3 transition-all cursor-pointer group"
+                  >
+                    <span className="text-xl">🎭</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold group-hover:text-purple-300 flex items-center gap-1.5">
+                        <span>Rubii Multi-Char Studio</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">PREVIEW</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        วางโครงเรื่องหลายตัวละคร (10 ตัว) + กฎโลก
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Logo */}
           <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border border-border/40">
             <img
