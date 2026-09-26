@@ -93,7 +93,7 @@ export function AIAssistantModal({
 
     setIsLoading(true);
     setErrorMsg(null);
-    setLoadingStep(`กำลังประมวลผลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 2.5 Flash / OpenRouter' : selectedModel} (ขอบเขต: ${selectedCategories.length}/10 หมวดหมู่)...`);
+    setLoadingStep(`กำลังประมวลผลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 3.5 Flash Lite' : selectedModel} (ขอบเขต: ${selectedCategories.length}/10 หมวดหมู่)...`);
 
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -158,7 +158,7 @@ export function AIAssistantModal({
 
     setIsLoading(true);
     setErrorMsg(null);
-    setLoadingStep(`กำลังแยกวิเคราะห์ข้อมูลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 2.5 Flash / OpenRouter' : selectedModel}...`);
+    setLoadingStep(`กำลังแยกวิเคราะห์ข้อมูลด้วยโมเดล ${selectedModel === 'auto' ? 'Gemini 3.5 Flash Lite' : selectedModel}...`);
 
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
