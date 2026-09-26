@@ -124,14 +124,14 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               </div>
               <div className="text-2xl sm:text-3xl font-black text-foreground mt-0.5 flex items-baseline gap-1.5">
                 <span className="text-rose-600 dark:text-rose-400">฿29</span>
-                <span className="text-xs font-normal text-muted-foreground line-through">฿199</span>
+                <span className="text-xs font-normal text-muted-foreground line-through">฿99</span>
                 <span className="text-xs font-medium text-muted-foreground">/ ตลอดชีพ</span>
               </div>
             </div>
 
             <div className="text-right">
               <span className="text-[10px] px-2 py-1 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/20 inline-block">
-                ประหยัด 85%
+                ประหยัด 70%
               </span>
             </div>
           </div>
