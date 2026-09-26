@@ -40,7 +40,7 @@ const TABS = [
   { id: 'lore', label: '2. Lore & Timeline', desc: 'ไทม์ไลน์, ภูมิหลัง, ความลับ', icon: BookOpen, color: 'text-amber-600 dark:text-amber-400' },
   { id: 'routes', label: '3. Routes & Branches', desc: 'เส้นทางเรื่อง, เงื่อนไข', icon: GitFork, color: 'text-blue-600 dark:text-blue-400' },
   { id: 'mainChars', label: '4. Main Characters', desc: 'ตัวละครหลัก (10 ตัวใน Free)', icon: Users, color: 'text-rose-600 dark:text-rose-400' },
-  { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎฉากรวม', icon: Sparkles, color: 'text-emerald-600 dark:text-emerald-400' },
+  { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎหลากรวม', icon: Sparkles, color: 'text-emerald-600 dark:text-emerald-400' },
   { id: 'preview', label: '6. Master Draft Export', desc: 'สรุปรวมร่าง & ดาวน์โหลด', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
 ];
 
@@ -89,11 +89,11 @@ export function RubiiMultiWorkspace() {
 
   const handleLoadSample = () => {
     loadSampleProject();
-    showToast('โหลดตัวอย่างจักรวาล "Aethelgard: มหานครเวทจักรกล" เรียบร้อย!');
+    showToast('โหลดตัวอย่างจักรวาล "Aethelgard: เงาอัศวินกับพันธนาการจักรกล" เรียบร้อย!');
   };
 
   const handleReset = () => {
-    if (confirm('คุณต้องการรีเซ็ตโปรเจกต์ Multi-Char ทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่?')) {
+    if (confirm('คุณต้องการรีเซ็ตโปรเจกต์ Multi-Char กลับเป็นค่าเริ่มต้นหรือไม่?')) {
       resetProject();
       showToast('รีเซ็ตโปรเจกต์เรียบร้อย');
     }
@@ -166,7 +166,7 @@ export function RubiiMultiWorkspace() {
             type="button"
             onClick={handleReset}
             className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center justify-center cursor-pointer shadow-xs"
-            title="ล้างโปรเจกต์ทั้งหมด"
+            title="ล้างโปรเจกต์"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -180,33 +180,29 @@ export function RubiiMultiWorkspace() {
               title="อัปเกรดเป็น Premium เพียง 29 บาท (ชำระด้วยบัตร หรือ PromptPay QR)"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>โปรโมชั่น 29.-</span>
+              <span>โปร 29.-</span>
             </button>
           )}
 
-          {/* User Auth Menu */}
-          <UserMenu onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)} />
-
+          {/* User Menu without duplicate character library button */}
+          <UserMenu
+            onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)}
+            showLibraryButton={false}
+            onOpenCustomLibrary={() => setIsLibraryModalOpen(true)}
+            customLibraryLabel="โปรเจกต์ Multi-Char"
+            customLibraryCount={savedProjects.length}
+          />
           <ThemeToggle />
-
-          {/* Mobile Drawer Button */}
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-            className="md:hidden w-8 h-8 rounded-xl border border-border bg-card flex items-center justify-center text-foreground cursor-pointer"
-          >
-            {isMobileDrawerOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
         </div>
       </header>
 
-      {/* Main Workspace Body */}
-      <div className="flex-1 overflow-hidden flex relative">
-        {/* Left Vertical Navigation Sidebar (Desktop) */}
-        <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-border bg-card/40 p-3 space-y-1.5 flex-shrink-0 overflow-y-auto custom-scrollbar">
-          <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+      {/* Main Container: Sidebar + Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Category Sidebar (Desktop) */}
+        <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/50 backdrop-blur-xs p-3 space-y-1.5 overflow-y-auto custom-scrollbar flex-shrink-0">
+          <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
             <span>โครงสร้างโปรเจกต์</span>
-            <span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold font-mono bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+            <span className="text-[11px] font-mono font-normal text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">
               {mainCharCount}/{maxMainChars} ตัวหลัก
             </span>
           </div>
@@ -220,24 +216,24 @@ export function RubiiMultiWorkspace() {
                 type="button"
                 onClick={() => setActiveTab(tab.id as TabId)}
                 className={
-                  'w-full text-left p-2.5 rounded-2xl border transition-all flex items-center gap-3 cursor-pointer ' +
+                  'w-full p-2.5 rounded-xl text-left flex items-center gap-3 transition-all cursor-pointer group ' +
                   (isActive
-                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300 shadow-xs'
-                    : 'bg-card/40 border-transparent hover:bg-muted text-muted-foreground hover:text-foreground')
+                    ? 'bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 shadow-xs'
+                    : 'hover:bg-muted/70 text-muted-foreground hover:text-foreground border border-transparent')
                 }
               >
                 <div
                   className={
-                    'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border ' +
+                    'w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0 ' +
                     (isActive
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-400'
-                      : 'bg-muted/80 border-border')
+                      ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+                      : 'bg-muted/80')
                   }
                 >
-                  <Icon className={"w-4 h-4 " + (isActive ? "text-rose-600 dark:text-rose-400" : tab.color)} />
+                  <Icon className={'w-4 h-4 ' + (isActive ? 'text-rose-600 dark:text-rose-400' : tab.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className={"text-xs font-bold truncate " + (isActive ? "text-foreground" : "text-foreground/90")}>
+                  <div className={'text-xs font-bold truncate ' + (isActive ? 'text-foreground' : 'text-foreground/90')}>
                     {tab.label}
                   </div>
                   <div className="text-[10px] text-muted-foreground truncate">
@@ -259,7 +255,7 @@ export function RubiiMultiWorkspace() {
                 <Save className="w-4 h-4 text-rose-500 flex-shrink-0" />
                 <div className="min-w-0">
                   <div className="text-xs font-bold truncate">บันทึกโปรเจกต์</div>
-                  <div className="text-[10px] text-muted-foreground truncate">เก็บเข้าคลังส่วนตัว</div>
+                  <div className="text-[10px] text-muted-foreground truncate">เข้าคลังส่วนตัว</div>
                 </div>
               </div>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold">
@@ -273,7 +269,7 @@ export function RubiiMultiWorkspace() {
                 <span>Multi-Char Draft Isolation</span>
               </div>
               <p className="text-[10px] leading-relaxed">
-                บันทึก Draft อัตโนมัติแยกคีย์ ปลอดภัย ไม่ทับ Single-Char
+                บันทึก Draft อัตโนมัติแยกมิติ ปลอดภัย ไม่ทับ Single-Char
               </p>
             </div>
           </div>
@@ -283,7 +279,7 @@ export function RubiiMultiWorkspace() {
         {isMobileDrawerOpen && (
           <div className="fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in flex flex-col">
             <div className="p-4 bg-card border-b border-border flex items-center justify-between">
-              <span className="font-bold text-sm text-foreground">เลือกแท็บแก้ไข</span>
+              <span className="font-bold text-sm text-foreground">เลือกหมวดหมู่</span>
               <button
                 type="button"
                 onClick={() => setIsMobileDrawerOpen(false)}
@@ -305,9 +301,9 @@ export function RubiiMultiWorkspace() {
                       setActiveTab(tab.id as TabId);
                       setIsMobileDrawerOpen(false);
                     }}
-                    className={"w-full p-3 rounded-2xl border text-left flex items-center gap-3 cursor-pointer " + (isActive ? "bg-rose-500/10 border-rose-500/50" : "bg-card border-border")}
+                    className={'w-full p-3 rounded-2xl border text-left flex items-center gap-3 cursor-pointer ' + (isActive ? 'bg-rose-500/10 border-rose-500/50' : 'bg-card border-border')}
                   >
-                    <Icon className={"w-5 h-5 " + tab.color} />
+                    <Icon className={'w-5 h-5 ' + tab.color} />
                     <div>
                       <div className="text-xs font-bold text-foreground">{tab.label}</div>
                       <div className="text-[10px] text-muted-foreground">{tab.desc}</div>

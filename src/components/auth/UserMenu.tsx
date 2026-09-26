@@ -17,9 +17,19 @@ import Link from 'next/link';
 
 interface UserMenuProps {
   onOpenUpgradeModal?: () => void;
+  showLibraryButton?: boolean;
+  onOpenCustomLibrary?: () => void;
+  customLibraryLabel?: string;
+  customLibraryCount?: number;
 }
 
-export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
+export function UserMenu({
+  onOpenUpgradeModal,
+  showLibraryButton = true,
+  onOpenCustomLibrary,
+  customLibraryLabel,
+  customLibraryCount,
+}: UserMenuProps) {
   const {
     user,
     userRole,
@@ -94,19 +104,33 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
     icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
   };
 
+  const handleLibraryClick = () => {
+    if (onOpenCustomLibrary) {
+      onOpenCustomLibrary();
+    } else {
+      openLibraryModal();
+    }
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       <div className="flex items-center gap-2">
-        {/* Library quick button */}
-        <button
-          type="button"
-          onClick={openLibraryModal}
-          title="คลังตัวละคร Cloud Library"
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
-        >
-          <FolderOpen className="w-3.5 h-3.5 text-primary" />
-          <span>คลัง ({savedCharacters.length})</span>
-        </button>
+        {/* Quick Library button (shown only on pages where desired, e.g. Single-Char) */}
+        {showLibraryButton && (
+          <button
+            type="button"
+            onClick={handleLibraryClick}
+            title={customLibraryLabel || 'คลังตัวละคร Cloud Library'}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-primary" />
+            <span>
+              {customLibraryLabel
+                ? `${customLibraryLabel} (${customLibraryCount ?? 0})`
+                : `คลัง (${savedCharacters.length})`}
+            </span>
+          </button>
+        )}
 
         {/* User profile button */}
         <button
@@ -150,7 +174,7 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
             <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Coins className="w-3 h-3 text-primary" />
-                โควตา AI วันนี้:
+                โควต้า AI วันนี้:
               </span>
               <span className="font-bold text-primary">
                 {userRole === 'admin' ? '∞ ไม่จำกัด' : `${quotaRemaining} / ${quotaMax} ครั้ง`}
@@ -174,7 +198,7 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
                   <span>อัปเกรด Premium</span>
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500 text-white font-bold">29.-</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate">AI 50 ครั้ง/วัน + บัตร/PromptPay</div>
+                <div className="text-[10px] text-muted-foreground truncate">AI 50 ครั้ง/วัน + ชำระด้วยบัตร/PromptPay</div>
               </div>
             </button>
           )}
@@ -183,13 +207,20 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
           <div className="space-y-1 text-xs">
             <button
               type="button"
-              onClick={() => { setIsOpen(false); openLibraryModal(); }}
+              onClick={() => {
+                setIsOpen(false);
+                handleLibraryClick();
+              }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
             >
               <FolderOpen className="w-4 h-4 text-primary" />
               <div className="flex-1">
-                <div className="font-semibold">คลังตัวละคร Cloud Library</div>
-                <div className="text-[10px] text-muted-foreground">เก็บไว้ {savedCharacters.length} ตัวละคร</div>
+                <div className="font-semibold">
+                  {customLibraryLabel ? `คลัง${customLibraryLabel}` : 'คลังตัวละคร Cloud Library'}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  มี {customLibraryCount !== undefined ? customLibraryCount : savedCharacters.length} รายการ
+                </div>
               </div>
             </button>
 
@@ -203,14 +234,17 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
                 <ShieldCheck className="w-4 h-4 text-amber-500" />
                 <div className="flex-1">
                   <div>Control Nexus Console</div>
-                  <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควตาหลังบ้าน</div>
+                  <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควต้าผู้ใช้งาน</div>
                 </div>
               </Link>
             )}
 
             <button
               type="button"
-              onClick={() => { setIsOpen(false); openAuthModal('reset'); }}
+              onClick={() => {
+                setIsOpen(false);
+                openAuthModal('reset');
+              }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
             >
               <KeyRound className="w-4 h-4 text-muted-foreground" />
@@ -221,7 +255,10 @@ export function UserMenu({ onOpenUpgradeModal }: UserMenuProps) {
 
             <button
               type="button"
-              onClick={() => { setIsOpen(false); signOut(); }}
+              onClick={() => {
+                setIsOpen(false);
+                signOut();
+              }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer text-left font-semibold"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
