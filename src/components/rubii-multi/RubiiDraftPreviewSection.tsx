@@ -1,10 +1,21 @@
 'use client';
-import React, { useState } from 'react';
-import { FileText, Copy, Check, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import {
+  FileText,
+  Copy,
+  Check,
+  Download,
+  FileJson,
+  Upload,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 
 interface RubiiDraftPreviewSectionProps {
   project: MultiCharacterProjectDraft;
+  onImportJson?: (importedData: MultiCharacterProjectDraft) => void;
+  showToast?: (msg: string) => void;
 }
 
 export function compileRubiiProjectMarkdown(p: MultiCharacterProjectDraft): string {
@@ -82,20 +93,100 @@ export function compileRubiiProjectMarkdown(p: MultiCharacterProjectDraft): stri
   return md.trim();
 }
 
-export function RubiiDraftPreviewSection({ project }: RubiiDraftPreviewSectionProps) {
-  const [copied, setCopied] = useState(false);
-  const markdownText = compileRubiiProjectMarkdown(project);
+export function RubiiDraftPreviewSection({
+  project,
+  onImportJson,
+  showToast = () => {},
+}: RubiiDraftPreviewSectionProps) {
+  const [copiedMd, setCopiedMd] = useState(false);
+  const [copiedJson, setCopiedJson] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCopy = async () => {
+  const markdownText = compileRubiiProjectMarkdown(project);
+  const jsonText = JSON.stringify(project, null, 2);
+  const baseFilename = (project.worldSetting.projectName || project.title || 'multi_char_project')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim() || 'multi_char_project';
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`ดาวน์โหลดไฟล์ ${filename} เรียบร้อย!`);
+    setIsDownloadOpen(false);
+  };
+
+  const handleDownloadMd = () => {
+    const blob = new Blob([markdownText], { type: 'text/markdown;charset=utf-8' });
+    downloadBlob(blob, `${baseFilename}.md`);
+  };
+
+  const handleDownloadJson = () => {
+    const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
+    downloadBlob(blob, `${baseFilename}.json`);
+  };
+
+  const handleDownloadTxt = () => {
+    const blob = new Blob([markdownText], { type: 'text/plain;charset=utf-8' });
+    downloadBlob(blob, `${baseFilename}.txt`);
+  };
+
+  const handleCopyMd = async () => {
     try {
       await navigator.clipboard.writeText(markdownText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedMd(true);
+      showToast('คัดลอก Master Markdown เรียบร้อย!');
+      setTimeout(() => setCopiedMd(false), 2000);
     } catch {}
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      await navigator.clipboard.writeText(jsonText);
+      setCopiedJson(true);
+      showToast('คัดลอก JSON Data เรียบร้อย!');
+      setTimeout(() => setCopiedJson(false), 2000);
+    } catch {}
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (onImportJson) {
+          onImportJson(parsed);
+          showToast(`นำเข้าโปรเจกต์ "${parsed.worldSetting?.projectName || parsed.title || 'Multi-Char'}" เรียบร้อย!`);
+        }
+      } catch (err: any) {
+        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + (err.message || 'รูปแบบไฟล์ไม่ถูกต้อง'));
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
+      {/* Hidden File Input for JSON Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400 flex-shrink-0">
@@ -105,23 +196,111 @@ export function RubiiDraftPreviewSection({ project }: RubiiDraftPreviewSectionPr
             <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
               <span>6. Master Draft Preview & Export</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300 border border-pink-500/20 font-bold">
-                Draft Specification
+                Export & Download Suite
               </span>
             </h2>
             <p className="text-xs text-muted-foreground">
-              สรุปรวมโครงร่างโปรเจกต์ Multi-Char ทั้งหมดพร้อมสำหรับการส่งออกหรือคัดลอก
+              ดาวน์โหลดหรือคัดลอกโครงร่างโปรเจกต์เป็นไฟล์ JSON, Markdown หรือ Plain Text
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 self-start sm:self-auto"
-        >
-          {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? 'คัดลอกโครงร่างแล้ว!' : 'คัดลอก Master Draft'}</span>
-        </button>
+        {/* Action Buttons Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Import JSON Button */}
+          {onImportJson && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              title="นำเข้าไฟล์โปรเจกต์ .json"
+            >
+              <Upload className="w-3.5 h-3.5 text-blue-500" />
+              <span>นำเข้า JSON</span>
+            </button>
+          )}
+
+          {/* Copy Markdown */}
+          <button
+            type="button"
+            onClick={handleCopyMd}
+            className="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="คัดลอก Master Markdown"
+          >
+            {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedMd ? 'คัดลอก MD แล้ว' : 'คัดลอก MD'}</span>
+          </button>
+
+          {/* Copy JSON */}
+          <button
+            type="button"
+            onClick={handleCopyJson}
+            className="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="คัดลอก JSON Schema Data"
+          >
+            {copiedJson ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <FileJson className="w-3.5 h-3.5 text-amber-500" />}
+            <span>{copiedJson ? 'คัดลอก JSON แล้ว' : 'คัดลอก JSON'}</span>
+          </button>
+
+          {/* Download Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsDownloadOpen(!isDownloadOpen)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Download className="w-4 h-4" />
+              <span>ดาวน์โหลดไฟล์</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {isDownloadOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setIsDownloadOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-1.5 w-52 p-1.5 rounded-2xl bg-card border border-border shadow-2xl z-30 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={handleDownloadMd}
+                    className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-blue-500" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold">Markdown (.md)</div>
+                      <div className="text-[10px] text-muted-foreground">โครงร่างสมบูรณ์สำหรับ AI Bot</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadJson}
+                    className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                  >
+                    <FileJson className="w-4 h-4 text-amber-500" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold">JSON Data (.json)</div>
+                      <div className="text-[10px] text-muted-foreground">บันทึก Schema สำรอง/แชร์</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadTxt}
+                    className="p-2 rounded-xl hover:bg-muted text-foreground text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-emerald-500" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold">Plain Text (.txt)</div>
+                      <div className="text-[10px] text-muted-foreground">ข้อความล้วนอ่านง่าย</div>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Overview Badges */}
@@ -151,7 +330,7 @@ export function RubiiDraftPreviewSection({ project }: RubiiDraftPreviewSectionPr
       <div className="rounded-2xl border border-border bg-neutral-950 overflow-hidden shadow-2xl">
         <div className="px-4 py-2.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
           <span className="font-mono text-[11px] font-semibold text-rose-300">multi_character_project_draft.md</span>
-          <span className="text-[10px] text-neutral-500">Multi-Char Engine</span>
+          <span className="text-[10px] text-neutral-500">Multi-Char Studio</span>
         </div>
 
         <div className="p-4 max-h-[550px] overflow-y-auto custom-scrollbar">

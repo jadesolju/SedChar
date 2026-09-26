@@ -14,7 +14,10 @@ import {
   RotateCcw,
   Shield,
   Layers,
-  Sparkle
+  Sparkle,
+  FolderOpen,
+  Save,
+  Download,
 } from 'lucide-react';
 import { useMultiCharacterProject } from '@/hooks/useMultiCharacterProject';
 import { WorldSettingSection } from './WorldSettingSection';
@@ -23,6 +26,7 @@ import { RoutesSection } from './RoutesSection';
 import { MainCharactersSection } from './MainCharactersSection';
 import { CastRulesSection } from './CastRulesSection';
 import { RubiiDraftPreviewSection } from './RubiiDraftPreviewSection';
+import { MultiCharLibraryModal } from './MultiCharLibraryModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 type TabId = 'world' | 'lore' | 'routes' | 'mainChars' | 'castRules' | 'preview';
@@ -33,12 +37,18 @@ const TABS = [
   { id: 'routes', label: '3. Routes & Branches', desc: 'เส้นทางเรื่อง, เงื่อนไข', icon: GitFork, color: 'text-blue-600 dark:text-blue-400' },
   { id: 'mainChars', label: '4. Main Characters', desc: 'ตัวละครหลัก (10 ตัวใน Free)', icon: Users, color: 'text-rose-600 dark:text-rose-400' },
   { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎฉากรวม', icon: Sparkles, color: 'text-emerald-600 dark:text-emerald-400' },
-  { id: 'preview', label: '6. Master Draft Export', desc: 'สรุปรวมร่างโปรเจกต์', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
+  { id: 'preview', label: '6. Master Draft Export', desc: 'สรุปรวมร่าง & ดาวน์โหลด', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
 ];
 
 export function RubiiMultiWorkspace() {
   const {
     project,
+    activeLibraryProjectId,
+    savedProjects,
+    saveProjectToLibrary,
+    loadProjectFromLibrary,
+    deleteProjectFromLibrary,
+    importProjectJson,
     updateProjectTitle,
     updateWorldSetting,
     updateLore,
@@ -63,6 +73,7 @@ export function RubiiMultiWorkspace() {
 
   const [activeTab, setActiveTab] = useState<TabId>('world');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -117,15 +128,31 @@ export function RubiiMultiWorkspace() {
 
         {/* Action Buttons Right */}
         <div className="flex items-center gap-2">
+          {/* Project Library Button */}
+          <button
+            type="button"
+            onClick={() => setIsLibraryModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="เปิดคลังโปรเจกต์ Multi-Char / บันทึกโปรเจกต์"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-rose-500" />
+            <span className="hidden sm:inline">คลังโปรเจกต์</span>
+            {savedProjects.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono font-bold">
+                {savedProjects.length}
+              </span>
+            )}
+          </button>
+
           {/* Load Sample Universe */}
           <button
             type="button"
             onClick={handleLoadSample}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="hidden sm:flex px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all items-center gap-1.5 cursor-pointer shadow-xs"
             title="โหลดตัวอย่างโครงสร้าง Multi-Character Universe"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">ตัวอย่าง Multi-Char</span>
+            <span>ตัวอย่าง Universe</span>
           </button>
 
           {/* Reset */}
@@ -187,7 +214,25 @@ export function RubiiMultiWorkspace() {
             );
           })}
 
-          <div className="mt-auto pt-4 border-t border-border px-2">
+          <div className="mt-auto pt-4 border-t border-border px-2 space-y-2">
+            {/* Quick Save to Library Card */}
+            <button
+              type="button"
+              onClick={() => setIsLibraryModalOpen(true)}
+              className="w-full p-2.5 rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-500/30 hover:border-rose-500/60 text-foreground flex items-center justify-between gap-2 transition-all cursor-pointer group text-left"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Save className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate">บันทึกโปรเจกต์</div>
+                  <div className="text-[10px] text-muted-foreground truncate">เก็บเข้าคลังส่วนตัว</div>
+                </div>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold">
+                Save
+              </span>
+            </button>
+
             <div className="p-3 rounded-xl bg-muted/40 border border-border text-[11px] text-muted-foreground space-y-1">
               <div className="font-bold text-foreground flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-rose-500" />
@@ -236,6 +281,20 @@ export function RubiiMultiWorkspace() {
                   </button>
                 );
               })}
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsLibraryModalOpen(true);
+                  }}
+                  className="w-full p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-foreground flex items-center gap-3 font-bold text-xs"
+                >
+                  <FolderOpen className="w-5 h-5 text-rose-500" />
+                  <span>เปิดคลังโปรเจกต์ ({savedProjects.length})</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -292,11 +351,28 @@ export function RubiiMultiWorkspace() {
             )}
 
             {activeTab === 'preview' && (
-              <RubiiDraftPreviewSection project={project} />
+              <RubiiDraftPreviewSection
+                project={project}
+                onImportJson={importProjectJson}
+                showToast={showToast}
+              />
             )}
           </div>
         </main>
       </div>
+
+      {/* Multi-Char Project Library Modal */}
+      <MultiCharLibraryModal
+        isOpen={isLibraryModalOpen}
+        onClose={() => setIsLibraryModalOpen(false)}
+        currentProject={project}
+        savedProjects={savedProjects}
+        activeLibraryProjectId={activeLibraryProjectId}
+        onSaveToLibrary={saveProjectToLibrary}
+        onLoadFromLibrary={loadProjectFromLibrary}
+        onDeleteFromLibrary={deleteProjectFromLibrary}
+        showToast={showToast}
+      />
 
       {/* Toast Notification */}
       {toastMsg && (

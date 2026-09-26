@@ -15,7 +15,20 @@ import {
 import type { SubCharacter } from '@/shared/types';
 
 export const RUBII_MULTI_DRAFT_KEY = 'sedchar_rubii_multi_draft_v1';
+export const MULTI_CHAR_LIBRARY_KEY = 'sedchar_multi_projects_library_v1';
 export const MAX_FREE_MAIN_CHARACTERS = 10;
+
+export interface SavedMultiProjectRecord {
+  id: string;
+  title: string;
+  description: string;
+  mainCharCount: number;
+  subCharCount: number;
+  routeCount: number;
+  projectData: MultiCharacterProjectDraft;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export function useMultiCharacterProject() {
   const [project, setProject] = useState<MultiCharacterProjectDraft>(() => {
@@ -32,7 +45,24 @@ export function useMultiCharacterProject() {
     return DEFAULT_MULTI_PROJECT_DRAFT;
   });
 
-  // Auto-save to LocalStorage whenever project changes
+  const [activeLibraryProjectId, setActiveLibraryProjectId] = useState<string | null>(null);
+
+  // Saved Projects Library State
+  const [savedProjects, setSavedProjects] = useState<SavedMultiProjectRecord[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  // Auto-save active draft to LocalStorage whenever project changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -41,6 +71,132 @@ export function useMultiCharacterProject() {
       console.error('Failed to auto-save multi-character project draft', e);
     }
   }, [project]);
+
+  // Persist Saved Projects Library
+  const persistLibrary = (records: SavedMultiProjectRecord[]) => {
+    setSavedProjects(records);
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(records));
+    } catch (e) {
+      console.error('Failed to persist multi-char project library', e);
+    }
+  };
+
+  // Save / Overwrite in Project Library
+  const saveProjectToLibrary = useCallback(
+    (title?: string, idToOverwrite?: string) => {
+      const now = new Date().toISOString();
+      const projectTitle = title?.trim() || project.worldSetting.projectName?.trim() || project.title || 'โปรเจกต์ Multi-Char';
+      const summaryDesc = project.worldSetting.genreTone || project.worldSetting.mainLocation || 'โปรเจกต์หลายตัวละคร';
+
+      if (idToOverwrite) {
+        // Overwrite existing record
+        const next = savedProjects.map((rec) => {
+          if (rec.id === idToOverwrite) {
+            return {
+              ...rec,
+              title: projectTitle,
+              description: summaryDesc,
+              mainCharCount: project.mainCharacters.length,
+              subCharCount: project.supportingCharacters.length,
+              routeCount: project.routes.length,
+              projectData: {
+                ...project,
+                title: projectTitle,
+                updatedAt: now,
+              },
+              updatedAt: now,
+            };
+          }
+          return rec;
+        });
+        persistLibrary(next);
+        setActiveLibraryProjectId(idToOverwrite);
+        return { success: true, id: idToOverwrite };
+      } else {
+        // Create new record
+        const newId = 'proj_lib_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        const newRecord: SavedMultiProjectRecord = {
+          id: newId,
+          title: projectTitle,
+          description: summaryDesc,
+          mainCharCount: project.mainCharacters.length,
+          subCharCount: project.supportingCharacters.length,
+          routeCount: project.routes.length,
+          projectData: {
+            ...project,
+            id: newId,
+            title: projectTitle,
+            updatedAt: now,
+          },
+          createdAt: now,
+          updatedAt: now,
+        };
+        persistLibrary([newRecord, ...savedProjects]);
+        setActiveLibraryProjectId(newId);
+        return { success: true, id: newId };
+      }
+    },
+    [project, savedProjects]
+  );
+
+  // Load project from library
+  const loadProjectFromLibrary = useCallback(
+    (id: string) => {
+      const record = savedProjects.find((p) => p.id === id);
+      if (!record || !record.projectData) return false;
+      setProject(record.projectData);
+      setActiveLibraryProjectId(id);
+      try {
+        localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(record.projectData));
+      } catch {}
+      return true;
+    },
+    [savedProjects]
+  );
+
+  // Delete project from library
+  const deleteProjectFromLibrary = useCallback(
+    (id: string) => {
+      const next = savedProjects.filter((p) => p.id !== id);
+      persistLibrary(next);
+      if (activeLibraryProjectId === id) {
+        setActiveLibraryProjectId(null);
+      }
+    },
+    [savedProjects, activeLibraryProjectId]
+  );
+
+  // Import JSON Project
+  const importProjectJson = useCallback((imported: MultiCharacterProjectDraft) => {
+    if (!imported || imported.schemaVersion !== 1) {
+      throw new Error('รูปแบบไฟล์ JSON ไม่ตรงตาม Multi-Character Schema Version 1');
+    }
+    const cleanProject: MultiCharacterProjectDraft = {
+      ...DEFAULT_MULTI_PROJECT_DRAFT,
+      ...imported,
+      worldSetting: { ...DEFAULT_MULTI_PROJECT_DRAFT.worldSetting, ...(imported.worldSetting || {}) },
+      lore: {
+        ...DEFAULT_MULTI_PROJECT_DRAFT.lore,
+        ...(imported.lore || {}),
+        timelineEvents: Array.isArray(imported.lore?.timelineEvents) ? imported.lore.timelineEvents : [],
+      },
+      routes: Array.isArray(imported.routes) ? imported.routes : [],
+      mainCharacters: Array.isArray(imported.mainCharacters) && imported.mainCharacters.length > 0
+        ? imported.mainCharacters
+        : DEFAULT_MULTI_PROJECT_DRAFT.mainCharacters,
+      supportingCharacters: Array.isArray(imported.supportingCharacters) ? imported.supportingCharacters : [],
+      castInteractionRules: imported.castInteractionRules || DEFAULT_MULTI_PROJECT_DRAFT.castInteractionRules,
+      updatedAt: new Date().toISOString(),
+    };
+    setProject(cleanProject);
+    setActiveLibraryProjectId(null);
+    try {
+      localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(cleanProject));
+    } catch {}
+    return true;
+  }, []);
 
   // Project Title
   const updateProjectTitle = useCallback((title: string) => {
@@ -283,6 +439,7 @@ export function useMultiCharacterProject() {
   // Reset Project
   const resetProject = useCallback(() => {
     setProject(DEFAULT_MULTI_PROJECT_DRAFT);
+    setActiveLibraryProjectId(null);
     try {
       localStorage.removeItem(RUBII_MULTI_DRAFT_KEY);
     } catch {}
@@ -427,6 +584,7 @@ export function useMultiCharacterProject() {
       updatedAt: new Date().toISOString(),
     };
     setProject(sample);
+    setActiveLibraryProjectId(null);
     try {
       localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(sample));
     } catch {}
@@ -434,6 +592,12 @@ export function useMultiCharacterProject() {
 
   return {
     project,
+    activeLibraryProjectId,
+    savedProjects,
+    saveProjectToLibrary,
+    loadProjectFromLibrary,
+    deleteProjectFromLibrary,
+    importProjectJson,
     updateProjectTitle,
     updateWorldSetting,
     updateLore,
