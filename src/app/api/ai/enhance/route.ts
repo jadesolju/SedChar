@@ -6,7 +6,7 @@ import { logAITelemetry, estimateTokenCount } from '@/lib/telemetry';
 
 function safeExtractJson(raw: string): any {
   let text = raw.trim();
-  text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+  text = text.replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/i, '').replace(/\s*\`\`\`$/i, '').trim();
   try { return JSON.parse(text); } catch {}
   const s = text.indexOf('{');
   const e = text.lastIndexOf('}');
@@ -95,7 +95,7 @@ const PRIMARY_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const FALLBACK_OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite';
 const SECONDARY_FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
-async function callDirectGeminiSingle(apiKey: string, prompt: string, model: string = PRIMARY_GEMINI_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
+async function callDirectGeminiSingle(apiKey: string, prompt: string, model: string = PRIMARY_GEMINI_MODEL, timeoutMs: number = 25000): Promise<{ text: string; model: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -109,7 +109,7 @@ async function callDirectGeminiSingle(apiKey: string, prompt: string, model: str
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 0.3,
+          temperature: 0.35,
           topP: 0.92,
           topK: 40,
         },
@@ -131,7 +131,7 @@ async function callDirectGeminiSingle(apiKey: string, prompt: string, model: str
   }
 }
 
-async function callOpenRouterSingle(apiKey: string, prompt: string, model: string = FALLBACK_OPENROUTER_MODEL, timeoutMs: number = 12000): Promise<{ text: string; model: string }> {
+async function callOpenRouterSingle(apiKey: string, prompt: string, model: string = FALLBACK_OPENROUTER_MODEL, timeoutMs: number = 25000): Promise<{ text: string; model: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -153,7 +153,7 @@ async function callOpenRouterSingle(apiKey: string, prompt: string, model: strin
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.3,
+        temperature: 0.35,
         response_format: { type: 'json_object' }
       }),
       signal: controller.signal,
@@ -186,15 +186,107 @@ const CATEGORY_FIELD_MAP: Record<string, (keyof ThaiMasterCharacter)[]> = {
   subchars: ['supportingCharacters', 'locations'],
 };
 
+const JSON_SCHEMA_TEMPLATE = `{
+  "nickname": "string (ชื่อเล่น)",
+  "fullName": "string (ชื่อจริง / ฉายา)",
+  "age": "string (เช่น 22 ปี)",
+  "gender": "string (เช่น ชาย, หญิง)",
+  "status": "string (สถานะความสัมพันธ์ เช่น โสด)",
+  "birthdate": "string (วันเกิดและราศี เช่น 8 สิงหาคม (ราศีสิงห์))",
+  "weightHeight": "string (เช่น 195 ซม. / 82 กก.)",
+  "mbti": "string (เช่น ISTP-A)",
+  "sexualOrientation": "string (เช่น Heterosexual / Pansexual)",
+  "car": "string (รถ ยานพาหนะ)",
+  "perfume": "string (กลิ่นน้ำหอม กลิ่นตัว หรือกลิ่นเฉพาะตัว)",
+  "address": "string (ที่อยู่อาศัย ที่พัก)",
+  "wealthStatus": "string (ฐานะทางการเงิน)",
+  "occupation": "string (อาชีพ บทบาทหน้าที่)",
+  "fashionStyle": "string (สไตล์การแต่งตัว เสื้อผ้าประจำ)",
+  "appearanceDesc": "string (รูปลักษณ์ภายนอก หน้าตา ทรงผม ผิวพรรณ)",
+  "visualFeatures": "string (จุดเด่นทางกายภาพ เช่น รอยสัก แผลเป็น แววตา)",
+  "visualTags": ["string"],
+  "nsfwMaleSize": "string (เช่น 56 / 7.5 นิ้ว)",
+  "nsfwFemaleChest": "string (เช่น คัพ D 34 นิ้ว)",
+  "nsfwFemaleVagina": "string (เช่น ขาวอมชมพู สะอาด มีกลิ่นหอมอ่อนๆ)",
+  "coreTraits": "string (บุคลิกหลัก อุปนิสัย)",
+  "personalityTags": ["string"],
+  "likes": ["string"],
+  "dislikes": ["string"],
+  "generalBehaviors": "string (พฤติกรรมทั่วไป คำพูดติดปาก)",
+  "userExclusiveBehaviors": "string (พฤติกรรมเฉพาะเมื่ออยู่กับ User)",
+  "mindset": "string (กรอบความคิด ปรัชญา)",
+  "coreBelief": "string (ความเชื่อหลัก)",
+  "perception": "string (มุมมองต่อโลกและผู้คน)",
+  "expression": "string (การแสดงออกทางสีหน้าและสายตา)",
+  "behaviorUnderEmotion": "string (พฤติกรรมเวลาโกรธ เขิน เสียใจ)",
+  "emotionalTriggers": "string (จุดกระตุ้นอารมณ์ จุดเดือด)",
+  "flawsWeaknesses": "string (จุดอ่อน ปมในใจ ข้อเสีย)",
+  "userStoryRole": "string (บทบาทของ User ในความสัมพันธ์)",
+  "initialRelationship": "string (ความสัมพันธ์เริ่มต้น)",
+  "userAttitude": "string (ทัศนคติที่มีต่อ User)",
+  "relationshipBackstory": "string (ปมเบื้องหลังความสัมพันธ์)",
+  "absoluteAntiBehaviors": "string (พฤติกรรมที่ไม่มีวันทำเด็ดขาด)",
+  "hiddenSoftSide": "string (มุมอ่อนโยนที่ซ่อนไว้)",
+  "darkSide": "string (ด้านมืด มุมลับอันตราย)",
+  "sexualStyle": "string (สไตล์และแนวทางบนเตียง)",
+  "kinksPreferences": "string (รสนิยมจำเพาะ)",
+  "aftercareStyle": "string (การดูแลหลังกิจกรรม)",
+  "openGreetingNarrative": "string (บทบรรยายฉากเปิด)",
+  "openGreetingDialogue": "string (บทสนทนาแรก)",
+  "fullGreeting": "string (ฉากเปิดเต็มพร้อมบทบรรยาย)",
+  "plotSummary": "string (พล็อตเรื่องย่อ)",
+  "shortIntro": "string (คำโปรยสั้น)",
+  "punchline": "string (ประโยคเด็ด / คำคม)",
+  "momentIntro": "string (ฉากช่วงเวลาสำคัญ)",
+  "dailyRoutine": "string (กิจวัตรประจำวัน)",
+  "toneSetting": "string (โทนเรื่องและฉากหลัง)",
+  "systemRules": ["string"],
+  "subCharRules": "string",
+  "subCharAllowed": "string",
+  "categoryTags": ["string"],
+  "supportingCharacters": [
+    {
+      "id": "string",
+      "name": "string",
+      "gender": "string",
+      "age": "string",
+      "personality": "string",
+      "relationship": "string",
+      "mainRole": "string",
+      "appearWhen": "string"
+    }
+  ],
+  "locations": [
+    {
+      "id": "string",
+      "name": "string",
+      "prompt": "string"
+    }
+  ]
+}`;
+
 const ENHANCE_SYSTEM_PROMPT = `You are SedChar-Enhancer v3.5, an elite Thai AI Roleplay Character Designer.
 
-## TASK & STRICT SCOPING RULES:
+## TASK & STRICT ENHANCEMENT RULES:
 1. PRESERVE every existing non-empty field exactly as written by the user. NEVER overwrite, erase, or contradict existing user data.
-2. ENRICH ONLY the fields belonging to the requested categories.
-3. NEVER return '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ' as values.
-4. NEVER invent or replace character names. NEVER hallucinate random names like "น้ำเหนือ", "กวินทร์", or placeholder names.
-5. Output ONLY valid JSON containing the enhanced fields strictly adhering to the schema.
+2. ENRICH and populate empty/unfilled fields with vivid, creative, imaginative, in-character Thai prose strictly adhering to the character persona.
+3. NEVER return '-' or '—' or 'N/A' or 'ไม่มี' or 'ไม่ได้ระบุ' as values. Always fill them with meaningful roleplay content.
+4. The character identity is strictly locked. NEVER invent a new character name (NEVER generate random names like "น้ำเหนือ" or "กวินทร์").
+5. Return ONLY valid JSON strictly matching the keys in the schema template below.
+
+## REQUIRED JSON SCHEMA TEMPLATE:
+${JSON_SCHEMA_TEMPLATE}
 `;
+
+// Helper to get field value with case and alias tolerance
+function getFieldVal(json: any, ...keys: string[]): any {
+  for (const k of keys) {
+    if (json[k] !== undefined && json[k] !== null && json[k] !== '') {
+      return json[k];
+    }
+  }
+  return '';
+}
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -237,7 +329,7 @@ export async function POST(req: NextRequest) {
         if (fields) fields.forEach(f => allowedKeys.add(f));
       });
       // Contextual read-only keys for coherent prompt generation
-      ['nickname', 'fullName', 'age', 'gender'].forEach(k => allowedKeys.add(k));
+      ['nickname', 'fullName', 'age', 'gender', 'occupation', 'coreTraits', 'initialRelationship'].forEach(k => allowedKeys.add(k));
 
       const filtered: any = {};
       Object.keys(scopedCharacter).forEach(k => {
@@ -275,9 +367,9 @@ ${identityAnchor}${scopedKeysNotice}
 
 ${instructions ? `## USER SPECIAL INSTRUCTIONS:\n${instructions}\n` : ''}
 
-${onlyEmptyFields ? '## FOCUS: Enrich ONLY the empty/unfilled fields while keeping existing non-empty values.' : ''}
+${onlyEmptyFields ? '## FOCUS: Enrich and fill ALL empty/unfilled fields with rich details while keeping existing non-empty values.' : ''}
 
-## CURRENT CHARACTER DATA:
+## CURRENT CHARACTER DATA (FILL ALL EMPTY/UNFILLED FIELDS):
 ${JSON.stringify(scopedCharacter, null, 2)}
 `;
 
@@ -318,6 +410,11 @@ ${JSON.stringify(scopedCharacter, null, 2)}
               aiResult = await callOpenRouterSingle(openRouterKey, prompt, FALLBACK_OPENROUTER_MODEL);
             } catch (fbErr: any) {
               console.warn('Fallback OpenRouter enhance failed:', fbErr.message);
+              try {
+                aiResult = await callOpenRouterSingle(openRouterKey, prompt, SECONDARY_FALLBACK_MODEL);
+              } catch (secErr: any) {
+                console.warn('Secondary fallback OpenRouter enhance failed:', secErr.message);
+              }
             }
           }
         }
@@ -342,10 +439,75 @@ ${JSON.stringify(scopedCharacter, null, 2)}
 
     const parsedJson = safeExtractJson(aiResult.text);
 
-    // Strict Selective Merge: ONLY update fields from selected categories!
+    // Strict Selective Merge with robust aliases
     const merged: ThaiMasterCharacter = {
       ...DEFAULT_CHARACTER,
       ...character,
+    };
+
+    const fieldMap: Record<keyof ThaiMasterCharacter, string[]> = {
+      nickname: ['nickname', 'name', 'nick_name'],
+      fullName: ['fullName', 'full_name', 'realName', 'name'],
+      age: ['age'],
+      gender: ['gender', 'sex'],
+      status: ['status', 'relationshipStatus', 'relationship_status'],
+      birthdate: ['birthdate', 'birthDate', 'birthday', 'birth_date'],
+      weightHeight: ['weightHeight', 'weight_height', 'heightWeight', 'height_weight'],
+      mbti: ['mbti'],
+      sexualOrientation: ['sexualOrientation', 'sexual_orientation', 'orientation'],
+      car: ['car', 'vehicle'],
+      perfume: ['perfume', 'scent', 'bodyScent'],
+      address: ['address', 'residence', 'livingPlace'],
+      wealthStatus: ['wealthStatus', 'wealth_status', 'wealth'],
+      occupation: ['occupation', 'job', 'role'],
+      fashionStyle: ['fashionStyle', 'fashion_style', 'outfit', 'clothes'],
+      appearanceDesc: ['appearanceDesc', 'appearance_desc', 'appearance', 'looks'],
+      visualFeatures: ['visualFeatures', 'visual_features', 'features', 'distinctFeatures'],
+      visualTags: ['visualTags', 'visual_tags', 'vTags'],
+      nsfwMaleSize: ['nsfwMaleSize', 'nsfw_male_size', 'maleSize', 'penisSize'],
+      nsfwFemaleChest: ['nsfwFemaleChest', 'nsfw_female_chest', 'femaleChest', 'bustSize'],
+      nsfwFemaleVagina: ['nsfwFemaleVagina', 'nsfw_female_vagina', 'femaleVagina'],
+      coreTraits: ['coreTraits', 'core_traits', 'personality', 'traits', 'personalityTraits'],
+      personalityTags: ['personalityTags', 'personality_tags', 'pTags'],
+      likes: ['likes'],
+      dislikes: ['dislikes'],
+      generalBehaviors: ['generalBehaviors', 'general_behaviors', 'behaviors'],
+      userExclusiveBehaviors: ['userExclusiveBehaviors', 'user_exclusive_behaviors', 'exclusiveBehaviors'],
+      mindset: ['mindset', 'philosophy'],
+      coreBelief: ['coreBelief', 'core_belief', 'belief'],
+      perception: ['perception', 'worldview'],
+      expression: ['expression', 'facialExpression'],
+      behaviorUnderEmotion: ['behaviorUnderEmotion', 'behavior_under_emotion', 'emotionalBehavior'],
+      emotionalTriggers: ['emotionalTriggers', 'emotional_triggers', 'triggers'],
+      flawsWeaknesses: ['flawsWeaknesses', 'flaws_weaknesses', 'flaws', 'weaknesses'],
+      userStoryRole: ['userStoryRole', 'user_story_role', 'storyRole'],
+      initialRelationship: ['initialRelationship', 'initial_relationship', 'relationship'],
+      userAttitude: ['userAttitude', 'user_attitude', 'attitude'],
+      relationshipBackstory: ['relationshipBackstory', 'relationship_backstory', 'backstory'],
+      absoluteAntiBehaviors: ['absoluteAntiBehaviors', 'absolute_anti_behaviors', 'antiBehaviors'],
+      hiddenSoftSide: ['hiddenSoftSide', 'hidden_soft_side', 'softSide', 'gentleSide'],
+      darkSide: ['darkSide', 'dark_side'],
+      sexualStyle: ['sexualStyle', 'sexual_style'],
+      kinksPreferences: ['kinksPreferences', 'kinks_preferences', 'kinks'],
+      aftercareStyle: ['aftercareStyle', 'aftercare_style', 'aftercare'],
+      openGreetingNarrative: ['openGreetingNarrative', 'open_greeting_narrative', 'greetingNarrative'],
+      openGreetingDialogue: ['openGreetingDialogue', 'open_greeting_dialogue', 'greetingDialogue'],
+      fullGreeting: ['fullGreeting', 'full_greeting', 'greeting'],
+      plotSummary: ['plotSummary', 'plot_summary', 'plot'],
+      shortIntro: ['shortIntro', 'short_intro', 'intro'],
+      punchline: ['punchline', 'hook', 'tagline'],
+      momentIntro: ['momentIntro', 'moment_intro'],
+      dailyRoutine: ['dailyRoutine', 'daily_routine', 'routine'],
+      toneSetting: ['toneSetting', 'tone_setting', 'setting', 'tone'],
+      systemRules: ['systemRules', 'system_rules', 'rules'],
+      subCharRules: ['subCharRules', 'sub_char_rules'],
+      subCharAllowed: ['subCharAllowed', 'sub_char_allowed'],
+      categoryTags: ['categoryTags', 'category_tags', 'tags'],
+      flagType: ['flagType', 'flag_type', 'flag'],
+      supportingCharacters: ['supportingCharacters', 'supporting_characters', 'subChars'],
+      locations: ['locations', 'places'],
+      garageStorage: ['garageStorage', 'garage_storage'],
+      publicInfo: ['publicInfo', 'public_info'],
     };
 
     const stringKeys: (keyof ThaiMasterCharacter)[] = [
@@ -370,7 +532,8 @@ ${JSON.stringify(scopedCharacter, null, 2)}
 
       const currentVal = character[key];
       if (isEmptyValue(currentVal)) {
-        const enrichedVal = normalizeString(parsedJson[key]);
+        const aliases = fieldMap[key] || [key];
+        const enrichedVal = normalizeString(getFieldVal(parsedJson, ...aliases));
         if (enrichedVal) {
           (merged as any)[key] = enrichedVal;
         }
@@ -391,7 +554,9 @@ ${JSON.stringify(scopedCharacter, null, 2)}
 
       const currentArr = character[key];
       if (!Array.isArray(currentArr) || currentArr.length === 0) {
-        const enrichedArr = normalizeArray(parsedJson[key]);
+        const aliases = fieldMap[key] || [key];
+        const rawArr = getFieldVal(parsedJson, ...aliases);
+        const enrichedArr = normalizeArray(rawArr);
         if (enrichedArr.length > 0) {
           (merged as any)[key] = enrichedArr;
         }
@@ -401,17 +566,19 @@ ${JSON.stringify(scopedCharacter, null, 2)}
     });
 
     if (!isSelective || allowedKeys.has('supportingCharacters')) {
-      if (Array.isArray(parsedJson.supportingCharacters) && parsedJson.supportingCharacters.length > 0) {
+      const rawSub = getFieldVal(parsedJson, 'supportingCharacters', 'supporting_characters', 'subChars');
+      if (Array.isArray(rawSub) && rawSub.length > 0) {
         if (!Array.isArray(character.supportingCharacters) || character.supportingCharacters.length === 0) {
-          merged.supportingCharacters = parsedJson.supportingCharacters;
+          merged.supportingCharacters = rawSub;
         }
       }
     }
 
     if (!isSelective || allowedKeys.has('locations')) {
-      if (Array.isArray(parsedJson.locations) && parsedJson.locations.length > 0) {
+      const rawLoc = getFieldVal(parsedJson, 'locations', 'places');
+      if (Array.isArray(rawLoc) && rawLoc.length > 0) {
         if (!Array.isArray(character.locations) || character.locations.length === 0) {
-          merged.locations = parsedJson.locations;
+          merged.locations = rawLoc;
         }
       }
     }
