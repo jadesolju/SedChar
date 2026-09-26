@@ -345,7 +345,7 @@ function MainWorkspace() {
 
                   {/* Multi-Char Studio */}
                   <Link
-                    href="/rubii/multi"
+                    href="/multi"
                     onClick={() => setIsNavMenuOpen(false)}
                     className="p-2.5 rounded-xl border border-border/80 hover:border-purple-500/50 hover:bg-purple-500/10 text-foreground flex items-center gap-3 transition-all cursor-pointer group"
                   >
