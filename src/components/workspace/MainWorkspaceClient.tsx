@@ -174,18 +174,16 @@ function MainWorkspace() {
     }
   }, [applyParsedCharacter]);
 
-  // Synchronize Markdown and Form data safely when toggling between tabs
+  // True Live Two-Way Synchronization between Single Box and 10 Categories Form
   const handleModeSwitch = (mode: 'structured' | 'single') => {
     if (mode === 'structured') {
-      // If user typed freeform text in single box and structured character is still empty, auto-parse to populate 10 categories
-      if (rawMarkdown && rawMarkdown.trim() && !character.nickname && !character.fullName && !character.coreTraits) {
+      // When entering Advanced Mode: parse current single box raw text so 10 categories are immediately updated
+      if (rawMarkdown && rawMarkdown.trim()) {
         importRawMarkdown(rawMarkdown);
       }
     } else if (mode === 'single') {
-      // If structured character has substantive data, sync it back to clean Markdown
-      if (character.nickname || character.fullName || character.coreTraits || character.age || character.occupation) {
-        syncToMarkdown();
-      }
+      // When returning to Single Box Mode: compile latest form edits into clean Master Markdown immediately
+      syncToMarkdown();
     }
     setInputMode(mode);
   };

@@ -227,6 +227,7 @@ export function useCharacterData() {
     setRawMarkdown(text);
     try {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(parsed));
+      localStorage.setItem(RAW_DRAFT_STORAGE_KEY, text);
     } catch { }
   }, []);
 
@@ -275,7 +276,11 @@ export function useCharacterData() {
 
   // Keep rawMarkdown in sync when switching to single mode
   const syncToMarkdown = useCallback(() => {
-    setRawMarkdown(characterToFullMarkdown(character));
+    const md = characterToFullMarkdown(character);
+    setRawMarkdown(md);
+    try {
+      localStorage.setItem(RAW_DRAFT_STORAGE_KEY, md);
+    } catch {}
   }, [character]);
 
   return {
