@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { parseMarkdownToCharacter } from '@/shared/thaiTagParser';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { DEFAULT_CHARACTER } from '@/shared/types';
@@ -407,9 +407,9 @@ export async function POST(req: NextRequest) {
           openGreetingDialogue: normalizeString(parsedJson.openGreetingDialogue),
           fullGreeting: normalizeString(parsedJson.fullGreeting),
           plotSummary: normalizeString(parsedJson.plotSummary),
-          shortIntro: normalizeString(parsedJson.shortIntro),
-          punchline: normalizeString(parsedJson.punchline),
-          momentIntro: normalizeString(parsedJson.momentIntro),
+          shortIntro: normalizeString(parsedJson.shortIntro) || normalizeString(parsedJson.momentIntro) || normalizeString(parsedJson.punchline),
+          punchline: normalizeString(parsedJson.punchline) || normalizeString(parsedJson.momentIntro) || normalizeString(parsedJson.shortIntro),
+          momentIntro: normalizeString(parsedJson.momentIntro) || normalizeString(parsedJson.punchline) || normalizeString(parsedJson.shortIntro),
           dailyRoutine: normalizeString(parsedJson.dailyRoutine),
           toneSetting: normalizeString(parsedJson.toneSetting),
           subCharRules: normalizeString(parsedJson.subCharRules),

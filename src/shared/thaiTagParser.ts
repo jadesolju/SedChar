@@ -1,5 +1,10 @@
-
+﻿
 export function extractPunchyHook(char: ThaiMasterCharacter): string {
+  // 0. Direct Moment Intro / Tagline (Shared across Rubii, Purrpaw, Khui)
+  if (char.momentIntro && char.momentIntro.trim()) {
+    return char.momentIntro.trim();
+  }
+
   // 1. Direct punchline
   if (char.punchline && char.punchline.trim()) {
     const cleanP = char.punchline.trim();
@@ -7,21 +12,27 @@ export function extractPunchyHook(char: ThaiMasterCharacter): string {
     return `"${cleanP}"`;
   }
 
-  // 2. Quote from shortIntro
+  // 2. Direct shortIntro (if concise)
+  if (char.shortIntro && char.shortIntro.trim().length <= 180) {
+    return char.shortIntro.trim();
+  }
+
+  // 3. Quote from shortIntro
   if (char.shortIntro) {
     const match = char.shortIntro.match(/"([^"]{10,180})"/i) || char.shortIntro.match(/“([^”]{10,180})”/i);
     if (match) return `"${match[1]}"`;
   }
 
-  // 3. Quote from expression / catchphrase
+  // 4. Quote from expression / catchphrase
   if (char.expression) {
     const match = char.expression.match(/"([^"]{8,180})"/i) || char.expression.match(/“([^”]{8,180})”/i);
     if (match) return `"${match[1]}"`;
   }
 
-  // 4. Fallback to shortIntro or memorable trait
+  // 5. Fallback to first line of shortIntro
   if (char.shortIntro) {
-    const firstLine = char.shortIntro.split('\n')[0]; return (firstLine || char.shortIntro).trim();
+    const firstLine = char.shortIntro.split('\n')[0];
+    return (firstLine || char.shortIntro).trim();
   }
 
   return '';
@@ -754,7 +765,7 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
 
   const sysPrompt = sysPromptLines.join("\n");
 
-  // Rich Markdown + Emoji Character Description
+  // Rich Markdown + Emoji Character Description (Profile for Khui AI: Basic Info + User Relationship + Backstory)
   let charDesc = "## 📌 ข้อมูลเบื้องต้น\n";
   if (char.fullName || char.nickname) {
     charDesc += "- **ชื่อ:** " + (char.fullName || char.nickname) + (char.nickname && char.fullName && char.nickname !== char.fullName ? " (" + char.nickname + ")" : "") + "\n";
@@ -763,22 +774,23 @@ export function generateKhuiOutput(char: ThaiMasterCharacter): KhuiOutput {
   if (char.gender || char.status) charDesc += "- **เพศ / สถานะ:** " + [char.gender, char.status].filter(Boolean).join(" | ") + "\n";
   if (char.mbti) charDesc += "- **MBTI:** " + char.mbti + "\n";
   if (char.occupation) charDesc += "- **อาชีพ:** " + char.occupation + "\n";
+  if (char.wealthStatus) charDesc += "- **ฐานะ:** " + char.wealthStatus + "\n";
   if (char.fashionStyle) charDesc += "- **สไตล์การแต่งกาย:** " + char.fashionStyle + "\n";
   if (char.appearanceDesc) charDesc += "- **รูปลักษณ์:** " + char.appearanceDesc.replace(/\n/g, " ") + "\n";
 
-  if (char.coreTraits || char.personalityTags.length > 0) {
-    charDesc += "\n## 🧠 บุคลิกภาพและจิตวิทยา\n";
-    if (char.coreTraits) charDesc += "- **ลักษณะเด่น:** " + char.coreTraits.replace(/\n/g, " ") + "\n";
-    if (char.personalityTags.length > 0) charDesc += "- **แท็กนิสัย:** " + char.personalityTags.join(", ") + "\n";
-    if (char.likes.length > 0) charDesc += "- **สิ่งที่ชอบ:** " + char.likes.join(", ") + "\n";
-    if (char.dislikes.length > 0) charDesc += "- **สิ่งที่ไม่ชอบ:** " + char.dislikes.join(", ") + "\n";
+  // Relationship with {{user}}
+  const relItems: string[] = [];
+  if (char.userStoryRole) relItems.push("- **บทบาทในเนื้อเรื่อง:** " + char.userStoryRole);
+  if (char.initialRelationship) relItems.push("- **ความสัมพันธ์เริ่มต้น:** " + char.initialRelationship);
+  if (char.userAttitude) relItems.push("- **ทัศนคติที่มีต่อ {{user}}:** " + char.userAttitude.replace(/\n/g, " "));
+
+  if (relItems.length > 0) {
+    charDesc += "\n## 👥 ความสัมพันธ์กับ {{user}}\n" + relItems.join("\n") + "\n";
   }
 
-  if (char.sexualStyle || char.kinksPreferences || char.aftercareStyle) {
-    charDesc += "\n## 🔞 เรื่องบนเตียงและความใกล้ชิด (NSFW & Intimacy)\n";
-    if (char.sexualStyle) charDesc += "- **สไตล์:** " + char.sexualStyle + "\n";
-    if (char.kinksPreferences) charDesc += "- **รสนิยมจำเพาะ (Kinks):** " + char.kinksPreferences + "\n";
-    if (char.aftercareStyle) charDesc += "- **การดูแลหลังกิจกรรม (Aftercare):** " + char.aftercareStyle + "\n";
+  // Backstory & Lore
+  if (char.relationshipBackstory) {
+    charDesc += "\n## 📖 ภูมิหลัง (Backstory & Lore)\n" + char.relationshipBackstory.trim() + "\n";
   }
 
   // Active Sub-characters using structured key-value tag format
