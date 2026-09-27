@@ -88,6 +88,19 @@ export default function RootLayout({ children }: { readonly children: React.Reac
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script src="/scripts/theme-init.js" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.warn('[PWA] ServiceWorker registration failed:', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>

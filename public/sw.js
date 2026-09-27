@@ -1,18 +1,158 @@
-// SedChar.AI Self-Destructing Service Worker
-// Automatically unregisters itself and wipes all client caches
-self.addEventListener('install', () => {
-  self.skipWaiting();
+﻿// SedChar.AI Progressive Web App (PWA) Service Worker
+// Provides full offline support, static asset caching, and app shell fallback
+
+const CACHE_NAME = 'sedchar-pwa-v1.2.0';
+
+// Core assets to pre-cache immediately upon installation
+const PRECACHE_ASSETS = [
+  '/',
+  '/manifest.json',
+  '/shedchar_logo.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
+  '/scripts/theme-init.js',
+];
+
+// Install Event - Pre-cache core shell
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch((err) => {
+        console.warn('[PWA SW] Pre-cache warning:', err);
+      })
+  );
 });
 
+// Activate Event - Clean up old caches & take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-      .then(() => self.registration.unregister())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => {
+              console.log('[PWA SW] Removing old cache:', key);
+              return caches.delete(key);
+            })
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
 
+// Fetch Event - Handle offline routing & dynamic caching
 self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request));
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // 1. Only handle GET requests and http/https schemes
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // 2. Pass through API routes & external third-party endpoints directly to network
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.hostname.includes('supabase.co') ||
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('r2.cloudflarestorage.com')
+  ) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return new Response(
+          JSON.stringify({ error: 'คุณกำลังออฟไลน์ (Offline Mode)' }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      })
+    );
+    return;
+  }
+
+  // 3. Navigation Requests (HTML Pages) -> Network First, fallback to cached '/'
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Fallback to app shell
+          return caches.match('/');
+        })
+    );
+    return;
+  }
+
+  // 4. Next.js Static Assets & Media (/_next/static/*, fonts, CSS, JS, images)
+  // Strategy: Stale-While-Revalidate / Cache First for Next.js immutable assets
+  const isImmutableAsset =
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.woff2');
+
+  if (isImmutableAsset) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            // Return empty response if unavailable
+            return new Response('', { status: 408, statusText: 'Offline' });
+          });
+      })
+    );
+    return;
+  }
+
+  // 5. Default Strategy for other static requests -> Stale-While-Revalidate
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
+    })
+  );
 });
