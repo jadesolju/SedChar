@@ -233,8 +233,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localList.forEach((localItem) => {
           if (!map.has(localItem.id)) {
             map.set(localItem.id, localItem);
-            // Background sync unsynced item to Supabase
-            if (user) { supabase.from('characters').upsert({ ...localItem, user_id: user.id }).then(() => {}, () => {}); }
+            // Background sync unsynced item to Supabase (Lightweight metadata only, Zero DB Egress)
+            if (user) {
+              const { character_data, ...metadataRow } = localItem as any;
+              supabase.from('characters').upsert({ ...metadataRow, user_id: user.id }).then(() => {}, () => {});
+            }
           }
         });
 

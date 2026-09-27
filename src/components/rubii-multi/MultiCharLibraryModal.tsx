@@ -224,15 +224,14 @@ export function MultiCharLibraryModal({
               {/* Search Bar & Stats */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="ค้นหาตามชื่อโปรเจกต์หรือแนวเรื่อง..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground outline-hidden focus:border-rose-500/60"
-                  >
-                  </input>
+                    className="w-full !pl-10 pr-4 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground outline-hidden focus:border-rose-500/60"
+                  />
                 </div>
 
                 <button
