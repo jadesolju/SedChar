@@ -4,6 +4,40 @@
 
 ---
 
+## [v0.5.0] — 2026-09-27 (Multi-Character Studio, Unified Taglines, Stripe & Mobile UX 🚀✨)
+
+### 🌌 Universal Multi-Character Studio (`/multi`)
+- **Dedicated Multi-Char Studio**: ยกระดับระบบสร้างจักรวาลหลายตัวละครสู่ Route หลัก `/multi` พร้อมระบบ Backward-Compatible Auto-Redirect จาก `/rubii/multi` เพื่อความราบรื่นในการเข้าใช้งาน
+- **Project Cloud & Local Library Manager**: ระบบคลังโปรเจกต์มัลติ (Save / Load / Overwrite / Delete) เชื่อมต่อ Cloud Database พร้อมระบบเตือนและบังคับเข้าสู่ระบบเมื่อบันทึก เพื่อความปลอดภัยของข้อมูล
+- **Multi-Format Master Draft Import & Export**: รองรับการนำเข้า (Import) และส่งออก (Export) Master Draft ครบทั้ง 3 รูปแบบ (`.json`, `.md`, `.txt`)
+- **Strict Light/Dark Mode Contrast & SVG Icons**: ปรับปรุง UI ทั้ง 6 หมวด (World Setting, Lore & Timeline, Routes, Main Characters, Cast Rules, Master Draft) ให้ใช้ SVG Icons คมชัดและสีคอนทราสต์ถูกต้องตาม Design System
+
+### 📱 Mobile UX Audit Improvements (แก้ไขและยกระดับประสบการณ์บนมือถือ)
+- **Mobile Drawer Navigation (Issue M-01 Fixed)**: เพิ่มปุ่ม Hamburger Toggle บน Header สำหรับเปิด-ปิดเมนูหมวดหมู่บนมือถืออย่างสะดวก
+- **Quick Category Switcher Bar**: เพิ่มแถบระบุหมวดหมู่ปัจจุบันพร้อมปุ่มลัด `เลือกหมวด` ด้านบนสุดของเนื้อหาบนหน้าจอมือถือ
+- **Touch & Accessibility Standards**: เพิ่มมาตรฐาน ARIA (`role="dialog"`, `aria-modal="true"`) และรองรับการแตะ Backdrop เพื่อปิด Drawer
+
+### 🎯 Cross-Platform Tagline & Hook Unification (รวมศูนย์คำโปรยและโมเมนต์)
+- **Unified Punchy Hook Logic**: เชื่อมโยงข้อมูล `สร้างโมเมนต์ (Moment Intro)` ของ Rubii = `2. TAGLINE (คำโปรยสั้นๆกระชับ)` ของ Purrpaw = `2. คำโปรย` ของ Khui AI ให้แชร์ฐานข้อมูลเดียวกัน 1:1 ผ่านฟังก์ชัน `extractPunchyHook` ลดการสร้างข้อมูลซ้ำซ้อน
+- **Streamlined Khui AI Profile**: ปรับโครงสร้างส่วนประวัติตัวละคร (`characterDescription`) ของ Khui AI ให้กระชับ ตรงประเด็น โดยเน้นเฉพาะ:
+  1. `## 📌 ข้อมูลพื้นฐาน`
+  2. `## 👥 ความสัมพันธ์กับ {{user}}`
+  3. `## 📖 ภูมิหลัง (Backstory & Lore)`
+
+### 💳 Stripe Monetization & Pro Upgrade (ระบบชำระเงินอัปเกรด 29 บาท)
+- **Stripe Checkout Integration**: รองรับการชำระเงินโปรโมชัน 29 บาท (จากราคาเต็ม 99 บาท) ครบทั้ง PromptPay QR Code และบัตรเครดิต/เดบิต
+- **Secure Webhook & Session Verification**: ระบบตรวจสอบและอัปเกรดสถานะ Pro แบบอัตโนมัติผ่าน Stripe Webhook และ Server-Side Session Verification
+- **Cute Mascot Illustration**: เพิ่มภาพประกอบมาสคอต SedChar ใน Modal ปลดล็อก Pro เพื่อความน่ารักและน่าเชื่อถือ
+
+### 🌐 SEO, Open Graph & Social Sharing (ภาพตัวอย่างแชร์และเมทาดาทา)
+- **Complete Open Graph & Twitter Cards**: ติดตั้ง Dynamic Metadata และ OG Tags ครอบคลุมทุกหน้าของเว็บไซต์
+- **Official 1200x630 OG Banner**: ผสานภาพแบนเนอร์ทางการ `shedchar_logo.png` ความละเอียดสูง สวยงามเมื่อแชร์บนโซเชียลมีเดีย
+
+### 🧪 Test Automation & Quality Assurance (ชุดทดสอบ Vitest)
+- **English Location Prompt Unit Tests**: เพิ่มชุดทดสอบฟังก์ชันแปลงสถานที่ `generateEnglishLocationPrompt` ครอบคลุม 11 หมวดหมู่สถานที่ภาษาไทยและ Edge Cases (Vitest ผ่านทั้งหมด 28/28 tests)
+
+---
+
 ## [v0.4.5] — 2026-09-20 (Design System, Modal Stacked Headers & Theming Fix 🎨📱)
 
 ### 🎨 Mobile-First Single-Grid Modal Architecture (ระบบ Header ป๊อปอัปแบบคอลัมน์เดี่ยวบนมือถือ)
