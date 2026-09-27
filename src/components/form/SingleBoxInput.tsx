@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { Wand2, Sparkles, RotateCcw, Trash2, FileUp, Check } from 'lucide-react';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -164,18 +164,19 @@ export function SingleBoxInput({
         </div>
 
         {/* Quota indicator & Quick Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {user ? (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
-              โควตา AI: <strong>{quotaRemaining}/{quotaMax}</strong>
+            <span className="text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <span className="hidden xs:inline">โควตา </span>AI: <strong>{quotaRemaining}/{quotaMax}</strong>
             </span>
           ) : (
             <button
               type="button"
               onClick={() => openAuthModal('signin')}
-              className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
+              className="text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-all cursor-pointer"
             >
-              🔒 เข้าสู่ระบบรับ 15 ครั้ง/วัน
+              <span>🔒 </span>
+              <span className="hidden xs:inline">เข้าสู่ระบบรับ </span>15 ครั้ง/วัน
             </button>
           )}
 
@@ -196,7 +197,7 @@ export function SingleBoxInput({
             className="px-2 py-1 text-xs font-semibold rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-all cursor-pointer shadow-2xs flex items-center gap-1"
           >
             <span>📋</span>
-            <span>ตัวอย่าง</span>
+            <span className="hidden sm:inline">ตัวอย่าง</span>
           </button>
           <button
             type="button"

@@ -134,11 +134,11 @@ export function RubiiMultiWorkspace() {
 
         {/* Action Buttons Right */}
         <div className="flex items-center gap-2">
-          {/* Project Library Button */}
+          {/* Project Library Button (Desktop/Tablet) */}
           <button
             type="button"
             onClick={() => setIsLibraryModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="hidden md:flex px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all items-center gap-1.5 cursor-pointer shadow-xs"
             title="เปิดคลังโปรเจกต์ Multi-Char / บันทึกโปรเจกต์"
           >
             <FolderOpen className="w-3.5 h-3.5 text-rose-500" />
@@ -286,21 +286,43 @@ export function RubiiMultiWorkspace() {
           </div>
         </aside>
 
-        {/* Mobile Category Switcher Bar */}
-        <div className="flex md:hidden items-center justify-between border-b border-border bg-card/90 backdrop-blur-xs px-3 py-2 flex-shrink-0">
+        {/* Mobile Category Switcher & Workspace Action Bar */}
+        <div className="flex md:hidden items-center justify-between border-b border-border bg-card/90 backdrop-blur-xs px-3 py-2 flex-shrink-0 gap-2">
+          {/* Current Category Title */}
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xs font-bold text-foreground truncate">
               {TABS.find(t => t.id === activeTab)?.label}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className="px-2.5 py-1 rounded-lg border border-border bg-muted/60 text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
-          >
-            <Menu className="w-3.5 h-3.5 text-primary" />
-            <span>เลือกหมวด ({mainCharCount}/{maxMainChars})</span>
-          </button>
+
+          {/* Action Buttons Right (Mobile) */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Project Library Button */}
+            <button
+              type="button"
+              onClick={() => setIsLibraryModalOpen(true)}
+              className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="เปิดคลังโปรเจกต์ Multi-Char / บันทึกโปรเจกต์"
+            >
+              <FolderOpen className="w-3.5 h-3.5 text-rose-500" />
+              <span>คลังโปรเจกต์</span>
+              {savedProjects.length > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono font-bold">
+                  {savedProjects.length}
+                </span>
+              )}
+            </button>
+
+            {/* Category Switcher Drawer Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="px-2.5 py-1 rounded-lg border border-border bg-muted/60 text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Menu className="w-3.5 h-3.5 text-primary" />
+              <span>เลือกหมวด ({mainCharCount}/{maxMainChars})</span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Drawer (When Open) */}
