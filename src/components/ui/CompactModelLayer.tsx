@@ -155,17 +155,17 @@ export function getProviderIcon(provider: AIModelOption['provider'], size = 14) 
     case 'Google':
       return <GoogleIcon size={size} />;
     case 'OpenAI':
-      return <OpenAIIcon size={size} className="text-emerald-400" />;
+      return <OpenAIIcon size={size} className="text-emerald-600 dark:text-emerald-400" />;
     case 'xAI':
-      return <XAIIcon size={size} className="text-white" />;
+      return <XAIIcon size={size} className="text-foreground" />;
     case 'Qwen':
-      return <QwenIcon size={size} className="text-indigo-400" />;
+      return <QwenIcon size={size} className="text-indigo-600 dark:text-indigo-400" />;
     case 'Z-AI':
-      return <ZaiIcon size={size} className="text-cyan-400" />;
+      return <ZaiIcon size={size} className="text-cyan-600 dark:text-cyan-400" />;
     case 'Gemma':
-      return <GemmaIcon size={size} className="text-teal-400" />;
+      return <GemmaIcon size={size} className="text-teal-600 dark:text-teal-400" />;
     default:
-      return <OpenRouterIcon size={size} className="text-rose-400" />;
+      return <OpenRouterIcon size={size} className="text-rose-500 dark:text-rose-400" />;
   }
 }
 
@@ -208,32 +208,32 @@ export function CompactModelLayer({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-neutral-700/70 hover:border-rose-500/50 text-neutral-200 transition-all shadow-sm hover:shadow-rose-500/10 active:scale-95 group cursor-pointer"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card hover:bg-muted border border-border hover:border-primary/50 text-foreground transition-all shadow-xs hover:shadow-primary/10 active:scale-95 group cursor-pointer"
         title={`Active AI Model Layer: ${current.name}`}
       >
         <span className="flex-shrink-0 flex items-center justify-center w-4 h-4">
           {getProviderIcon(current.provider, 13)}
         </span>
-        <span className="font-medium text-neutral-300 group-hover:text-white truncate max-w-[140px]">
+        <span className="font-medium text-foreground group-hover:text-primary truncate max-w-[140px]">
           {current.shortName}
         </span>
-        <span className="px-1.5 py-0.2 text-[9px] font-semibold rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+        <span className="px-1.5 py-0.2 text-[9px] font-semibold rounded bg-primary/15 text-primary border border-primary/30">
           {current.tag.split(' ')[0]}
         </span>
-        <span className="text-[10px] text-neutral-400 group-hover:text-rose-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+        <span className="text-[10px] text-muted-foreground group-hover:text-primary transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}>
           ▾
         </span>
       </button>
 
       {/* Micro-Dropdown Menu: Left-aligned, high Z-index, responsive max-width to prevent clipping */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-80 max-w-[calc(100vw-2.5rem)] max-h-84 bg-neutral-950/98 backdrop-blur-2xl border border-neutral-800/90 rounded-2xl shadow-2xl shadow-black/95 p-2.5 z-[9999] flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-border/50">
+        <div className="absolute left-0 top-full mt-1.5 w-80 max-w-[calc(100vw-2.5rem)] max-h-84 bg-card/95 backdrop-blur-2xl border border-border rounded-2xl shadow-2xl p-2.5 z-[9999] flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-border">
           {/* Header & Category Filters */}
-          <div className="flex items-center justify-between px-1.5 pb-1.5 border-b border-neutral-800/80">
-            <span className="text-[11px] font-bold tracking-wide text-neutral-300 flex items-center gap-1.5">
+          <div className="flex items-center justify-between px-1.5 pb-1.5 border-b border-border">
+            <span className="text-[11px] font-bold tracking-wide text-foreground flex items-center gap-1.5">
               <span>⚡ AI Model Engine</span>
             </span>
-            <span className="text-[10px] text-emerald-400 font-mono font-medium">Gemini 3.5 Lite Ready</span>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">Gemini 3.5 Lite Ready</span>
           </div>
 
           {/* Quick Filter Tabs */}
@@ -251,8 +251,8 @@ export function CompactModelLayer({
                 onClick={() => setActiveCategory(tab.id as any)}
                 className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
                   activeCategory === tab.id
-                    ? 'bg-rose-500 text-white shadow-xs'
-                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {tab.label}
@@ -274,8 +274,8 @@ export function CompactModelLayer({
                   }}
                   className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-gradient-to-r from-rose-500/25 to-purple-500/25 border border-rose-500/50 text-white shadow-xs'
-                      : 'hover:bg-neutral-900/90 border border-transparent text-neutral-300 hover:text-white'
+                      ? 'bg-primary/15 border border-primary/40 text-foreground font-semibold shadow-xs'
+                      : 'hover:bg-muted border border-transparent text-foreground/80 hover:text-foreground'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -283,16 +283,18 @@ export function CompactModelLayer({
                       {getProviderIcon(model.provider, 15)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold truncate">{model.name}</div>
-                      <div className="text-[10px] text-neutral-400 flex items-center gap-1.5">
+                      <div className="text-xs font-semibold text-foreground truncate">{model.name}</div>
+                      <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
                         <span>{model.provider}</span>
                         <span>•</span>
-                        <span className="font-mono text-neutral-400">{model.speed}</span>
+                        <span className="font-mono">{model.speed}</span>
                       </div>
                     </div>
                   </div>
                   <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold flex-shrink-0 ml-1.5 ${
-                    isSelected ? 'bg-rose-500 text-white' : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
+                    isSelected 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground border border-border'
                   }`}>
                     {model.tag}
                   </span>
