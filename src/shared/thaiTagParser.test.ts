@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import {
   parseMarkdownToCharacter,
   characterToFullMarkdown,
   generateRubiiOutput,
   generatePurrpawOutput,
   generateKhuiOutput,
+  generateEnglishLocationPrompt,
   autoDetectCharacterFlag,
   estimateTokens,
 } from './thaiTagParser';
@@ -110,5 +111,70 @@ MBTI: ENTP
     const tokens = estimateTokens(thaiText);
     expect(tokens).toBeGreaterThan(5);
     expect(estimateTokens('')).toBe(0);
+  });
+
+  describe('7. generateEnglishLocationPrompt text transformations', () => {
+    it('returns trimmed English description if already pure English (> 10 chars)', () => {
+      const pureEn = 'luxurious futuristic cyber cafe with neon ambient lighting';
+      expect(generateEnglishLocationPrompt('Cyber Cafe', `  ${pureEn}  `)).toBe(pureEn);
+    });
+
+    it('transforms University & Academic keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('ตึกคณะศิลปกรรม', 'ห้องเรียนในมหาวิทยาลัย')).toContain('university art faculty building interior');
+      expect(generateEnglishLocationPrompt('Campus Studio', 'ห้องพักนักศึกษา')).toContain('university art faculty building interior');
+    });
+
+    it('transforms Bar, Club & Nightlife keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('บาร์ลับทองหล่อ', 'ค็อกเทลเลานจ์ยามค่ำคืน')).toContain('stylish upscale nightlife cocktail bar');
+      expect(generateEnglishLocationPrompt('VIP Nightclub', 'สถานที่ปาร์ตี้กลางคืน')).toContain('stylish upscale nightlife cocktail bar');
+    });
+
+    it('transforms Condo, Penthouse & Luxury Bedroom keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('ห้องนอนเพนต์เฮาส์', 'คอนโดหรูชั้นสูง')).toContain('cinematic luxury high-rise condo master bedroom in Bangkok');
+      expect(generateEnglishLocationPrompt('Luxury Apartment', 'ห้องนอนอารีย์')).toContain('cinematic luxury high-rise condo master bedroom in Bangkok');
+    });
+
+    it('transforms Safehouse & Warehouse keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('โกดังเซฟเฮาส์', 'ห้องลับริมน้ำ')).toContain('underground secret waterfront safehouse warehouse');
+    });
+
+    it('transforms Shooting Range & Tactical keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('สนามฝึกยิงปืน', 'คลังอาวุธ')).toContain('private underground tactical firing range');
+    });
+
+    it('transforms Hospital & Clinic keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('ห้องตรวจคลินิก', 'โรงพยาบาลเอกชน')).toContain('modern clean private hospital luxury suite interior');
+    });
+
+    it('transforms Mansion & House keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('คฤหาสน์หรู', 'บ้านพักวิลล่า')).toContain('luxurious contemporary private mansion interior');
+    });
+
+    it('transforms Beach & Resort keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('รีสอร์ทริมชายหาด', 'ทะเลเกาะส่วนตัว')).toContain('exclusive tropical beachfront luxury villa resort');
+    });
+
+    it('transforms Office & Workplace keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('ห้องทำงานผู้บริหาร', 'ออฟฟิศใจกลางเมือง')).toContain('luxurious modern executive office interior');
+    });
+
+    it('transforms Cafe & Coffee Shop keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('คาเฟ่สไตล์โมเดิร์น', 'ร้านกาแฟอบอุ่น')).toContain('aesthetic modern specialty coffee shop cafe interior');
+    });
+
+    it('transforms Garden & Nature keywords correctly', () => {
+      expect(generateEnglishLocationPrompt('สวนเซนญี่ปุ่น', 'ธรรมชาติร่มรื่น')).toContain('serene lush Japanese botanical garden');
+    });
+
+    it('provides high-quality cinematic fallback for unmatched custom locations', () => {
+      const result = generateEnglishLocationPrompt('หอสมุดเวทมนตร์โบราณ', 'แท่นบูชาศิลาลึกลับ');
+      expect(result).toContain('cinematic interior of หอสมุดเวทมนตร์โบราณ');
+      expect(result).toContain('photorealistic, 8k resolution');
+    });
+
+    it('handles empty inputs gracefully with fallback', () => {
+      const result = generateEnglishLocationPrompt('', '');
+      expect(result).toContain('cinematic interior of atmospheric setting');
+    });
   });
 });

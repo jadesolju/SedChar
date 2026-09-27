@@ -193,11 +193,22 @@ export function RubiiMultiWorkspace() {
             customLibraryCount={savedProjects.length}
           />
           <ThemeToggle />
+
+          {/* Mobile Drawer Hamburger Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+            className="md:hidden w-8 h-8 rounded-xl border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground cursor-pointer shadow-xs"
+            aria-label="เปิดเมนูเลือกหมวดหมู่ Multi-Char"
+            title="เปิดเมนูเลือกหมวดหมู่"
+          >
+            {isMobileDrawerOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
         </div>
       </header>
 
       {/* Main Container: Sidebar + Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden flex-col md:flex-row">
         {/* Left Category Sidebar (Desktop) */}
         <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/50 backdrop-blur-xs p-3 space-y-1.5 overflow-y-auto custom-scrollbar flex-shrink-0">
           <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
@@ -275,15 +286,41 @@ export function RubiiMultiWorkspace() {
           </div>
         </aside>
 
+        {/* Mobile Category Switcher Bar */}
+        <div className="flex md:hidden items-center justify-between border-b border-border bg-card/90 backdrop-blur-xs px-3 py-2 flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-bold text-foreground truncate">
+              {TABS.find(t => t.id === activeTab)?.label}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="px-2.5 py-1 rounded-lg border border-border bg-muted/60 text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Menu className="w-3.5 h-3.5 text-primary" />
+            <span>เลือกหมวด ({mainCharCount}/{maxMainChars})</span>
+          </button>
+        </div>
+
         {/* Mobile Drawer (When Open) */}
         {isMobileDrawerOpen && (
-          <div className="fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in flex flex-col">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="เมนูเลือกหมวดหมู่ Multi-Char"
+            className="fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in flex flex-col"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsMobileDrawerOpen(false);
+            }}
+          >
             <div className="p-4 bg-card border-b border-border flex items-center justify-between">
               <span className="font-bold text-sm text-foreground">เลือกหมวดหมู่</span>
               <button
                 type="button"
                 onClick={() => setIsMobileDrawerOpen(false)}
                 className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground cursor-pointer"
+                aria-label="ปิดเมนู"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -319,7 +356,7 @@ export function RubiiMultiWorkspace() {
                     setIsMobileDrawerOpen(false);
                     setIsLibraryModalOpen(true);
                   }}
-                  className="w-full p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-foreground flex items-center gap-3 font-bold text-xs"
+                  className="w-full p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-foreground flex items-center gap-3 font-bold text-xs cursor-pointer"
                 >
                   <FolderOpen className="w-5 h-5 text-rose-500" />
                   <span>เปิดคลังโปรเจกต์ ({savedProjects.length})</span>
