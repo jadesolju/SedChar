@@ -1045,31 +1045,29 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
           id="sec-pitches"
           title="10. คำโปรย & บทนำ / ฉากเปิด (Greeting & Pitch)"
           icon={<MessageSquareQuote className="w-4 h-4 text-cyan-500" />}
-          description="Short Intro, Punchline, เรื่องย่อ และบทนำฉากเปิดตัวละคร"
+          description="Tagline, ประโยคเด็ด, เรื่องย่อ และบทนำฉากเปิดตัวละคร"
           defaultOpen={false}
           badge={character.categoryTags.length}
         >
           <ExpandableTextarea readOnly={isReadOnly}
-            id="shortIntro"
-            label="คำโปรยสั้น (Short Intro)"
-            rows={3}
-            value={character.shortIntro}
-            onChange={v => onUpdateField('shortIntro', v)}
-            placeholder="เมื่อลูกหนี้ตัวน้อยต้องมาชดใช้หนี้ด้วยการเป็นเลขาข้างกายมาเฟียหนุ่มสุดเย็นชา..."
-          />
-
-          <ExpandableTextarea readOnly={isReadOnly}
             id="punchline"
-            label="ประโยคเด็ดประจำตัว (Punchline - 1 ประโยคเด็ด)"
+            label="ประโยคเด็ด / คำโปรยสั้น (Tagline & Punchline / Moment Intro)"
+            hint="ข้อความ 1 ประโยคเด็ด (ใช้เป็น 2. TAGLINE ของ Purrpaw, 2. คำโปรย ของ Khui AI และ สร้างโมเมนต์ ของ Rubii อัตโนมัติ)"
             rows={2}
-            value={character.punchline}
-            onChange={v => onUpdateField('punchline', v)}
-            placeholder={"'หนี้ของคุณ... ต้องจ่ายด้วยทั้งตัวและหัวใจเท่านั้น'"}
+            value={character.punchline || character.momentIntro || character.shortIntro}
+            onChange={v => {
+              onUpdateField('punchline', v);
+              onUpdateField('momentIntro', v);
+              if (!character.shortIntro || character.shortIntro === character.punchline || character.shortIntro === character.momentIntro) {
+                onUpdateField('shortIntro', v);
+              }
+            }}
+            placeholder="'หนี้ของคุณ... ต้องจ่ายด้วยทั้งตัวและหัวใจเท่านั้น'"
           />
 
           <ExpandableTextarea readOnly={isReadOnly}
             id="plotSummary"
-            label="พล็อตและเรื่องย่อ (Plot Summary)"
+            label="พล็อตและเรื่องย่อ (Plot Summary & Scenario)"
             rows={5}
             value={character.plotSummary}
             onChange={v => onUpdateField('plotSummary', v)}
@@ -1078,7 +1076,7 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
 
           <ExpandableTextarea readOnly={isReadOnly}
             id="publicInfo"
-            label="ข้อมูลสาธารณะ (Public Info)"
+            label="คำอธิบายสาธารณะ / ข้อมูลหน้าการ์ด (Public Description)"
             rows={4}
             value={character.publicInfo}
             onChange={v => onUpdateField('publicInfo', v)}
@@ -1095,15 +1093,6 @@ const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
               onRemove={onRemoveTag}
             />
           </FieldRow>
-
-          <ExpandableTextarea readOnly={isReadOnly}
-            id="momentIntro"
-            label="คำแนะนำตัวสั้น / สร้างโมเมนต์ (Moment Intro)"
-            rows={2}
-            value={character.momentIntro}
-            onChange={v => onUpdateField('momentIntro', v)}
-            placeholder={"คชา - 'อย่าคิดจะหนีไปจากฉัน... เพราะเธอไม่มีวันทำสำเร็จ'"}
-          />
 
           {/* Open Greetings */}
           <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3.5">
