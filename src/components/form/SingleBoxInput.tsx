@@ -120,7 +120,7 @@ export function SingleBoxInput({
             onApplyParse(rawMarkdown);
           }
           consumeQuota();
-          const modelTag = data.model === 'gemini-ai' ? 'Gemini AI ⚡ ⚡' : 'Universal Parser ⚡';
+          const modelTag = data.model === 'ThaiMaster AI' ? 'ThaiMaster AI ⚡' : 'Universal Parser ⚡';
           const msg = '✨ แปลงข้อมูลด้วย ' + modelTag + ' เข้าสู่ 10 หมวดหมู่เรียบร้อยแล้ว!';
           setParseNotice(msg);
           if (onParseSuccess) {
@@ -310,11 +310,10 @@ export function SingleBoxInput({
             {detectedSections.map((s) => (
               <span
                 key={s.name}
-                className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${
-                  s.detected
+                className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${s.detected
                     ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
                     : 'bg-muted/60 text-muted-foreground/50 border border-border/40'
-                }`}
+                  }`}
               >
                 {s.detected ? '✓ ' : '○ '}
                 {s.name}
