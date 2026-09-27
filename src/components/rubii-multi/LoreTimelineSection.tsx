@@ -39,7 +39,7 @@ export function LoreTimelineSection({
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground flex flex-wrap items-center gap-1.5 sm:gap-2 leading-tight">
               <span>2. Lore & Timeline (ภูมิหลังและไทม์ไลน์)</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-bold">
                 Narrative Backbone

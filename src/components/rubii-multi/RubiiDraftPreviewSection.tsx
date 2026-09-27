@@ -468,7 +468,7 @@ export function RubiiDraftPreviewSection({
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground flex flex-wrap items-center gap-1.5 sm:gap-2 leading-tight">
               <span>6. Master Draft Preview & Suite</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300 border border-pink-500/20 font-bold">
                 Export & Import Suite

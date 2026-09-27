@@ -124,7 +124,7 @@ export function RubiiMultiWorkspace() {
                 <span className="text-xs sm:text-sm font-bold text-foreground truncate">
                   Multi-Char Studio
                 </span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+                <span className="hidden sm:inline-block text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
                   Preview
                 </span>
               </div>

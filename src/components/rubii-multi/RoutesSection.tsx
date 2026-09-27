@@ -45,7 +45,7 @@ export function RoutesSection({
             <GitFork className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground flex flex-wrap items-center gap-1.5 sm:gap-2 leading-tight">
               <span>3. Routes & Story Branches (เส้นทางเนื้อเรื่อง)</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-bold">
                 Branching Logic

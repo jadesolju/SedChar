@@ -29,7 +29,7 @@ export function CastRulesSection({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground flex flex-wrap items-center gap-1.5 sm:gap-2 leading-tight">
               <span>5. ตัวละครเสริม & กฎฉากรวม (Cast Rules)</span>
               <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-emerald-500" />
