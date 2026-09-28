@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Search,
   Check,
@@ -130,6 +130,24 @@ export function PromptLibraryView({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Check if a prompt belongs to this user (locally created or authenticated author)
+  const isEntryMine = useCallback(
+    (entry: PromptLibraryEntry) => {
+      if (customPrompts.some((cp) => cp.id === entry.id)) return true;
+      if (user?.id && entry.authorId && entry.authorId === user.id) return true;
+      if (
+        userDisplayName &&
+        userDisplayName !== 'ผู้ใช้งานทั่วไป' &&
+        entry.authorName &&
+        entry.authorName.trim().toLowerCase() === userDisplayName.trim().toLowerCase()
+      ) {
+        return true;
+      }
+      return false;
+    },
+    [customPrompts, user, userDisplayName]
+  );
+
   // Combine all entries
   const allAvailableEntries: PromptLibraryEntry[] = useMemo(() => {
     const customMarked = customPrompts.map((p) => ({ ...p, isCustom: true }));
@@ -149,18 +167,19 @@ export function PromptLibraryView({
     return combined;
   }, [officialEntries, customPrompts, communityPrompts]);
 
+  // Dynamic counts for tab badges
+  const officialCount = useMemo(() => officialEntries.length, [officialEntries]);
+  const communityCount = useMemo(() => allAvailableEntries.filter((e) => e.isPublic).length, [allAvailableEntries]);
+  const myCreationsCount = useMemo(() => allAvailableEntries.filter(isEntryMine).length, [allAvailableEntries, isEntryMine]);
+  const localCount = useMemo(() => customPrompts.length, [customPrompts]);
+
   // Filtered entries
   const filteredEntries = useMemo(() => {
     return allAvailableEntries.filter((entry) => {
       if (activeSource === 'official' && entry.isCustom) return false;
-      if (activeSource === 'community' && (!entry.isPublic || !entry.isCustom)) return false;
-      if (activeSource === 'custom' && (!entry.isCustom || entry.isPublic)) return false;
-      if (activeSource === 'mine') {
-        const isMine =
-          (user && entry.authorId === user.id) ||
-          (entry.authorName && entry.authorName.toLowerCase() === userDisplayName.toLowerCase());
-        if (!isMine) return false;
-      }
+      if (activeSource === 'community' && !entry.isPublic) return false;
+      if (activeSource === 'custom' && !customPrompts.some((cp) => cp.id === entry.id)) return false;
+      if (activeSource === 'mine' && !isEntryMine(entry)) return false;
 
       if (activeCategory !== 'all' && entry.category !== activeCategory) return false;
       if (activeModeFilter !== 'all' && !entry.modes.includes(activeModeFilter)) return false;
@@ -170,7 +189,7 @@ export function PromptLibraryView({
         const query = searchQuery.toLowerCase().trim();
         const matchTitle = entry.title.toLowerCase().includes(query);
         const matchBody = entry.body.toLowerCase().includes(query);
-        const matchUseWhen = entry.useWhen.toLowerCase().includes(query);
+        const matchUseWhen = entry.useWhen?.toLowerCase().includes(query) || false;
         const matchAuthor = entry.authorName?.toLowerCase().includes(query) || false;
         const matchTag = entry.tags?.some((t) => t.toLowerCase().includes(query)) || false;
         if (!matchTitle && !matchBody && !matchUseWhen && !matchTag && !matchAuthor) return false;
@@ -178,7 +197,7 @@ export function PromptLibraryView({
 
       return true;
     });
-  }, [allAvailableEntries, activeSource, activeCategory, activeModeFilter, mode, searchQuery, user, userDisplayName]);
+  }, [allAvailableEntries, activeSource, activeCategory, activeModeFilter, mode, searchQuery, isEntryMine, customPrompts]);
 
   const selectedEntries = useMemo(() => {
     return allAvailableEntries.filter((e) => selectedIds.has(e.id));
@@ -684,9 +703,7 @@ export function PromptLibraryView({
               const isSelected = selectedIds.has(entry.id);
               const isOfficial = !entry.isCustom;
               const isPublicCommunity = entry.isPublic;
-              const isMine =
-                (user && entry.authorId === user.id) ||
-                (entry.authorName && entry.authorName.toLowerCase() === userDisplayName.toLowerCase());
+              const isMine = isEntryMine(entry);
 
               return (
                 <div
