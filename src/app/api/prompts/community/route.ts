@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadCommunityPromptToR2, R2_PUBLIC_URL } from '@/lib/r2';
+import {
+  uploadCommunityPromptToR2,
+  fetchCommunityPromptsIndexFromR2,
+  saveCommunityPromptToIndexInR2,
+  deleteCommunityPromptFromIndexInR2,
+} from '@/lib/r2';
 import type { PromptLibraryEntry } from '@/shared/promptLibraryTypes';
 
-// Initial curated community prompts (Fast fallback & default seed)
-const INITIAL_COMMUNITY_PROMPTS: PromptLibraryEntry[] = [
+// Initial curated community prompts (Default seed)
+const SEED_COMMUNITY_PROMPTS: PromptLibraryEntry[] = [
   {
     id: 'comm-turn-narrative-thai',
     title: 'เทมเพลตบรรยายสไตล์นิยายแปลจีนโบราณ',
@@ -62,16 +67,26 @@ const INITIAL_COMMUNITY_PROMPTS: PromptLibraryEntry[] = [
   },
 ];
 
-// In-memory cache for dynamic community submissions
-let dynamicCommunityPrompts: PromptLibraryEntry[] = [...INITIAL_COMMUNITY_PROMPTS];
-
 export async function GET() {
   try {
+    // 1. Try reading persistent community index from Cloudflare R2
+    let list: PromptLibraryEntry[] | null = null;
+    try {
+      list = await fetchCommunityPromptsIndexFromR2();
+    } catch (err) {
+      console.warn('Could not fetch community prompts from R2, using seed:', err);
+    }
+
+    // 2. If R2 index is empty or null, seed with default community prompts
+    if (!list || list.length === 0) {
+      list = SEED_COMMUNITY_PROMPTS;
+    }
+
     return NextResponse.json(
       {
         success: true,
-        prompts: dynamicCommunityPrompts,
-        total: dynamicCommunityPrompts.length,
+        prompts: list,
+        total: list.length,
       },
       {
         headers: {
@@ -80,7 +95,10 @@ export async function GET() {
       }
     );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: true, prompts: SEED_COMMUNITY_PROMPTS, total: SEED_COMMUNITY_PROMPTS.length },
+      { status: 200 }
+    );
   }
 }
 
@@ -101,7 +119,7 @@ export async function POST(req: NextRequest) {
       id: promptId,
       title: title.trim(),
       category: category || 'core',
-      tags: Array.isArray(tags) ? tags : ['ชุมชนแชร์'],
+      tags: Array.isArray(tags) && tags.length > 0 ? tags : ['ชุมชนแชร์'],
       modes: Array.isArray(modes) ? modes : ['single', 'multi'],
       useWhen: useWhen?.trim() || 'คำสั่งแบ่งปันจากชุมชน SedChar',
       body: promptBody.trim(),
@@ -114,21 +132,48 @@ export async function POST(req: NextRequest) {
       downloadsCount: 0,
     };
 
-    // Save to Cloudflare R2
+    // Save individual file to Cloudflare R2
     try {
       await uploadCommunityPromptToR2(promptId, newEntry);
     } catch (r2Err) {
-      console.warn('R2 upload skipped or fallback:', r2Err);
+      console.warn('R2 upload individual error:', r2Err);
     }
 
-    // Add to in-memory list (latest on top)
-    dynamicCommunityPrompts = [newEntry, ...dynamicCommunityPrompts];
+    // Append to persistent Community Index in R2
+    try {
+      await saveCommunityPromptToIndexInR2(newEntry);
+    } catch (idxErr) {
+      console.warn('R2 save index error:', idxErr);
+    }
 
     return NextResponse.json({
       success: true,
       prompt: newEntry,
       message: 'แชร์คำสั่งสู่คลังสาธารณะชุมชนเรียบร้อยแล้ว!',
     });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const authorId = searchParams.get('authorId');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Missing prompt ID' }, { status: 400 });
+    }
+
+    // Delete from R2 index
+    try {
+      await deleteCommunityPromptFromIndexInR2(id);
+    } catch (err) {
+      console.warn('R2 delete error:', err);
+    }
+
+    return NextResponse.json({ success: true, message: 'ลบคำสั่งออกจากคลังชุมชนแล้ว' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

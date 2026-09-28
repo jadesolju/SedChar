@@ -26,6 +26,9 @@ import {
   Users,
   Heart,
   RefreshCw,
+  UserCheck,
+  User as UserIcon,
+  LogIn,
 } from 'lucide-react';
 import type { PromptLibraryCategory, PromptLibraryEntry, PromptPreset } from '@/shared/promptLibraryTypes';
 import {
@@ -52,7 +55,7 @@ export function PromptLibraryView({
   onClose,
   isStandalonePage = false,
 }: PromptLibraryViewProps) {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
 
   // 1. Data States
   const officialCategories: PromptLibraryCategory[] = defaultLibraryJson.categories as PromptLibraryCategory[];
@@ -67,7 +70,7 @@ export function PromptLibraryView({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [activeSource, setActiveSource] = useState<'all' | 'official' | 'community' | 'custom'>('all');
+  const [activeSource, setActiveSource] = useState<'all' | 'official' | 'community' | 'custom' | 'mine'>('all');
   const [activeModeFilter, setActiveModeFilter] = useState<'all' | 'single' | 'multi'>('all');
 
   // 3. UI Action States
@@ -77,6 +80,13 @@ export function PromptLibraryView({
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // User Display Name Helper
+  const userDisplayName = useMemo(() => {
+    if (!user) return 'ผู้ใช้งานทั่วไป';
+    const meta = user.user_metadata;
+    return meta?.full_name || meta?.name || meta?.user_name || (user.email ? user.email.split('@')[0] : 'สมาชิก SedChar');
+  }, [user]);
 
   // Custom Prompt Form State
   const [customForm, setCustomForm] = useState({
@@ -117,13 +127,12 @@ export function PromptLibraryView({
     fetchCommunityPrompts();
   }, []);
 
-  // Set default author name when user is available
+  // Update default author name when user state changes
   useEffect(() => {
-    if (user?.email && !customForm.authorName) {
-      const name = user.email.split('@')[0] || 'นิรนาม';
-      setCustomForm((prev) => ({ ...prev, authorName: name }));
+    if (user && !customForm.authorName) {
+      setCustomForm((prev) => ({ ...prev, authorName: userDisplayName }));
     }
-  }, [user]);
+  }, [user, userDisplayName]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -135,7 +144,6 @@ export function PromptLibraryView({
     const customMarked = customPrompts.map((p) => ({ ...p, isCustom: true }));
     const communityMap = new Map<string, PromptLibraryEntry>();
 
-    // Merge community (avoiding duplicate IDs)
     communityPrompts.forEach((cp) => {
       communityMap.set(cp.id, { ...cp, isPublic: true, isCustom: true });
     });
@@ -157,6 +165,12 @@ export function PromptLibraryView({
       if (activeSource === 'official' && entry.isCustom) return false;
       if (activeSource === 'community' && (!entry.isPublic || !entry.isCustom)) return false;
       if (activeSource === 'custom' && (!entry.isCustom || entry.isPublic)) return false;
+      if (activeSource === 'mine') {
+        const isMine =
+          (user && entry.authorId === user.id) ||
+          (entry.authorName && entry.authorName.toLowerCase() === userDisplayName.toLowerCase());
+        if (!isMine) return false;
+      }
 
       // Category filter
       if (activeCategory !== 'all' && entry.category !== activeCategory) return false;
@@ -178,20 +192,16 @@ export function PromptLibraryView({
 
       return true;
     });
-  }, [allAvailableEntries, activeSource, activeCategory, activeModeFilter, mode, searchQuery]);
+  }, [allAvailableEntries, activeSource, activeCategory, activeModeFilter, mode, searchQuery, user, userDisplayName]);
 
   // Selected entries array
   const selectedEntries = useMemo(() => {
     return allAvailableEntries.filter((e) => selectedIds.has(e.id));
   }, [allAvailableEntries, selectedIds]);
 
-  // Conflict & Missing Requirements Check
+  // Conflict Check
   const activeConflicts = useMemo(() => {
     return findConflictingEntries(selectedEntries);
-  }, [selectedEntries]);
-
-  const activeMissingReqs = useMemo(() => {
-    return findMissingRequirements(selectedEntries);
   }, [selectedEntries]);
 
   // Toggle selection
@@ -276,6 +286,7 @@ export function PromptLibraryView({
       .map((t) => t.trim())
       .filter(Boolean);
 
+    const author = customForm.authorName.trim() || userDisplayName || 'นักสร้างบอท SedChar';
     const promptId = editingCustomId || `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newPrompt: PromptLibraryEntry = {
       id: promptId,
@@ -283,11 +294,12 @@ export function PromptLibraryView({
       category: customForm.category,
       modes: customForm.modes.length > 0 ? customForm.modes : ['single', 'multi'],
       tags: tagsArr.length > 0 ? tagsArr : ['กำหนดเอง'],
-      useWhen: customForm.useWhen.trim() || 'คำสั่งที่ผู้ใช้สร้างขึ้นเอง',
+      useWhen: customForm.useWhen.trim() || 'คำสั่งที่สร้างขึ้นเอง',
       body: customForm.body.trim(),
       isCustom: true,
       isPublic: customForm.isPublic,
-      authorName: customForm.authorName.trim() || (user?.email?.split('@')[0] || 'นิรนาม'),
+      authorName: author,
+      authorId: user?.id || undefined,
       createdAt: new Date().toISOString(),
       likesCount: 1,
     };
@@ -306,6 +318,7 @@ export function PromptLibraryView({
             useWhen: newPrompt.useWhen,
             promptBody: newPrompt.body,
             authorName: newPrompt.authorName,
+            authorId: user?.id,
           }),
         });
         if (pubRes.ok) {
@@ -337,7 +350,7 @@ export function PromptLibraryView({
       useWhen: '',
       body: '',
       isPublic: false,
-      authorName: (user?.email ? user.email.split('@')[0] : '') || '',
+      authorName: userDisplayName,
     });
   };
 
@@ -353,25 +366,40 @@ export function PromptLibraryView({
       useWhen: entry.useWhen,
       body: entry.body,
       isPublic: entry.isPublic || false,
-      authorName: entry.authorName || '',
+      authorName: entry.authorName || userDisplayName,
     });
     setIsCustomModalOpen(true);
   };
 
-  // Delete Custom Prompt
-  const handleDeleteCustom = (id: string, e?: React.MouseEvent) => {
+  // Delete Custom / Community Prompt
+  const handleDeletePrompt = async (entry: PromptLibraryEntry, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (confirm('ต้องการลบคำสั่งนี้ออกจากเครื่องใช่หรือไม่?')) {
-      const updatedList = customPrompts.filter((p) => p.id !== id);
-      setCustomPrompts(updatedList);
-      saveCustomPrompts(updatedList);
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      showToast('🗑️ ลบคำสั่งเรียบร้อยแล้ว');
+    if (!confirm(`ต้องการลบคำสั่ง "${entry.title}" ใช่หรือไม่?`)) return;
+
+    // 1. If public in community, call DELETE API
+    if (entry.isPublic) {
+      try {
+        await fetch(`/api/prompts/community?id=${entry.id}&authorId=${user?.id || ''}`, {
+          method: 'DELETE',
+        });
+        setCommunityPrompts((prev) => prev.filter((p) => p.id !== entry.id));
+      } catch (err) {
+        console.warn('Failed to delete community prompt:', err);
+      }
     }
+
+    // 2. Remove from local custom list if present
+    const updatedList = customPrompts.filter((p) => p.id !== entry.id);
+    setCustomPrompts(updatedList);
+    saveCustomPrompts(updatedList);
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(entry.id);
+      return next;
+    });
+
+    showToast('🗑️ ลบคำสั่งเรียบร้อยแล้ว');
   };
 
   // Export Custom Prompts JSON
@@ -397,7 +425,6 @@ export function PromptLibraryView({
         const imported = JSON.parse(event.target?.result as string);
         if (Array.isArray(imported)) {
           const merged = [...imported, ...customPrompts];
-          // Deduplicate by ID
           const uniqueMap = new Map<string, PromptLibraryEntry>();
           merged.forEach((item) => {
             if (item.id && item.title && item.body) {
@@ -443,9 +470,28 @@ export function PromptLibraryView({
                   10 หมวดหมู่ + ชุมชน
                 </span>
               </h2>
-              <p className="text-[11px] text-muted-foreground hidden sm:block">
-                คลังคำสั่ง System Prompt, กฎพฤติกรรม, และสไตล์การตอบกลับ พร้อมระบบแชร์สาธารณะ
-              </p>
+              {/* Account Status Subtitle */}
+              <div className="flex items-center gap-2 mt-0.5">
+                {user ? (
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <UserCheck className="w-3 h-3" />
+                    <span>เข้าสู่ระบบในชื่อ: <strong>{userDisplayName}</strong></span>
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <UserIcon className="w-3 h-3" />
+                    <span>โหมดทั่วไป (Guest)</span>
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('signin')}
+                      className="text-primary hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <LogIn className="w-3 h-3" />
+                      <span>เข้าสู่ระบบ</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -494,7 +540,7 @@ export function PromptLibraryView({
                   useWhen: '',
                   body: '',
                   isPublic: false,
-                  authorName: (user?.email ? user.email.split('@')[0] : '') || '',
+                  authorName: userDisplayName,
                 });
                 setIsCustomModalOpen(true);
               }}
@@ -506,7 +552,7 @@ export function PromptLibraryView({
           </div>
         </div>
 
-        {/* Source Tabs: All | Official | Community | Custom */}
+        {/* Source Tabs: All | Official | Community | Mine | Custom */}
         <div className="flex items-center gap-1.5 border-b border-border/60 pb-2 overflow-x-auto scrollbar-none">
           <button
             type="button"
@@ -545,6 +591,21 @@ export function PromptLibraryView({
             <span>คลังสาธารณะชุมชน ({communityPrompts.length})</span>
           </button>
 
+          {user && (
+            <button
+              type="button"
+              onClick={() => setActiveSource('mine')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeSource === 'mine'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>ผลงานของฉัน</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setActiveSource('custom')}
@@ -555,7 +616,7 @@ export function PromptLibraryView({
             }`}
           >
             <Lock className="w-3.5 h-3.5" />
-            <span>คำสั่งของฉัน ({customPrompts.length})</span>
+            <span>คำสั่งในเครื่อง ({customPrompts.length})</span>
           </button>
         </div>
 
@@ -666,6 +727,9 @@ export function PromptLibraryView({
               const isSelected = selectedIds.has(entry.id);
               const isOfficial = !entry.isCustom;
               const isPublicCommunity = entry.isPublic;
+              const isMine =
+                (user && entry.authorId === user.id) ||
+                (entry.authorName && entry.authorName.toLowerCase() === userDisplayName.toLowerCase());
 
               return (
                 <div
@@ -725,11 +789,16 @@ export function PromptLibraryView({
                       {entry.useWhen}
                     </p>
 
-                    {/* Author Info if Community or Custom */}
+                    {/* Author Info */}
                     {entry.authorName && (
                       <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1 mb-2">
                         <Users className="w-3 h-3" />
                         <span>สร้างโดย: <strong>{entry.authorName}</strong></span>
+                        {isMine && (
+                          <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1 py-0.2 rounded border border-emerald-500/20 font-bold ml-1">
+                            (ผลงานของคุณ)
+                          </span>
+                        )}
                         {entry.likesCount ? (
                           <span className="text-muted-foreground ml-auto flex items-center gap-0.5">
                             <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" />
@@ -778,8 +847,8 @@ export function PromptLibraryView({
                         <Share2 className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* Custom Prompt Edit & Delete */}
-                      {entry.isCustom && (
+                      {/* Prompt Edit & Delete (for custom or own community prompt) */}
+                      {(entry.isCustom || isMine) && (
                         <>
                           <button
                             type="button"
@@ -791,7 +860,7 @@ export function PromptLibraryView({
                           </button>
                           <button
                             type="button"
-                            onClick={(e) => handleDeleteCustom(entry.id, e)}
+                            onClick={(e) => handleDeletePrompt(entry, e)}
                             title="ลบคำสั่ง"
                             className="p-1 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                           >
@@ -1051,18 +1120,19 @@ export function PromptLibraryView({
                 </div>
               </div>
 
-              {customForm.isPublic && (
-                <div>
-                  <label className="block font-bold text-foreground mb-1">ชื่อผู้สร้าง / นามปากกา (Author Name)</label>
-                  <input
-                    type="text"
-                    value={customForm.authorName}
-                    onChange={(e) => setCustomForm({ ...customForm, authorName: e.target.value })}
-                    placeholder="เช่น นามปากกาของคุณ หรือ ชื่อเล่น"
-                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block font-bold text-foreground mb-1">
+                  ชื่อผู้สร้าง / นามปากกา (Author Name)
+                  {user ? <span className="text-emerald-500 text-[10px] ml-1.5 font-normal">(อิงจากบัญชีปัจจุบัน)</span> : null}
+                </label>
+                <input
+                  type="text"
+                  value={customForm.authorName}
+                  onChange={(e) => setCustomForm({ ...customForm, authorName: e.target.value })}
+                  placeholder="เช่น นามปากกาของคุณ หรือ ชื่อเล่น"
+                  className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
 
               <div>
                 <label className="block font-bold text-foreground mb-1">คำอธิบายการใช้งาน / Use When</label>

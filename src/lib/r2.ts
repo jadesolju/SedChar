@@ -125,3 +125,96 @@ export async function uploadCommunityPromptToR2(promptId: string, payload: any):
 
   return `${R2_PUBLIC_URL}/${key}`;
 }
+
+/**
+ * Fetches the community prompts list from Cloudflare R2
+ */
+export async function fetchCommunityPromptsIndexFromR2(): Promise<any[] | null> {
+  const key = 'prompts/community_index.json';
+  const cdnUrl = `${R2_PUBLIC_URL}/${key}`;
+  
+  // 1. Try public CDN fast-path
+  try {
+    const res = await fetch(cdnUrl, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+    }
+  } catch {}
+
+  // 2. Direct S3 GetObject fallback
+  try {
+    const getRes = await r2Client.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      })
+    );
+    const bodyStr = await getRes.Body?.transformToString();
+    if (bodyStr) {
+      const parsed = JSON.parse(bodyStr);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    // File may not exist yet on first run
+  }
+
+  return null;
+}
+
+/**
+ * Saves and updates the community prompts index in Cloudflare R2
+ */
+export async function saveCommunityPromptToIndexInR2(newPrompt: any): Promise<void> {
+  const key = 'prompts/community_index.json';
+  
+  // Fetch existing index
+  let existing: any[] = [];
+  try {
+    const fetched = await fetchCommunityPromptsIndexFromR2();
+    if (Array.isArray(fetched)) {
+      existing = fetched;
+    }
+  } catch {}
+
+  // Filter out any duplicate with same ID, prepend new prompt
+  const updated = [newPrompt, ...existing.filter((p) => p.id !== newPrompt.id)];
+
+  // Save to R2
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: JSON.stringify(updated, null, 2),
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=60, stale-while-revalidate=86400',
+    })
+  );
+}
+
+/**
+ * Deletes a prompt from the community index in Cloudflare R2
+ */
+export async function deleteCommunityPromptFromIndexInR2(promptId: string): Promise<void> {
+  const key = 'prompts/community_index.json';
+  
+  let existing: any[] = [];
+  try {
+    const fetched = await fetchCommunityPromptsIndexFromR2();
+    if (Array.isArray(fetched)) {
+      existing = fetched;
+    }
+  } catch {}
+
+  const updated = existing.filter((p) => p.id !== promptId);
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: JSON.stringify(updated, null, 2),
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=60, stale-while-revalidate=86400',
+    })
+  );
+}
