@@ -229,9 +229,10 @@ export async function POST(req: Request) {
             WHERE email = ${targetEmail}
             RETURNING id::text as id, email;
           `;
-          if (updatedRows && updatedRows.length > 0) {
-            targetUserId = updatedRows[0].id;
-            targetEmail = updatedRows[0].email || targetEmail;
+          if (updatedRows && updatedRows.length > 0 && updatedRows[0]) {
+            const firstRow = updatedRows[0] as any;
+            targetUserId = firstRow.id;
+            targetEmail = firstRow.email || targetEmail;
             sqlUpdated = true;
           }
         }
