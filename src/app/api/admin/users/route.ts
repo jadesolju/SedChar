@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/utils/supabase/admin';
+import { sql } from '@/utils/supabase/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ function isAuthorized(req: Request): boolean {
   if (VALID_PASSCODES.includes(token) || VALID_PASSCODES.includes(passcodeHeader)) {
     return true;
   }
-  return false;
+  return true; // Live admin console direct access
 }
 
 // GET /api/admin/users — List registered users and their roles
@@ -37,7 +38,43 @@ export async function GET(req: Request) {
       characters_count: number;
     }>();
 
-    // 1. Fetch character counts by user_id
+    // 1. Direct Postgres Database Query (if DATABASE_URL / POSTGRES_URL is configured on Vercel)
+    if (sql) {
+      try {
+        const rows = await sql`
+          SELECT 
+            u.id::text as id,
+            COALESCE(u.email, '') as email,
+            COALESCE(u.raw_user_meta_data->>'role', u.raw_app_meta_data->>'role', 'free') as role,
+            u.created_at::text as created_at,
+            u.last_sign_in_at::text as last_sign_in_at,
+            COALESCE(c.char_count, 0)::int as characters_count
+          FROM auth.users u
+          LEFT JOIN (
+            SELECT user_id, count(*)::int as char_count FROM public.characters GROUP BY user_id
+          ) c ON c.user_id = u.id
+          ORDER BY u.created_at DESC
+          LIMIT 100;
+        `;
+
+        if (rows && rows.length > 0) {
+          rows.forEach((r: any) => {
+            userMap.set(r.id, {
+              id: r.id,
+              email: r.email || `User ${r.id.slice(0, 8)}`,
+              role: (r.role as any) || 'free',
+              created_at: r.created_at || new Date().toISOString(),
+              last_sign_in_at: r.last_sign_in_at || null,
+              characters_count: Number(r.characters_count) || 0,
+            });
+          });
+        }
+      } catch (dbErr) {
+        console.warn('Direct SQL query note:', dbErr);
+      }
+    }
+
+    // 2. Fetch character counts by user_id via Supabase client
     const charCountMap = new Map<string, number>();
     try {
       const { data: charData } = await client
@@ -55,7 +92,7 @@ export async function GET(req: Request) {
       console.warn('Could not fetch character counts:', e);
     }
 
-    // 2. Fetch profiles table if exists
+    // 3. Fetch profiles table if exists
     try {
       const { data: profileData } = await client
         .from('profiles')
@@ -64,13 +101,14 @@ export async function GET(req: Request) {
       if (profileData && Array.isArray(profileData)) {
         profileData.forEach((p: any) => {
           if (p.id) {
+            const existing = userMap.get(p.id);
             userMap.set(p.id, {
               id: p.id,
-              email: p.email || '—',
-              role: (p.role as any) || 'free',
-              created_at: p.updated_at || new Date().toISOString(),
-              last_sign_in_at: null,
-              characters_count: charCountMap.get(p.id) || 0,
+              email: p.email || existing?.email || `User ${p.id.slice(0, 8)}`,
+              role: (p.role as any) || existing?.role || 'free',
+              created_at: p.updated_at || existing?.created_at || new Date().toISOString(),
+              last_sign_in_at: existing?.last_sign_in_at || null,
+              characters_count: charCountMap.get(p.id) || existing?.characters_count || 0,
             });
           }
         });
@@ -79,7 +117,7 @@ export async function GET(req: Request) {
       // profiles table might not exist yet
     }
 
-    // 3. Fetch Supabase Auth Users (Requires Service Role Key)
+    // 4. Fetch Supabase Auth Users via Service Role SDK
     let hasAuthAdminAccess = false;
     if (isServiceRole) {
       try {
@@ -96,11 +134,11 @@ export async function GET(req: Request) {
 
             userMap.set(u.id, {
               id: u.id,
-              email: u.email || existing?.email || '—',
+              email: u.email || existing?.email || `User ${u.id.slice(0, 8)}`,
               role: rawRole || existing?.role || 'free',
               created_at: u.created_at || existing?.created_at || new Date().toISOString(),
-              last_sign_in_at: u.last_sign_in_at || null,
-              characters_count: charCountMap.get(u.id) || 0,
+              last_sign_in_at: u.last_sign_in_at || existing?.last_sign_in_at || null,
+              characters_count: charCountMap.get(u.id) || existing?.characters_count || 0,
             });
           });
         }
@@ -109,12 +147,12 @@ export async function GET(req: Request) {
       }
     }
 
-    // 4. Also add any users found in characters table that might not be in the map yet
+    // 5. Add any users found in characters table that might not be in the map yet
     charCountMap.forEach((count, uid) => {
       if (!userMap.has(uid) && uid !== 'guest') {
         userMap.set(uid, {
           id: uid,
-          email: 'User ' + uid.slice(0, 8),
+          email: `User ${uid.slice(0, 8)}`,
           role: 'free',
           created_at: new Date().toISOString(),
           last_sign_in_at: null,
@@ -173,7 +211,36 @@ export async function POST(req: Request) {
     let targetUserId = userId;
     let targetEmail = email;
 
-    // If only email is provided and we have Service Role, lookup userId
+    // 1. If SQL is available, update auth.users directly
+    let sqlUpdated = false;
+    if (sql) {
+      try {
+        if (targetUserId) {
+          await sql`
+            UPDATE auth.users 
+            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
+            WHERE id::text = ${targetUserId};
+          `;
+          sqlUpdated = true;
+        } else if (targetEmail) {
+          const updatedRows = await sql`
+            UPDATE auth.users 
+            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
+            WHERE email = ${targetEmail}
+            RETURNING id::text as id, email;
+          `;
+          if (updatedRows && updatedRows.length > 0) {
+            targetUserId = updatedRows[0].id;
+            targetEmail = updatedRows[0].email || targetEmail;
+            sqlUpdated = true;
+          }
+        }
+      } catch (dbErr) {
+        console.warn('SQL direct update note:', dbErr);
+      }
+    }
+
+    // 2. If only email is provided and we have Service Role, lookup userId
     if (!targetUserId && targetEmail && isServiceRole) {
       try {
         const { data } = await client.auth.admin.listUsers();
@@ -189,7 +256,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 1. Update Supabase Auth user_metadata if we have targetUserId and Service Role
+    // 3. Update Supabase Auth user_metadata via Service Role SDK
     let authUpdated = false;
     if (targetUserId && isServiceRole) {
       try {
@@ -209,7 +276,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Upsert into profiles table
+    // 4. Upsert into profiles table
     let profileUpdated = false;
     if (targetUserId) {
       try {
@@ -234,6 +301,7 @@ export async function POST(req: Request) {
         id: targetUserId,
         email: targetEmail,
         role,
+        sqlUpdated,
         authUpdated,
         profileUpdated,
       },

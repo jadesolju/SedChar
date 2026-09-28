@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Returns a Supabase client with admin/service-role capabilities if available,
- * or standard client fallback.
+ * checking all Vercel and Supabase environment variable variations.
  */
 export function getSupabaseAdmin(): { client: SupabaseClient; isServiceRole: boolean } {
   const supabaseUrl =
@@ -13,7 +13,11 @@ export function getSupabaseAdmin(): { client: SupabaseClient; isServiceRole: boo
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_KEY;
+    process.env.SUPABASE_ADMIN_KEY ||
+    process.env.SUPABASE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.VERCEL_SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
     const fallbackKey =

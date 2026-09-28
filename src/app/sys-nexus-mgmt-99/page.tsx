@@ -404,18 +404,6 @@ function AdminNexusDashboardContent() {
             </div>
           </div>
 
-          {!hasServiceRole && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2">
-              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>คำแนะนำสำหรับการดึงรายชื่อผู้ใช้จาก Supabase Auth ทั้งหมด:</strong>
-                <p className="mt-0.5 text-muted-foreground">
-                  หากต้องการให้ตารางดึงผู้ใช้ทุกคนที่เคยสมัครใน Supabase Auth แบบอัตโนมัติ ให้เพิ่ม <code className="text-foreground bg-muted px-1 rounded font-mono">SUPABASE_SERVICE_ROLE_KEY</code> ใน <code className="text-foreground bg-muted px-1 rounded font-mono">.env.local</code> หรือ Vercel Environment Variables (คัดลอกจาก Supabase Dashboard &gt; Project Settings &gt; API &gt; service_role key)
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Filters & Search Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1">
