@@ -1,4 +1,4 @@
-﻿// Prompt Library Type Definitions & Logic Helpers for SedChar.AI
+// Prompt Library Type Definitions & Logic Helpers for SedChar.AI
 
 export interface PromptLibraryCategory {
   id: string;
@@ -17,6 +17,13 @@ export interface PromptLibraryEntry {
   requires?: string[];
   conflictsWith?: string[];
   body: string;
+  isCustom?: boolean;
+  isPublic?: boolean;
+  authorName?: string;
+  authorId?: string;
+  createdAt?: string;
+  likesCount?: number;
+  downloadsCount?: number;
 }
 
 export interface PromptPreset {
@@ -238,6 +245,65 @@ export function detectConflicts(
   }
 
   return conflicts;
+}
+
+/**
+ * Finds conflicting entries in a list of selected entries.
+ */
+export function findConflictingEntries(
+  selectedEntries: PromptLibraryEntry[]
+): Array<{ itemA: PromptLibraryEntry; itemB: PromptLibraryEntry; conflictId: string }> {
+  const selectedIds = selectedEntries.map((e) => e.id);
+  return detectConflicts(selectedIds, selectedEntries);
+}
+
+/**
+ * Finds missing requirements in a list of selected entries.
+ */
+export function findMissingRequirements(
+  selectedEntries: PromptLibraryEntry[]
+): Array<{ item: PromptLibraryEntry; missingReqId: string }> {
+  const selectedIds = new Set<string>(selectedEntries.map((e) => e.id));
+  const missing: Array<{ item: PromptLibraryEntry; missingReqId: string }> = [];
+
+  for (const item of selectedEntries) {
+    if (Array.isArray(item.requires)) {
+      for (const reqId of item.requires) {
+        if (!selectedIds.has(reqId)) {
+          missing.push({ item, missingReqId: reqId });
+        }
+      }
+    }
+  }
+
+  return missing;
+}
+
+/**
+ * Loads custom prompts from localStorage
+ */
+export function loadCustomPrompts(): PromptLibraryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('sedchar_custom_prompts');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Saves custom prompts to localStorage
+ */
+export function saveCustomPrompts(prompts: PromptLibraryEntry[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('sedchar_custom_prompts', JSON.stringify(prompts));
+  } catch (err) {
+    console.warn('Failed to save custom prompts to localStorage:', err);
+  }
 }
 
 /**

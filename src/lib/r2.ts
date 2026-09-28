@@ -105,3 +105,23 @@ export async function deleteCharacterPayloadFromR2(characterId: string): Promise
     console.warn('R2 Delete error for character:', characterId, err);
   }
 }
+
+/**
+ * Uploads a public community prompt to Cloudflare R2
+ */
+export async function uploadCommunityPromptToR2(promptId: string, payload: any): Promise<string> {
+  const key = `prompts/${promptId}.json`;
+  const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=3600, stale-while-revalidate=86400',
+    })
+  );
+
+  return `${R2_PUBLIC_URL}/${key}`;
+}

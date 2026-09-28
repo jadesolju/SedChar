@@ -416,7 +416,7 @@ function MainWorkspace() {
               }`}
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>⚡ ช่องเดียวรวด (Auto-Parser)</span>
+              <span>ช่องเดียวรวด (Auto-Parser)</span>
             </button>
             <button
               type="button"
@@ -428,7 +428,7 @@ function MainWorkspace() {
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-primary" />
-              <span>⚙️ โหมดขั้นสูง (10 หมวดหมู่)</span>
+              <span>โหมดขั้นสูง (10 หมวดหมู่)</span>
             </button>
           </div>
         </div>
