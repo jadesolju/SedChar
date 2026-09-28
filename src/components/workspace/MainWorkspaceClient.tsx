@@ -11,6 +11,8 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { CharacterLibraryModal } from '@/components/library/CharacterLibraryModal';
 import { UpgradeModal } from '@/components/ui/UpgradeModal';
+import { PromptLibraryModal } from '@/components/prompt-library/PromptLibraryModal';
+import { mergeSystemRules, type PromptLibraryEntry } from '@/shared/promptLibraryTypes';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
 import {
@@ -35,6 +37,7 @@ import {
   User as UserIcon,
   Users,
   Coffee,
+  BookOpen,
 } from 'lucide-react';
 
 function MainWorkspace() {
@@ -75,6 +78,24 @@ function MainWorkspace() {
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+  const handleApplyPromptLibrary = (selectedEntries: PromptLibraryEntry[]) => {
+    const prevRules = [...(character.systemRules || [])];
+    const { newRules, addedCount, duplicateCount } = mergeSystemRules(prevRules, selectedEntries);
+    updateField('systemRules', newRules);
+    const suffix = duplicateCount > 0 ? ' (ข้ามที่ซ้ำ ' + duplicateCount + ' ข้อ)' : '';
+    const msg = 'เพิ่ม ' + addedCount + ' กฎเข้าสู่ System Rules เรียบร้อย' + suffix;
+    showToast(msg);
+    return {
+      success: true,
+      message: msg,
+      undo: () => {
+        updateField('systemRules', prevRules);
+        showToast('ย้อนกลับการเพิ่มกฎเรียบร้อย');
+      },
+    };
+  };
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
 
   // Sharing Mode state
@@ -547,6 +568,14 @@ function MainWorkspace() {
       <UpgradeModal
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
+      />
+
+      <PromptLibraryModal
+        isOpen={isPromptLibraryOpen}
+        onClose={() => setIsPromptLibraryOpen(false)}
+        mode="single"
+        isReadOnly={isReadOnly}
+        onApplyToProject={handleApplyPromptLibrary}
       />
       <CharacterLibraryModal
         currentCharacter={character}

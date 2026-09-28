@@ -32,9 +32,11 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UpgradeModal } from '@/components/ui/UpgradeModal';
+import { PromptLibraryView } from '@/components/prompt-library/PromptLibraryView';
+import { mergeCastRules, type PromptLibraryEntry } from '@/shared/promptLibraryTypes';
 import { useAuth } from '@/context/AuthContext';
 
-type TabId = 'world' | 'lore' | 'routes' | 'mainChars' | 'castRules' | 'preview';
+type TabId = 'world' | 'lore' | 'routes' | 'mainChars' | 'castRules' | 'promptLibrary' | 'preview';
 
 const TABS = [
   { id: 'world', label: '1. World Setting', desc: 'กฎของโลก, ฉาก, ยุคสมัย', icon: Globe, color: 'text-purple-600 dark:text-purple-400' },
@@ -42,7 +44,8 @@ const TABS = [
   { id: 'routes', label: '3. Routes & Branches', desc: 'เส้นทางเรื่อง, เงื่อนไข', icon: GitFork, color: 'text-blue-600 dark:text-blue-400' },
   { id: 'mainChars', label: '4. Main Characters', desc: 'ตัวละครหลัก (10 ตัวใน Free)', icon: Users, color: 'text-rose-600 dark:text-rose-400' },
   { id: 'castRules', label: '5. Cast & Sub-Chars', desc: 'ตัวละครเสริมไม่จำกัด + กฎหลากรวม', icon: Sparkles, color: 'text-emerald-600 dark:text-emerald-400' },
-  { id: 'preview', label: '6. Master Draft Export', desc: 'สรุปรวมร่าง & ดาวน์โหลด', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
+  { id: 'promptLibrary', label: '6. Prompt Library', desc: 'คลังคำสั่ง, กฎบทสนทนา, ระบบโบ้', icon: Sparkle, color: 'text-indigo-600 dark:text-indigo-400' },
+  { id: 'preview', label: '7. Master Draft Export', desc: 'สรุปรวมร่าง & ดาวน์โหลด', icon: FileText, color: 'text-pink-600 dark:text-pink-400' },
 ];
 
 export function RubiiMultiWorkspace() {
@@ -437,6 +440,28 @@ export function RubiiMultiWorkspace() {
                 onUpdateSubChar={updateSupportingCharacter}
                 onRemoveSubChar={removeSupportingCharacter}
                 onUpdateRules={updateCastInteractionRules}
+              />
+            )}
+
+            {activeTab === 'promptLibrary' && (
+              <PromptLibraryView
+                mode="multi"
+                isReadOnly={false}
+                onApplyToProject={(selectedEntries: PromptLibraryEntry[]) => {
+                  const prevRules = project.castInteractionRules || '';
+                  const { newText, addedCount } = mergeCastRules(prevRules, selectedEntries);
+                  updateCastInteractionRules(newText);
+                  const msg = 'เพิ่ม ' + addedCount + ' กฎเข้าสู่ Cast Interaction Rules เรียบร้อย';
+                  showToast(msg);
+                  return {
+                    success: true,
+                    message: msg,
+                    undo: () => {
+                      updateCastInteractionRules(prevRules);
+                      showToast('ย้อนกลับการเพิ่มกฎเรียบร้อย');
+                    },
+                  };
+                }}
               />
             )}
 
