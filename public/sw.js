@@ -1,20 +1,18 @@
-﻿// SedChar.AI Progressive Web App (PWA) Service Worker
-// Provides full offline support, static asset caching, and app shell fallback
+﻿// SedChar.AI Progressive Web App (PWA) Service Worker v1.3.0
+// Features: High-efficiency Cache-First for static assets, minimal pre-cache payload, and offline app shell fallback
 
-const CACHE_NAME = 'sedchar-pwa-v1.2.0';
+const CACHE_NAME = 'sedchar-pwa-v1.3.0';
 
-// Core assets to pre-cache immediately upon installation
+// Core essential assets to pre-cache immediately upon installation (Total ~300 KB)
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
-  '/shedchar_logo.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
   '/scripts/theme-init.js',
 ];
 
-// Install Event - Pre-cache core shell
+// Install Event - Pre-cache core shell & skip waiting
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -22,12 +20,12 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
       .catch((err) => {
-        console.warn('[PWA SW] Pre-cache warning:', err);
+        console.warn('[PWA SW] Pre-cache note:', err);
       })
   );
 });
 
-// Activate Event - Clean up old caches & take control immediately
+// Activate Event - Clean up all previous caches & claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
@@ -37,7 +35,7 @@ self.addEventListener('activate', (event) => {
           keys
             .filter((key) => key !== CACHE_NAME)
             .map((key) => {
-              console.log('[PWA SW] Removing old cache:', key);
+              console.log('[PWA SW] Clearing obsolete cache:', key);
               return caches.delete(key);
             })
         )
@@ -46,7 +44,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event - Handle offline routing & dynamic caching
+// Fetch Event - Smart offline routing & Zero-Redundant transfer caching
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -102,17 +100,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Next.js Static Assets & Media (/_next/static/*, fonts, CSS, JS, images)
-  // Strategy: Stale-While-Revalidate / Cache First for Next.js immutable assets
-  const isImmutableAsset =
+  // 4. Static Assets & Media (/_next/static/*, fonts, CSS, JS, images)
+  // Strategy: Cache-First (Serves from local cache instantly, fetches from network only if missing)
+  const isStaticAsset =
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
     url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.ico') ||
     url.pathname.endsWith('.woff2');
 
-  if (isImmutableAsset) {
+  if (isStaticAsset) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
@@ -129,7 +128,6 @@ self.addEventListener('fetch', (event) => {
             return networkResponse;
           })
           .catch(() => {
-            // Return empty response if unavailable
             return new Response('', { status: 408, statusText: 'Offline' });
           });
       })
@@ -137,7 +135,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Default Strategy for other static requests -> Stale-While-Revalidate
+  // 5. Default Strategy for general requests -> Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
