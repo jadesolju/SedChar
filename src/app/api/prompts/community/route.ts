@@ -4,6 +4,7 @@ import {
   fetchCommunityPromptsIndexFromR2,
   saveCommunityPromptToIndexInR2,
   deleteCommunityPromptFromIndexInR2,
+  likeCommunityPromptInR2,
 } from '@/lib/r2';
 import type { PromptLibraryEntry } from '@/shared/promptLibraryTypes';
 
@@ -174,6 +175,29 @@ export async function DELETE(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: 'ลบคำสั่งออกจากคลังชุมชนแล้ว' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, action } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Missing prompt ID' }, { status: 400 });
+    }
+
+    const delta = action === 'unlike' ? -1 : 1;
+    const newLikes = await likeCommunityPromptInR2(id, delta);
+
+    return NextResponse.json({
+      success: true,
+      id,
+      likesCount: newLikes,
+      message: action === 'unlike' ? 'Unliked prompt' : 'Liked prompt',
+    });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

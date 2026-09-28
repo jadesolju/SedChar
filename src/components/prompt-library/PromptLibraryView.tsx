@@ -57,6 +57,14 @@ export function PromptLibraryView({
   const presets: PromptPreset[] = (defaultLibraryJson.presets || []) as PromptPreset[];
 
   const [customPrompts, setCustomPrompts] = useState<PromptLibraryEntry[]>([]);
+  const [likedPromptIds, setLikedPromptIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(localStorage.getItem('sedchar_liked_prompts') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [communityPrompts, setCommunityPrompts] = useState<PromptLibraryEntry[]>([]);
   const [isFetchingCommunity, setIsFetchingCommunity] = useState(false);
 

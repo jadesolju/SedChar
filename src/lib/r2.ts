@@ -218,3 +218,43 @@ export async function deleteCommunityPromptFromIndexInR2(promptId: string): Prom
     })
   );
 }
+
+/**
+ * Increments or decrements the likes count of a prompt in Cloudflare R2 index
+ */
+export async function likeCommunityPromptInR2(promptId: string, delta: number = 1): Promise<number> {
+  const key = 'prompts/community_index.json';
+  let existing: any[] = [];
+  try {
+    const fetched = await fetchCommunityPromptsIndexFromR2();
+    if (Array.isArray(fetched)) {
+      existing = fetched;
+    }
+  } catch {}
+
+  let newLikes = 1;
+  const updated = existing.map((p) => {
+    if (p.id === promptId) {
+      const count = Math.max(0, (p.likesCount || 0) + delta);
+      newLikes = count;
+      return { ...p, likesCount: count };
+    }
+    return p;
+  });
+
+  try {
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: JSON.stringify(updated, null, 2),
+        ContentType: 'application/json; charset=utf-8',
+        CacheControl: 'public, max-age=60, stale-while-revalidate=86400',
+      })
+    );
+  } catch (err) {
+    console.warn('R2 like update error:', err);
+  }
+
+  return newLikes;
+}
