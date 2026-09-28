@@ -24,6 +24,8 @@ import {
   User as UserIcon,
   LogIn,
   X,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import type { PromptLibraryCategory, PromptLibraryEntry, PromptPreset } from '@/shared/promptLibraryTypes';
 import {
@@ -49,7 +51,7 @@ export function PromptLibraryView({
   onClose,
   isStandalonePage = false,
 }: PromptLibraryViewProps) {
-  const { user, openAuthModal } = useAuth();
+  const { user, userRole, openAuthModal } = useAuth();
 
   // Data States
   const officialCategories: PromptLibraryCategory[] = defaultLibraryJson.categories as PromptLibraryCategory[];
@@ -74,6 +76,7 @@ export function PromptLibraryView({
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [activeSource, setActiveSource] = useState<'all' | 'official' | 'community' | 'custom' | 'mine'>('all');
   const [activeModeFilter, setActiveModeFilter] = useState<'all' | 'single' | 'multi'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // UI Action States
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -138,22 +141,24 @@ export function PromptLibraryView({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Check if a prompt belongs to this user (locally created or authenticated author)
+  // Check if a prompt belongs to this user (can be edited/deleted)
   const isEntryMine = useCallback(
     (entry: PromptLibraryEntry) => {
-      if (customPrompts.some((cp) => cp.id === entry.id)) return true;
+      // Official library prompts can never be edited or deleted
+      if (!entry.isCustom && !entry.isPublic) return false;
+
+      // Admin has permission to manage all custom & community prompts
+      if (userRole === 'admin') return true;
+
+      // If user is logged in, check if authorId matches
       if (user?.id && entry.authorId && entry.authorId === user.id) return true;
-      if (
-        userDisplayName &&
-        userDisplayName !== 'ผู้ใช้งานทั่วไป' &&
-        entry.authorName &&
-        entry.authorName.trim().toLowerCase() === userDisplayName.trim().toLowerCase()
-      ) {
-        return true;
-      }
+
+      // If it's a private custom prompt stored locally in this browser
+      if (!entry.isPublic && customPrompts.some((cp) => cp.id === entry.id)) return true;
+
       return false;
     },
-    [customPrompts, user, userDisplayName]
+    [customPrompts, user, userRole]
   );
 
   // Combine all entries
@@ -162,7 +167,7 @@ export function PromptLibraryView({
     const communityMap = new Map<string, PromptLibraryEntry>();
 
     communityPrompts.forEach((cp) => {
-      communityMap.set(cp.id, { ...cp, isPublic: true, isCustom: true });
+      communityMap.set(cp.id, { ...cp, isPublic: true });
     });
 
     const combined = [...officialEntries, ...customMarked];
@@ -624,14 +629,42 @@ export function PromptLibraryView({
             <button
               type="button"
               onClick={() => setActiveSource('custom')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 ${
                 activeSource === 'custom'
-                  ? 'bg-amber-500 text-zinc-950 shadow-2xs'
-                  : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-amber-500 text-zinc-950 shadow-2xs font-extrabold'
+                  : 'bg-muted/70 text-zinc-700 dark:text-zinc-300 hover:text-foreground hover:bg-muted'
               }`}
             >
               <Lock className="w-3 h-3" />
               <span>ในเครื่อง ({customPrompts.length})</span>
+            </button>
+          </div>
+
+          {/* Grid vs List View Mode Toggle */}
+          <div className="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border shrink-0 ml-auto sm:ml-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              title="มุมมองแบบการ์ด (Grid View)"
+              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              title="มุมมองแบบรายการ (List View)"
+              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -641,10 +674,10 @@ export function PromptLibraryView({
           <button
             type="button"
             onClick={() => setActiveCategory('all')}
-            className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               activeCategory === 'all'
-                ? 'bg-foreground text-background font-bold shadow-2xs'
-                : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-2xs'
+                : 'bg-muted/70 text-zinc-700 dark:text-zinc-300 hover:text-foreground hover:bg-muted'
             }`}
           >
             หมวดทั้งหมด
@@ -654,10 +687,10 @@ export function PromptLibraryView({
               key={cat.id}
               type="button"
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeCategory === cat.id
-                  ? 'bg-foreground text-background font-bold shadow-2xs'
-                  : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-2xs'
+                  : 'bg-muted/70 text-zinc-700 dark:text-zinc-300 hover:text-foreground hover:bg-muted'
               }`}
             >
               {cat.label}
@@ -672,7 +705,7 @@ export function PromptLibraryView({
               type="button"
               onClick={() => handleApplyPreset(preset)}
               title={preset.description}
-              className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 whitespace-nowrap cursor-pointer transition-colors"
+              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/25 hover:bg-amber-500/20 whitespace-nowrap cursor-pointer transition-colors"
             >
               ⚡ {preset.title}
             </button>
@@ -693,7 +726,7 @@ export function PromptLibraryView({
         </div>
       )}
 
-      {/* Main Grid Content - FULL EXPANDED HEIGHT */}
+      {/* Main Content Area (Grid or List View) */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4">
         {filteredEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -705,11 +738,12 @@ export function PromptLibraryView({
               ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "สร้างคำสั่ง" เพื่อเพิ่มคำสั่งที่คุณต้องการ
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+        ) : viewMode === 'grid' ? (
+          /* GRID VIEW MODE */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredEntries.map((entry) => {
               const isSelected = selectedIds.has(entry.id);
-              const isOfficial = !entry.isCustom;
+              const isOfficial = !entry.isCustom && !entry.isPublic;
               const isPublicCommunity = entry.isPublic;
               const isMine = isEntryMine(entry);
 
@@ -717,49 +751,49 @@ export function PromptLibraryView({
                 <div
                   key={entry.id}
                   onClick={() => handleToggleSelect(entry.id)}
-                  className={`group relative p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-primary/5 border-primary shadow-xs ring-1 ring-primary/40'
-                      : 'bg-card border-border hover:border-primary/40 hover:shadow-2xs'
+                      ? 'bg-primary/[0.04] dark:bg-primary/[0.08] border-primary shadow-xs ring-1 ring-primary/40'
+                      : 'bg-card border-border/80 hover:border-primary/50 shadow-2xs hover:shadow-xs'
                   }`}
                 >
                   <div>
                     {/* Card Header */}
-                    <div className="flex items-start justify-between gap-1.5 mb-1.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-start gap-2 min-w-0">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleToggleSelect(entry.id);
                           }}
-                          className={`w-3.5 h-3.5 rounded flex items-center justify-center transition-colors shrink-0 ${
+                          className={`w-4 h-4 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 ${
                             isSelected
-                              ? 'bg-primary text-primary-foreground'
+                              ? 'bg-primary text-primary-foreground font-bold'
                               : 'border border-border text-transparent hover:border-primary'
                           }`}
                         >
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          <Check className="w-3 h-3 stroke-[3]" />
                         </button>
-                        <h3 className="font-bold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+                        <h3 className="font-bold text-xs sm:text-[13px] text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors leading-snug">
                           {entry.title}
                         </h3>
                       </div>
 
-                      {/* Source & Privacy Badges */}
+                      {/* Badges */}
                       <div className="flex items-center gap-1 shrink-0">
                         {isOfficial ? (
-                          <span className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+                          <span className="text-[9px] uppercase font-bold tracking-wide px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                             Official
                           </span>
                         ) : isPublicCommunity ? (
-                          <span className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 flex items-center gap-0.5">
-                            <Globe className="w-2 h-2" />
+                          <span className="text-[9px] uppercase font-bold tracking-wide px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-0.5">
+                            <Globe className="w-2.5 h-2.5" />
                             Community
                           </span>
                         ) : (
-                          <span className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 flex items-center gap-0.5">
-                            <Lock className="w-2 h-2" />
+                          <span className="text-[9px] uppercase font-bold tracking-wide px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-0.5">
+                            <Lock className="w-2.5 h-2.5" />
                             Private
                           </span>
                         )}
@@ -767,23 +801,23 @@ export function PromptLibraryView({
                     </div>
 
                     {/* Use When Description */}
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
+                    <p className="text-[11.5px] text-zinc-600 dark:text-zinc-300 line-clamp-2 my-2 leading-relaxed font-normal">
                       {entry.useWhen}
                     </p>
 
                     {/* Author Info */}
                     {entry.authorName && (
-                      <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1 mb-1.5">
-                        <Users className="w-2.5 h-2.5" />
+                      <div className="text-[10.5px] text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-1 mb-2">
+                        <Users className="w-3 h-3 shrink-0" />
                         <span>สร้างโดย: <strong>{entry.authorName}</strong></span>
                         {isMine && (
-                          <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1 py-0.2 rounded border border-emerald-500/20 font-bold ml-0.5">
+                          <span className="text-[9px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded-md border border-emerald-500/30 font-bold ml-1">
                             (ของคุณ)
                           </span>
                         )}
                         {entry.likesCount ? (
-                          <span className="text-muted-foreground ml-auto flex items-center gap-0.5 text-[9px]">
-                            <Heart className="w-2 h-2 text-rose-500 fill-rose-500" />
+                          <span className="text-zinc-500 dark:text-zinc-400 ml-auto flex items-center gap-1 text-[10px] font-bold">
+                            <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" />
                             {entry.likesCount}
                           </span>
                         ) : null}
@@ -796,7 +830,7 @@ export function PromptLibraryView({
                         {entry.tags.slice(0, 3).map((tag, idx) => (
                           <span
                             key={idx}
-                            className="text-[9px] px-1 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/60"
+                            className="text-[9.5px] px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-medium"
                           >
                             #{tag}
                           </span>
@@ -806,37 +840,37 @@ export function PromptLibraryView({
                   </div>
 
                   {/* Card Footer Actions */}
-                  <div className="pt-1.5 border-t border-border/60 flex items-center justify-between text-xs mt-1">
+                  <div className="pt-2 border-t border-border/70 flex items-center justify-between text-xs mt-1.5">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPreviewEntry(entry);
                       }}
-                      className="text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-foreground transition-colors cursor-pointer"
                     >
                       ดูตัวอย่าง
                     </button>
 
                     <div className="flex items-center gap-1">
-                      {/* Prompt Edit & Delete (for custom or own community prompt) */}
-                      {(entry.isCustom || isMine) && (
+                      {/* Prompt Edit & Delete (ONLY for own creations or admin) */}
+                      {isMine && (
                         <>
                           <button
                             type="button"
                             onClick={(e) => handleOpenEdit(entry, e)}
-                            title="แก้ไขคำสั่ง"
-                            className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                            title="แก้ไขคำสั่งของคุณ"
+                            className="p-1 rounded-lg text-zinc-500 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                           >
-                            <Edit3 className="w-3 h-3" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={(e) => handleDeletePrompt(entry, e)}
-                            title="ลบคำสั่ง"
-                            className="p-1 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="ลบคำสั่งของคุณ"
+                            className="p-1 rounded-lg text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
@@ -846,15 +880,153 @@ export function PromptLibraryView({
                         type="button"
                         onClick={(e) => handleCopySingle(entry, e)}
                         title="คัดลอกคำสั่ง"
-                        className="p-1 rounded-md border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
                       >
                         {copiedId === entry.id ? (
-                          <Check className="w-3 h-3 text-emerald-500" />
+                          <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" />
                         ) : (
-                          <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                          <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-foreground" />
                         )}
                       </button>
                     </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* LIST VIEW MODE (COMPACT & HIGH CONTRAST) */
+          <div className="flex flex-col gap-2">
+            {filteredEntries.map((entry) => {
+              const isSelected = selectedIds.has(entry.id);
+              const isOfficial = !entry.isCustom && !entry.isPublic;
+              const isPublicCommunity = entry.isPublic;
+              const isMine = isEntryMine(entry);
+
+              return (
+                <div
+                  key={entry.id}
+                  onClick={() => handleToggleSelect(entry.id)}
+                  className={`group p-3 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    isSelected
+                      ? 'bg-primary/[0.04] dark:bg-primary/[0.08] border-primary shadow-xs ring-1 ring-primary/40'
+                      : 'bg-card border-border/80 hover:border-primary/50 shadow-2xs hover:shadow-xs'
+                  }`}
+                >
+                  {/* Left Side: Checkbox, Title, Badges, Description */}
+                  <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSelect(entry.id);
+                      }}
+                      className={`w-4 h-4 rounded-md flex items-center justify-center transition-colors shrink-0 mt-0.5 sm:mt-0 ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground font-bold'
+                          : 'border border-border text-transparent hover:border-primary'
+                      }`}
+                    >
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </button>
+
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <h3 className="font-bold text-xs sm:text-[13px] text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors truncate">
+                          {entry.title}
+                        </h3>
+
+                        {isOfficial ? (
+                          <span className="text-[8.5px] uppercase font-bold tracking-wide px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                            Official
+                          </span>
+                        ) : isPublicCommunity ? (
+                          <span className="text-[8.5px] uppercase font-bold tracking-wide px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-0.5">
+                            <Globe className="w-2 h-2" />
+                            Community
+                          </span>
+                        ) : (
+                          <span className="text-[8.5px] uppercase font-bold tracking-wide px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-0.5">
+                            <Lock className="w-2 h-2" />
+                            Private
+                          </span>
+                        )}
+
+                        {entry.authorName && (
+                          <span className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium">
+                            • โดย <strong>{entry.authorName}</strong>
+                            {isMine && <span className="text-emerald-600 dark:text-emerald-400 font-bold ml-1">(ของคุณ)</span>}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-zinc-600 dark:text-zinc-300 truncate font-normal">
+                        {entry.useWhen}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Tags + Actions */}
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-1.5 sm:pt-0 border-border/60">
+                    {entry.tags && entry.tags.length > 0 && (
+                      <div className="hidden md:flex items-center gap-1 mr-1">
+                        {entry.tags.slice(0, 2).map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[9px] px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-medium"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewEntry(entry);
+                      }}
+                      className="px-2 py-1 rounded-lg text-[11px] font-bold text-zinc-600 dark:text-zinc-300 hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      ดูตัวอย่าง
+                    </button>
+
+                    {/* Prompt Edit & Delete (ONLY for own creations or admin) */}
+                    {isMine && (
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEdit(entry, e)}
+                          title="แก้ไขคำสั่งของคุณ"
+                          className="p-1.5 rounded-lg text-zinc-500 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeletePrompt(entry, e)}
+                          title="ลบคำสั่งของคุณ"
+                          className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Copy Single Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopySingle(entry, e)}
+                      title="คัดลอกคำสั่ง"
+                      className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                    >
+                      {copiedId === entry.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-foreground" />
+                      )}
+                    </button>
                   </div>
                 </div>
               );

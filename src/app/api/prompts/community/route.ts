@@ -115,7 +115,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const promptId = `pub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const promptId = body.id || `pub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // If editing existing prompt, verify authorId
+    if (body.id) {
+      try {
+        const list = await fetchCommunityPromptsIndexFromR2();
+        if (list) {
+          const target = list.find((p) => p.id === body.id);
+          if (target && target.authorId && authorId && target.authorId !== authorId) {
+            return NextResponse.json(
+              { success: false, error: 'คุณไม่มีสิทธิ์แก้ไขคำสั่งนี้ (เฉพาะผู้สร้างเท่านั้น)' },
+              { status: 403 }
+            );
+          }
+        }
+      } catch {}
+    }
+
     const newEntry: PromptLibraryEntry = {
       id: promptId,
       title: title.trim(),
@@ -140,7 +157,7 @@ export async function POST(req: NextRequest) {
       console.warn('R2 upload individual error:', r2Err);
     }
 
-    // Append to persistent Community Index in R2
+    // Append / update persistent Community Index in R2
     try {
       await saveCommunityPromptToIndexInR2(newEntry);
     } catch (idxErr) {
@@ -166,6 +183,20 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'Missing prompt ID' }, { status: 400 });
     }
+
+    // Verify author permission
+    try {
+      const list = await fetchCommunityPromptsIndexFromR2();
+      if (list) {
+        const target = list.find((p) => p.id === id);
+        if (target && target.authorId && authorId && target.authorId !== authorId) {
+          return NextResponse.json(
+            { success: false, error: 'คุณไม่มีสิทธิ์ลบคำสั่งนี้ (เฉพาะผู้สร้างเท่านั้น)' },
+            { status: 403 }
+          );
+        }
+      }
+    } catch {}
 
     // Delete from R2 index
     try {
