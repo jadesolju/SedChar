@@ -121,14 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return `sedchar_ai_quota_${userId}_${today}`;
   }, []);
 
+  const getTodayUsedKey = useCallback((userId: string) => {
+    const today = new Date().toISOString().slice(0, 10);
+    return `sedchar_ai_used_${userId}_${today}`;
+  }, []);
+
   // Sync and calculate quota when user or role changes
   const syncQuota = useCallback((currentUser: User | null, role: UserRole) => {
-    if (!currentUser) {
-      setQuotaRemaining(ROLE_QUOTA_MAP.free);
-      setQuotaMax(ROLE_QUOTA_MAP.free);
-      return;
-    }
-
     const max = ROLE_QUOTA_MAP[role] || ROLE_QUOTA_MAP.free;
     setQuotaMax(max);
 
@@ -137,29 +136,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const key = getTodayKey(currentUser.id);
-    const stored = localStorage.getItem(key);
-    if (stored !== null) {
-      const parsed = parseInt(stored, 10);
-      setQuotaRemaining(isNaN(parsed) ? max : Math.min(parsed, max));
-    } else {
-      localStorage.setItem(key, String(max));
-      setQuotaRemaining(max);
-    }
-  }, [getTodayKey]);
+    const effectiveId = currentUser?.id || 'guest';
+    const usedKey = getTodayUsedKey(effectiveId);
+    const storedUsed = localStorage.getItem(usedKey);
 
-  // Set User Role & Persist
-  const setUserRole = useCallback((role: UserRole) => {
+    if (storedUsed !== null) {
+      const parsedUsed = parseInt(storedUsed, 10);
+      const safeUsed = isNaN(parsedUsed) ? 0 : Math.max(0, parsedUsed);
+      setQuotaRemaining(Math.max(0, max - safeUsed));
+    } else {
+      const oldKey = getTodayKey(effectiveId);
+      const oldStored = localStorage.getItem(oldKey);
+      if (oldStored !== null) {
+        const oldParsed = parseInt(oldStored, 10);
+        const estimatedUsed = isNaN(oldParsed) ? 0 : Math.max(0, 15 - oldParsed);
+        localStorage.setItem(usedKey, String(estimatedUsed));
+        setQuotaRemaining(Math.max(0, max - estimatedUsed));
+      } else {
+        localStorage.setItem(usedKey, '0');
+        setQuotaRemaining(max);
+      }
+    }
+  }, [getTodayKey, getTodayUsedKey]);
+
+  // Set User Role & Persist directly in Supabase Auth
+  const setUserRole = useCallback(async (role: UserRole) => {
     setUserRoleState(role);
     if (user) {
       try {
-        localStorage.setItem(`sedchar_user_role_${user.id}`, role);
-        supabase.auth.updateUser({ data: { role } }).catch(() => {});
-      } catch {}
-    } else {
-      try {
-        localStorage.setItem('sedchar_guest_role', role);
-      } catch {}
+        const { data: updateRes, error: updateErr } = await supabase.auth.updateUser({
+          data: { role },
+        });
+        if (!updateErr && updateRes?.user) {
+          setUser(updateRes.user);
+          const confirmedRole = (updateRes.user.user_metadata?.role || updateRes.user.app_metadata?.role || role) as UserRole;
+          setUserRoleState(confirmedRole);
+          syncQuota(updateRes.user, confirmedRole);
+          return;
+        }
+
+        const { data: freshData } = await supabase.auth.getUser();
+        if (freshData?.user) {
+          setUser(freshData.user);
+          const confirmedRole = (freshData.user.user_metadata?.role || freshData.user.app_metadata?.role || role) as UserRole;
+          setUserRoleState(confirmedRole);
+          syncQuota(freshData.user, confirmedRole);
+          return;
+        }
+      } catch (e) {
+        console.warn('Error updating Supabase user role:', e);
+      }
     }
     syncQuota(user, role);
   }, [user, syncQuota, supabase]);
@@ -258,53 +284,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, supabase]);
 
-  // Initialize Auth & Session
+  // Initialize Auth & Session — Strictly and Authoritatively from Supabase Auth Server
   useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         setSession(initialSession);
-        const currentUser = initialSession?.user ?? null;
-        setUser(currentUser);
+        let currentUser = initialSession?.user ?? null;
 
         if (currentUser) {
-          const metaRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role) as UserRole | undefined;
-          const localRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
-          const effectiveRole: UserRole = (metaRole === 'admin' || localRole === 'admin')
-            ? 'admin'
-            : (metaRole === 'premium' || localRole === 'premium')
-            ? 'premium'
-            : localRole;
-
-          setUserRoleState(effectiveRole);
+          // Fetch fresh user data directly from Supabase Auth server
           try {
-            localStorage.setItem(`sedchar_user_role_${currentUser.id}`, effectiveRole);
+            const { data: freshUserData, error: freshErr } = await supabase.auth.getUser();
+            if (!freshErr && freshUserData?.user) {
+              currentUser = freshUserData.user;
+            }
           } catch {}
-          syncQuota(currentUser, effectiveRole);
 
-          // Asynchronously verify with profiles table if available
-          supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
-            .maybeSingle()
-            .then(
-              ({ data: profileRow }) => {
-                if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
-                  const dbRole = profileRow.role as UserRole;
-                  setUserRoleState(dbRole);
-                  try {
-                    localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
-                  } catch {}
-                  syncQuota(currentUser, dbRole);
-                }
-              },
-              () => {}
-            );
+          setUser(currentUser);
+
+          // Role extracted strictly from Supabase Auth metadata
+          const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
+          const authRole: UserRole = ['admin', 'premium', 'free'].includes(rawRole) ? rawRole : 'free';
+          setUserRoleState(authRole);
+          syncQuota(currentUser, authRole);
         } else {
-          const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
-          setUserRoleState(guestRole);
-          syncQuota(null, guestRole);
+          setUser(null);
+          setUserRoleState('free');
+          syncQuota(null, 'free');
         }
       } catch (e) {
         console.error('Error initializing auth:', e);
@@ -315,49 +322,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
-      const currentUser = newSession?.user ?? null;
-      setUser(currentUser);
+      let currentUser = newSession?.user ?? null;
 
       if (currentUser) {
-        const metaRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role) as UserRole | undefined;
-        const localRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
-        const effectiveRole: UserRole = (metaRole === 'admin' || localRole === 'admin')
-          ? 'admin'
-          : (metaRole === 'premium' || localRole === 'premium')
-          ? 'premium'
-          : localRole;
-
-        setUserRoleState(effectiveRole);
         try {
-          localStorage.setItem(`sedchar_user_role_${currentUser.id}`, effectiveRole);
+          const { data: freshUserData, error: freshErr } = await supabase.auth.getUser();
+          if (!freshErr && freshUserData?.user) {
+            currentUser = freshUserData.user;
+          }
         } catch {}
-        syncQuota(currentUser, effectiveRole);
 
-        // Asynchronously verify with profiles table if available
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .maybeSingle()
-          .then(
-            ({ data: profileRow }) => {
-              if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
-                const dbRole = profileRow.role as UserRole;
-                setUserRoleState(dbRole);
-                try {
-                  localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
-                } catch {}
-                syncQuota(currentUser, dbRole);
-              }
-            },
-            () => {}
-          );
+        setUser(currentUser);
+
+        const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
+        const authRole: UserRole = ['admin', 'premium', 'free'].includes(rawRole) ? rawRole : 'free';
+        setUserRoleState(authRole);
+        syncQuota(currentUser, authRole);
       } else {
-        const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
-        setUserRoleState(guestRole);
-        syncQuota(null, guestRole);
+        setUser(null);
+        setUserRoleState('free');
+        syncQuota(null, 'free');
       }
     });
 
@@ -454,14 +440,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (quotaRemaining <= 0) {
       return false;
     }
-    const nextVal = quotaRemaining - 1;
-    setQuotaRemaining(nextVal);
+    const max = ROLE_QUOTA_MAP[userRole] || ROLE_QUOTA_MAP.free;
+    const effectiveId = user?.id || 'guest';
+    const usedKey = getTodayUsedKey(effectiveId);
+    let currentUsed = 0;
     try {
-      const key = getTodayKey(user?.id || 'guest');
-      localStorage.setItem(key, String(nextVal));
+      const stored = localStorage.getItem(usedKey);
+      currentUsed = stored ? parseInt(stored, 10) || 0 : 0;
+    } catch {}
+
+    const nextUsed = currentUsed + 1;
+    const nextRemaining = Math.max(0, max - nextUsed);
+    setQuotaRemaining(nextRemaining);
+    try {
+      localStorage.setItem(usedKey, String(nextUsed));
     } catch {}
     return true;
-  }, [user, userRole, quotaRemaining, getTodayKey]);
+  }, [user, userRole, quotaRemaining, getTodayUsedKey]);
 
   const overwriteCharacterInLibrary = async (
     id: string,

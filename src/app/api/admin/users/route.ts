@@ -218,14 +218,16 @@ export async function POST(req: Request) {
         if (targetUserId) {
           await sql`
             UPDATE auth.users 
-            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
+            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text),
+                raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
             WHERE id::text = ${targetUserId};
           `;
           sqlUpdated = true;
         } else if (targetEmail) {
           const updatedRows = await sql`
             UPDATE auth.users 
-            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
+            SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text),
+                raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || jsonb_build_object('role', ${role}::text)
             WHERE email = ${targetEmail}
             RETURNING id::text as id, email;
           `;
@@ -257,7 +259,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Update Supabase Auth user_metadata via Service Role SDK
+    // 3. Update Supabase Auth user_metadata and app_metadata via Service Role SDK
     let authUpdated = false;
     if (targetUserId && isServiceRole) {
       try {
@@ -265,6 +267,7 @@ export async function POST(req: Request) {
           targetUserId,
           {
             user_metadata: { role },
+            app_metadata: { role },
           }
         );
         if (!updateAuthErr) {
