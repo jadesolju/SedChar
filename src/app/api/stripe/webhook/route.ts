@@ -26,13 +26,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  // Handle successful checkout session
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as any;
-    let userId = session.client_reference_id || session.metadata?.userId;
-    const userEmail = session.customer_email || session.metadata?.userEmail;
+  // Handle successful checkout session or payment intent
+  if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
+    const obj = event.data.object as any;
+    let userId = obj.client_reference_id || obj.metadata?.userId;
+    const userEmail = obj.customer_email || obj.customer_details?.email || obj.metadata?.userEmail || obj.receipt_email;
 
-    console.log(`✅ Payment succeeded for SedChar 29 THB! User: ${userId} (${userEmail})`);
+    console.log(`✅ Payment event [${event.type}] received! User: ${userId || 'unknown'} (${userEmail || 'no-email'})`);
 
     try {
       const { client, isServiceRole } = getSupabaseAdmin();
