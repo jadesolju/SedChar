@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState } from 'react';
 import {
   Sparkles,
@@ -13,6 +13,8 @@ import {
   Loader2,
   FolderOpen,
   Crown,
+  Coffee,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -58,21 +60,21 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       <div className="fixed inset-0" onClick={onClose} />
 
       <div className="relative w-full max-w-lg bg-card border border-border rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
-        {/* Header (2-Row on Mobile per DESIGN.md) */}
+        {/* Header */}
         <div className="flex-shrink-0 flex items-start justify-between p-4 sm:px-6 sm:py-3.5 border-b border-border bg-muted/30">
           <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
-              <Crown className="w-4 h-4 text-amber-300" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 text-white flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
+              <Coffee className="w-4 h-4 text-amber-100" />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                <span>SedChar Creator Premium</span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500 text-white">
-                  PROMO 29.-
+                <span>เลี้ยงกาแฟ & สนับสนุนผู้พัฒนา</span>
+                <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  DONATE 29.-
                 </span>
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                ปลดล็อกขีดจำกัดการสร้างและบริหารคาแรคเตอร์ AI ระดับมืออาชีพ
+                ช่วยสนับสนุนค่าเซิร์ฟเวอร์ SedChar.AI พร้อมรับสิทธิ์ปลดล็อคฟีเจอร์พรีเมียม
               </p>
             </div>
           </div>
@@ -88,67 +90,57 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar">
-          {/* Cute Hero Visual with Mascot Image */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-tr from-rose-500/20 via-pink-500/10 to-purple-500/20 border border-rose-500/30 p-4 sm:p-5 flex items-center justify-between gap-3 shadow-inner">
+          {/* Hero Visual with Mascot Image */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-tr from-amber-500/20 via-rose-500/15 to-purple-500/20 border border-amber-500/30 p-4 sm:p-5 flex items-center justify-between gap-3 shadow-inner">
             <div className="flex-1 min-w-0 z-10">
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-xs">
-                <Sparkles className="w-3 h-3 text-amber-300" />
-                <span>SPECIAL PROMOTION</span>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-zinc-950 text-[10px] font-bold shadow-xs">
+                <Coffee className="w-3 h-3" />
+                <span>BUY ME A COFFEE (29 บาท)</span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-foreground mt-1.5 leading-tight">
-                ปลดล็อกพลังเต็มขั้น <br />
-                <span className="bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 bg-clip-text text-transparent">
-                  SedChar Premium
+                เลี้ยงกาแฟ 1 แก้ว <br />
+                <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 bg-clip-text text-transparent">
+                  รับสิทธิ์ Premium ถาวร
                 </span>
               </h3>
-              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                สร้างคาแรคเตอร์ได้ไม่สะดุด พร้อมระบบประมวลผลความเร็วสูง
+              <p className="text-xs text-muted-foreground mt-1">
+                ขอบคุณทุกแรงสนับสนุนที่ช่วยให้เราพัฒนาเว็บต่อไปได้ครับ! ✨
               </p>
             </div>
 
-            {/* Mascot Image */}
-            <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 flex items-center justify-center">
+            {/* Mascot Avatar */}
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-card/60 backdrop-blur-md border border-border p-1.5 shadow-md flex-shrink-0 relative">
               <img
                 src="/premium-mascot.png"
-                alt="SedChar Premium Mascot"
-                className="w-full h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                alt="SedChar Mascot"
+                className="w-full h-full object-contain drop-shadow-sm"
               />
             </div>
           </div>
 
-          {/* Price Box */}
-          <div className="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
-                ราคาโปรโมชั่นพิเศษ (ชำระครั้งเดียว)
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-foreground mt-0.5 flex items-baseline gap-1.5">
-                <span className="text-rose-600 dark:text-rose-400">฿29</span>
-                <span className="text-xs font-normal text-muted-foreground line-through">฿99</span>
-                <span className="text-xs font-medium text-muted-foreground">/ ตลอดชีพ</span>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <span className="text-[10px] px-2 py-1 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/20 inline-block">
-                ประหยัด 70%
-              </span>
-            </div>
-          </div>
-
-          {/* Features Comparison List */}
+          {/* Features Perks List */}
           <div className="space-y-2">
             <div className="text-xs font-bold text-foreground uppercase tracking-wider">
-              สิทธิพิเศษที่คุณจะได้รับทันที:
+              สิทธิพิเศษตอบแทนที่คุณจะได้รับทันที:
             </div>
 
             <div className="space-y-2 text-xs text-foreground">
               <div className="flex items-start gap-2.5 p-2 rounded-xl bg-card border border-border">
                 <Zap className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold">AI Auto-Enhance 50 ครั้ง/วัน</span>
+                  <span className="font-bold">โควตา AI Auto-Enhance เพิ่มเป็น 50 ครั้ง/วัน</span>
                   <span className="text-muted-foreground text-[11px] block">
-                    (จากเดิม 15 ครั้ง/วัน ในแผน Free) ให้คุณปรับแต่งและเจนเนอเรทบอทได้ต่อเนื่อง
+                    (จากเดิม 15 ครั้ง/วัน ในแผน Free) ให้คุณสร้างและปรับแต่งบอทได้ต่อเนื่องไร้สะดุด
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2 rounded-xl bg-card border border-border">
+                <Users className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Multi-Char Studio++ ปลดล็อคสูงสุด 10 ตัวละคร</span>
+                  <span className="text-muted-foreground text-[11px] block">
+                    สร้างจักรวาล Multi-Character Universe เต็มรูปแบบ เพิ่มตัวละครหลักได้มากถึง 10 ตัว
                   </span>
                 </div>
               </div>
@@ -178,7 +170,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           {/* Payment Methods Supported Badges */}
           <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2">
             <div className="text-[11px] font-bold text-muted-foreground flex items-center justify-between">
-              <span>ช่องทางชำระเงินที่รองรับ:</span>
+              <span>ช่องทางสนับสนุนที่รองรับ:</span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                 <Lock className="w-3 h-3" />
                 <span>ความปลอดภัยระดับ Stripe 256-bit</span>
@@ -187,12 +179,12 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="p-2 rounded-lg bg-card border border-border flex items-center gap-2 font-medium text-foreground">
-                <CreditCard className="w-4 h-4 text-blue-500" />
-                <span>บัตรเครดิต / เดบิต</span>
+                <QrCode className="w-4 h-4 text-purple-500" />
+                <span>สแกน QR พร้อมเพย์ (PromptPay)</span>
               </div>
               <div className="p-2 rounded-lg bg-card border border-border flex items-center gap-2 font-medium text-foreground">
-                <QrCode className="w-4 h-4 text-purple-500" />
-                <span>สแกน QR พร้อมเพย์</span>
+                <CreditCard className="w-4 h-4 text-blue-500" />
+                <span>บัตรเครดิต / เดบิต</span>
               </div>
             </div>
           </div>
@@ -204,12 +196,12 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             </div>
           )}
 
-          {/* Checkout Button */}
+          {/* Checkout / Donate Button */}
           <button
             type="button"
             onClick={handleCheckout}
             disabled={isLoading || userRole === 'premium' || userRole === 'admin'}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 hover:from-amber-600 hover:via-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -219,18 +211,19 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             ) : userRole === 'premium' || userRole === 'admin' ? (
               <>
                 <Check className="w-4 h-4 text-emerald-300" />
-                <span>คุณมีสถานะ Premium / Admin อยู่แล้ว</span>
+                <span>คุณมีสถานะ Premium / ผู้สนับสนุน อยู่แล้ว ขอบคุณมากครับ! ☕</span>
               </>
             ) : (
               <>
-                <span>ชำระเงิน 29 บาท (บัตร หรือ PromptPay)</span>
+                <Coffee className="w-4 h-4 text-amber-200" />
+                <span>เลี้ยงกาแฟ 29 บาท (PromptPay QR หรือ บัตร)</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
 
           <p className="text-[10px] text-center text-muted-foreground">
-            ชำระครั้งเดียว ปลดล็อกสิทธิ์ทันทีโดยไม่มีข้อผูกมัดรายเดือน
+            ชำระครั้งเดียว ปลดล็อคสิทธิ์ทันทีโดยไม่มีข้อผูกมัดรายเดือน ขอบคุณทุกการสนับสนุนครับ ❤️
           </p>
         </div>
       </div>

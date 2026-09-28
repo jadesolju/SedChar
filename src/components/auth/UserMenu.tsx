@@ -12,6 +12,7 @@ import {
   ChevronDown,
   User as UserIcon,
   Gem,
+  Coffee,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -182,7 +183,7 @@ export function UserMenu({
             </div>
           </div>
 
-          {/* Upgrade Promo for Free Tier */}
+          {/* Upgrade / Donate Promo for Free Tier */}
           {userRole === 'free' && onOpenUpgradeModal && (
             <button
               type="button"
@@ -190,15 +191,15 @@ export function UserMenu({
                 setIsOpen(false);
                 onOpenUpgradeModal();
               }}
-              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-500/30 hover:border-rose-500/60 transition-all cursor-pointer text-left mb-1.5"
+              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 border border-amber-500/30 hover:border-amber-500/60 transition-all cursor-pointer text-left mb-1.5"
             >
-              <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <Coffee className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-xs flex items-center gap-1.5 text-foreground">
-                  <span>อัปเกรด Premium</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500 text-white font-bold">29.-</span>
+                  <span>เลี้ยงกาแฟ / ปลดล็อค Premium</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-zinc-950 font-bold">29.-</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate">AI 50 ครั้ง/วัน + ชำระด้วยบัตร/PromptPay</div>
+                <div className="text-[10px] text-muted-foreground truncate">AI 50 ครั้ง/วัน + Multi-Char 10 ตัว + PromptPay</div>
               </div>
             </button>
           )}

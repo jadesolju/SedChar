@@ -18,6 +18,7 @@ import {
   FolderOpen,
   Save,
   Download,
+  Coffee,
 } from 'lucide-react';
 import { useMultiCharacterProject } from '@/hooks/useMultiCharacterProject';
 import { WorldSettingSection } from './WorldSettingSection';
@@ -171,16 +172,16 @@ export function RubiiMultiWorkspace() {
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
-          {/* Promotion Button for Free Tier */}
+          {/* Promotion / Donate Button for Free Tier */}
           {userRole === 'free' && (
             <button
               type="button"
               onClick={() => setIsUpgradeModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/30 hover:border-rose-500 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-              title="อัปเกรดเป็น Premium เพียง 29 บาท (ชำระด้วยบัตร หรือ PromptPay QR)"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 border border-amber-500/30 hover:border-amber-500 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+              title="เลี้ยงกาแฟผู้พัฒนา 29 บาท พร้อมรับสิทธิ์ Premium"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>โปร 29.-</span>
+              <Coffee className="w-3.5 h-3.5 text-amber-500" />
+              <span>เลี้ยงกาแฟ ☕</span>
             </button>
           )}
 
