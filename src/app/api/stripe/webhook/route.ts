@@ -53,19 +53,27 @@ export async function POST(req: Request) {
 
       // 1. Update Supabase Auth user_metadata
       if (userId && userId !== 'anonymous' && isServiceRole) {
-        await client.auth.admin.updateUserById(userId, {
-          user_metadata: { role: 'premium' },
-        }).catch((e) => console.warn('Webhook Auth admin update error:', e));
+        try {
+          await client.auth.admin.updateUserById(userId, {
+            user_metadata: { role: 'premium' },
+          });
+        } catch (authUpdateErr) {
+          console.warn('Webhook Auth admin update error:', authUpdateErr);
+        }
       }
 
       // 2. Upsert into profiles table
       if (userId && userId !== 'anonymous') {
-        await client.from('profiles').upsert({
-          id: userId,
-          email: userEmail || null,
-          role: 'premium',
-          updated_at: new Date().toISOString(),
-        }).catch((e) => console.warn('Webhook profiles upsert note:', e));
+        try {
+          await client.from('profiles').upsert({
+            id: userId,
+            email: userEmail || null,
+            role: 'premium',
+            updated_at: new Date().toISOString(),
+          });
+        } catch (profileUpsertErr) {
+          console.warn('Webhook profiles upsert note:', profileUpsertErr);
+        }
       }
     } catch (dbErr) {
       console.error('Error updating profile in Supabase webhook:', dbErr);
@@ -74,4 +82,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ received: true });
 }
-

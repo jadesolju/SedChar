@@ -288,17 +288,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select('role')
             .eq('id', currentUser.id)
             .maybeSingle()
-            .then(({ data: profileRow }) => {
-              if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
-                const dbRole = profileRow.role as UserRole;
-                setUserRoleState(dbRole);
-                try {
-                  localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
-                } catch {}
-                syncQuota(currentUser, dbRole);
-              }
-            })
-            .catch(() => {});
+            .then(
+              ({ data: profileRow }) => {
+                if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
+                  const dbRole = profileRow.role as UserRole;
+                  setUserRoleState(dbRole);
+                  try {
+                    localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
+                  } catch {}
+                  syncQuota(currentUser, dbRole);
+                }
+              },
+              () => {}
+            );
         } else {
           const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
           setUserRoleState(guestRole);
@@ -339,17 +341,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select('role')
           .eq('id', currentUser.id)
           .maybeSingle()
-          .then(({ data: profileRow }) => {
-            if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
-              const dbRole = profileRow.role as UserRole;
-              setUserRoleState(dbRole);
-              try {
-                localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
-              } catch {}
-              syncQuota(currentUser, dbRole);
-            }
-          })
-          .catch(() => {});
+          .then(
+            ({ data: profileRow }) => {
+              if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
+                const dbRole = profileRow.role as UserRole;
+                setUserRoleState(dbRole);
+                try {
+                  localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
+                } catch {}
+                syncQuota(currentUser, dbRole);
+              }
+            },
+            () => {}
+          );
       } else {
         const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
         setUserRoleState(guestRole);

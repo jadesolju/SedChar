@@ -46,19 +46,27 @@ export async function GET(req: Request) {
 
         // 1. Update user_metadata in Supabase Auth
         if (userId && userId !== 'anonymous' && isServiceRole) {
-          await client.auth.admin.updateUserById(userId, {
-            user_metadata: { role: 'premium' },
-          }).catch((e) => console.warn('Auth admin update error:', e));
+          try {
+            await client.auth.admin.updateUserById(userId, {
+              user_metadata: { role: 'premium' },
+            });
+          } catch (authUpdateErr) {
+            console.warn('Auth admin update error:', authUpdateErr);
+          }
         }
 
         // 2. Upsert into profiles table
         if (userId && userId !== 'anonymous') {
-          await client.from('profiles').upsert({
-            id: userId,
-            email: userEmail || null,
-            role: 'premium',
-            updated_at: new Date().toISOString(),
-          }).catch((e) => console.warn('Profiles upsert note in verify-session:', e));
+          try {
+            await client.from('profiles').upsert({
+              id: userId,
+              email: userEmail || null,
+              role: 'premium',
+              updated_at: new Date().toISOString(),
+            });
+          } catch (profileErr) {
+            console.warn('Profiles upsert note in verify-session:', profileErr);
+          }
         }
       } catch (dbErr) {
         console.error('Error persisting premium role in verify-session:', dbErr);
