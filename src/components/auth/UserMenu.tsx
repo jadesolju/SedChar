@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   Gem,
   Coffee,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,6 +23,7 @@ interface UserMenuProps {
   onOpenCustomLibrary?: () => void;
   customLibraryLabel?: string;
   customLibraryCount?: number;
+  onOpenPromptLibrary?: () => void;
 }
 
 export function UserMenu({
@@ -30,69 +32,63 @@ export function UserMenu({
   onOpenCustomLibrary,
   customLibraryLabel,
   customLibraryCount,
+  onOpenPromptLibrary,
 }: UserMenuProps) {
-  const {
-    user,
-    userRole,
-    isLoading,
-    quotaRemaining,
-    quotaMax,
-    openAuthModal,
-    openLibraryModal,
-    signOut,
-    savedCharacters,
-  } = useAuth();
-
+  const { user, userRole, quotaRemaining, quotaMax, signOut, openAuthModal, openLibraryModal, savedCharacters } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Close when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
-    };
+    }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (isLoading) {
-    return <div className="w-8 h-8 rounded-lg bg-muted animate-pulse" />;
-  }
-
   if (!user) {
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           type="button"
           onClick={() => openAuthModal('signin')}
-          className="
-            flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-            bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700
-            text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95
-          "
+          className="px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">เข้าสู่ระบบ / สมัครสมาชิก</span>
-          <span className="sm:hidden">เข้าสู่ระบบ</span>
+          เข้าสู่ระบบ
+        </button>
+        <button
+          type="button"
+          onClick={() => openAuthModal('signup')}
+          className="px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-all shadow-xs cursor-pointer"
+        >
+          สมัครสมาชิก
         </button>
       </div>
     );
   }
 
-  const initial = ((user.email || 'U')[0] ?? 'U').toUpperCase();
-  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+  const initial = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+  const avatarUrl = user.user_metadata?.avatar_url;
 
+  // Role badges configuration
   const roleConfig = {
     admin: {
       name: 'Admin',
-      badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
-      icon: <Crown className="w-3.5 h-3.5 text-amber-500" />,
+      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      icon: <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />,
+    },
+    premium_plus: {
+      name: 'Premium Plus',
+      badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      icon: <Gem className="w-3.5 h-3.5 text-purple-500" />,
     },
     premium: {
       name: 'Premium',
-      badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-      icon: <Gem className="w-3.5 h-3.5 text-rose-500" />,
+      badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      icon: <Crown className="w-3.5 h-3.5 text-rose-500" />,
     },
     free: {
       name: 'Free',
@@ -206,6 +202,7 @@ export function UserMenu({
 
           {/* Menu Items */}
           <div className="space-y-1 text-xs">
+            {/* Cloud Library Link */}
             <button
               type="button"
               onClick={() => {
@@ -224,6 +221,46 @@ export function UserMenu({
                 </div>
               </div>
             </button>
+
+            {/* Prompt Library Menu Item */}
+            {onOpenPromptLibrary ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenPromptLibrary();
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+              >
+                <BookOpen className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold flex items-center gap-1.5 text-foreground">
+                    <span>คลังคำสั่ง & กฎ (Prompt Library)</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">ใหม่</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    10 หมวดหมู่ + สร้างคำสั่งส่วนตัว
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <Link
+                href="/prompts"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+              >
+                <BookOpen className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold flex items-center gap-1.5 text-foreground">
+                    <span>คลังคำสั่ง & กฎ (Prompt Library)</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">ใหม่</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    10 หมวดหมู่ + สร้างคำสั่งส่วนตัว
+                  </div>
+                </div>
+              </Link>
+            )}
 
             {/* Secret Control Nexus Link - ONLY FOR ADMIN ROLE */}
             {userRole === 'admin' && (
@@ -251,8 +288,6 @@ export function UserMenu({
               <KeyRound className="w-4 h-4 text-muted-foreground" />
               <span>รีเซ็ต / เปลี่ยนรหัสผ่าน</span>
             </button>
-
-            <div className="border-t border-border my-1" />
 
             <button
               type="button"

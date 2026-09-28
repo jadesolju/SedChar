@@ -549,6 +549,7 @@ function MainWorkspace() {
               onParseSuccess={handleSingleBoxSuccess}
               onLoadSample={loadSample}
               onClear={resetCharacter}
+              onOpenPromptLibrary={() => setIsPromptLibraryOpen(true)}
             />
           )}
         </div>

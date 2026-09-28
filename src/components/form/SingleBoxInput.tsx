@@ -15,6 +15,7 @@ interface SingleBoxInputProps {
   onParseSuccess?: (notice: string) => void;
   onLoadSample: () => void;
   onClear: () => void;
+  onOpenPromptLibrary?: () => void;
 }
 
 export function SingleBoxInput({
@@ -26,6 +27,7 @@ export function SingleBoxInput({
   onParseSuccess,
   onLoadSample,
   onClear,
+  onOpenPromptLibrary,
 }: SingleBoxInputProps) {
   const { user, session, quotaRemaining, quotaMax, consumeQuota, openAuthModal } = useAuth();
 
@@ -189,6 +191,18 @@ export function SingleBoxInput({
             <span>⛶</span>
             <span className="hidden sm:inline">เต็มจอ</span>
           </button>
+
+          {onOpenPromptLibrary && (
+            <button
+              type="button"
+              onClick={onOpenPromptLibrary}
+              title="เปิดคลังคำสั่งและกฎพฤติกรรม (Prompt Library)"
+              className="px-2 py-1 text-xs font-semibold rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
+            >
+              <span>📜</span>
+              <span className="hidden sm:inline">คลังคำสั่ง</span>
+            </button>
+          )}
 
           <button
             type="button"

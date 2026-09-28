@@ -847,7 +847,7 @@ export function PromptLibraryView({
               {/* Zero Egress info notice */}
               <div className="p-2.5 rounded-xl bg-muted/60 border border-border text-[11px] text-muted-foreground flex items-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>คำสั่งส่วนตัวจะถูกจัดเก็บในเครื่องของคุณแบบ Zero Egress ($0 Cloud Cost)</span>
+                <span>คำสั่งส่วนตัวจะถูกจัดเก็บในเครื่องของคุณ</span>
               </div>
             </div>
 
