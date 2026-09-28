@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,10 +21,55 @@ export async function GET(req: Request) {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     const isPaid = session.payment_status === 'paid';
+    let userId = session.client_reference_id || session.metadata?.userId;
+    const userEmail = session.customer_email || session.metadata?.userEmail;
+
+    // If payment is successful, persist the Premium role to Supabase
+    if (isPaid) {
+      try {
+        const { client, isServiceRole } = getSupabaseAdmin();
+
+        // If userId was 'anonymous' or missing, attempt to find user by email
+        if ((!userId || userId === 'anonymous') && userEmail && isServiceRole) {
+          try {
+            const { data } = await client.auth.admin.listUsers();
+            const foundUser = data?.users?.find(
+              (u) => u.email?.toLowerCase() === userEmail.toLowerCase()
+            );
+            if (foundUser) {
+              userId = foundUser.id;
+            }
+          } catch (listErr) {
+            console.warn('Could not list users during session verification:', listErr);
+          }
+        }
+
+        // 1. Update user_metadata in Supabase Auth
+        if (userId && userId !== 'anonymous' && isServiceRole) {
+          await client.auth.admin.updateUserById(userId, {
+            user_metadata: { role: 'premium' },
+          }).catch((e) => console.warn('Auth admin update error:', e));
+        }
+
+        // 2. Upsert into profiles table
+        if (userId && userId !== 'anonymous') {
+          await client.from('profiles').upsert({
+            id: userId,
+            email: userEmail || null,
+            role: 'premium',
+            updated_at: new Date().toISOString(),
+          }).catch((e) => console.warn('Profiles upsert note in verify-session:', e));
+        }
+      } catch (dbErr) {
+        console.error('Error persisting premium role in verify-session:', dbErr);
+      }
+    }
+
     return NextResponse.json({
       paid: isPaid,
-      userId: session.client_reference_id || session.metadata?.userId,
-      userEmail: session.customer_email || session.metadata?.userEmail,
+      role: isPaid ? 'premium' : 'free',
+      userId,
+      userEmail,
       status: session.status,
     });
   } catch (err: any) {

@@ -154,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       try {
         localStorage.setItem(`sedchar_user_role_${user.id}`, role);
+        supabase.auth.updateUser({ data: { role } }).catch(() => {});
       } catch {}
     } else {
       try {
@@ -161,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     }
     syncQuota(user, role);
-  }, [user, syncQuota]);
+  }, [user, syncQuota, supabase]);
 
   // Load Saved Characters Library (Local First + Cloud Sync + Robust Merge)
   const loadLibrary = useCallback(async () => {
@@ -267,9 +268,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
 
         if (currentUser) {
-          const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
-          setUserRoleState(storedRole);
-          syncQuota(currentUser, storedRole);
+          const metaRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role) as UserRole | undefined;
+          const localRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
+          const effectiveRole: UserRole = (metaRole === 'admin' || localRole === 'admin')
+            ? 'admin'
+            : (metaRole === 'premium' || localRole === 'premium')
+            ? 'premium'
+            : localRole;
+
+          setUserRoleState(effectiveRole);
+          try {
+            localStorage.setItem(`sedchar_user_role_${currentUser.id}`, effectiveRole);
+          } catch {}
+          syncQuota(currentUser, effectiveRole);
+
+          // Asynchronously verify with profiles table if available
+          supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .maybeSingle()
+            .then(({ data: profileRow }) => {
+              if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
+                const dbRole = profileRow.role as UserRole;
+                setUserRoleState(dbRole);
+                try {
+                  localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
+                } catch {}
+                syncQuota(currentUser, dbRole);
+              }
+            })
+            .catch(() => {});
         } else {
           const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
           setUserRoleState(guestRole);
@@ -290,9 +319,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (currentUser) {
-        const storedRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
-        setUserRoleState(storedRole);
-        syncQuota(currentUser, storedRole);
+        const metaRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role) as UserRole | undefined;
+        const localRole = (localStorage.getItem(`sedchar_user_role_${currentUser.id}`) as UserRole) || 'free';
+        const effectiveRole: UserRole = (metaRole === 'admin' || localRole === 'admin')
+          ? 'admin'
+          : (metaRole === 'premium' || localRole === 'premium')
+          ? 'premium'
+          : localRole;
+
+        setUserRoleState(effectiveRole);
+        try {
+          localStorage.setItem(`sedchar_user_role_${currentUser.id}`, effectiveRole);
+        } catch {}
+        syncQuota(currentUser, effectiveRole);
+
+        // Asynchronously verify with profiles table if available
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .maybeSingle()
+          .then(({ data: profileRow }) => {
+            if (profileRow?.role && (profileRow.role === 'premium' || profileRow.role === 'admin')) {
+              const dbRole = profileRow.role as UserRole;
+              setUserRoleState(dbRole);
+              try {
+                localStorage.setItem(`sedchar_user_role_${currentUser.id}`, dbRole);
+              } catch {}
+              syncQuota(currentUser, dbRole);
+            }
+          })
+          .catch(() => {});
       } else {
         const guestRole = (localStorage.getItem('sedchar_guest_role') as UserRole) || 'free';
         setUserRoleState(guestRole);

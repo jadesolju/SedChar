@@ -223,7 +223,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           </button>
 
           <p className="text-[10px] text-center text-muted-foreground">
-            ชำระครั้งเดียว ปลดล็อคสิทธิ์ทันทีโดยไม่มีข้อผูกมัดรายเดือน ขอบคุณทุกการสนับสนุนครับ ❤️
+            ชำระครั้งเดียว ปลดล็อคสิทธิ์ทันทีโดยไม่มีข้อผูกมัดรายเดือน ขอบคุณทุกการสนับสนุนนะคะ ❤️
           </p>
         </div>
       </div>
