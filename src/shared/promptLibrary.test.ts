@@ -46,7 +46,7 @@ describe('Prompt Library Validation & Data Integrity', () => {
   });
 
   it('searches prompts by keyword, category, and tag', () => {
-    const foundByKeyword = searchPrompts(data.entries, 'โบ้');
+    const foundByKeyword = searchPrompts(data.entries, 'บทบาท');
     expect(foundByKeyword.length).toBeGreaterThan(0);
 
     const foundByCategory = searchPrompts(data.entries, '', 'core');

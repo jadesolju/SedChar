@@ -435,15 +435,15 @@ function MainWorkspace() {
 
         {/* Right Action Icons & User Profile */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Quick Save to Cloud button */}
+          {/* Prompt Library Quick Link */}
           <button
             type="button"
-            onClick={openLibraryModal}
-            title="บันทึกตัวละครลง Cloud Library"
+            onClick={() => setIsPromptLibraryOpen(true)}
+            title="เปิดคลังคำสั่งและกฎพฤติกรรม (Prompt Library)"
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card hover:border-primary/50 text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
           >
-            <Bookmark className="w-3.5 h-3.5 text-primary" />
-            <span>บันทึกลงคลัง</span>
+            <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+            <span>คลังคำสั่ง</span>
           </button>
 
           {userRole === 'free' && (
