@@ -260,10 +260,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localList.forEach((localItem) => {
           if (!map.has(localItem.id)) {
             map.set(localItem.id, localItem);
-            // Background sync unsynced item to Supabase (Lightweight metadata only, Zero DB Egress)
+            // Background sync unsynced item to Cloudflare R2 and Supabase
             if (user) {
               const { character_data, ...metadataRow } = localItem as any;
               supabase.from('characters').upsert({ ...metadataRow, user_id: user.id }).then(() => {}, () => {});
+              fetch('/api/characters/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id: localItem.id,
+                  character: localItem.character_data,
+                  title: localItem.title,
+                  nickname: localItem.nickname,
+                  tagline: localItem.tagline,
+                  flag_type: localItem.flag_type,
+                  image_url: localItem.image_url,
+                  gallery_urls: localItem.gallery_urls,
+                  share_permission: localItem.share_permission,
+                  is_shared: localItem.is_shared,
+                  share_id: localItem.share_id,
+                  user_id: user.id,
+                }),
+              }).catch(() => {});
             }
           }
         });

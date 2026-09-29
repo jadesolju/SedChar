@@ -82,10 +82,20 @@ function AdminNexusDashboardContent() {
       let fetched: SystemUserRecord[] = data.users || [];
       setHasServiceRole(Boolean(data.hasServiceRole));
 
-      // Always include current logged-in user in list if not present
+      // Always include and synchronize current logged-in user in list
       if (user) {
-        const found = fetched.find((u) => u.id === user.id || (user.email && u.email === user.email));
-        if (!found) {
+        const foundIndex = fetched.findIndex(
+          (u) => u.id === user.id || (user.email && u.email.toLowerCase() === user.email.toLowerCase())
+        );
+
+        if (foundIndex !== -1 && fetched[foundIndex]) {
+          fetched[foundIndex] = {
+            ...fetched[foundIndex],
+            email: user.email || fetched[foundIndex].email,
+            role: userRole || fetched[foundIndex].role,
+            characters_count: Math.max(fetched[foundIndex].characters_count, savedCharacters.length),
+          };
+        } else {
           fetched = [
             {
               id: user.id,
@@ -129,8 +139,11 @@ function AdminNexusDashboardContent() {
   }, [fetchUsersList]);
 
   // Adjust role for the current admin's own session
-  const handleRoleChange = (newRole: UserRole) => {
-    setUserRole(newRole);
+  const handleRoleChange = async (newRole: UserRole) => {
+    await setUserRole(newRole);
+    setUsersList((prev) =>
+      prev.map((u) => (user && u.id === user.id ? { ...u, role: newRole } : u))
+    );
     showToast(
       `✓ สลับสิทธิ์ของคุณเป็น [${newRole.toUpperCase()}] — โควตา AI: ${
         newRole === 'admin' ? 'ไม่จำกัด (Unlimited)' : `${ROLE_QUOTA_MAP[newRole]} ครั้ง/วัน`

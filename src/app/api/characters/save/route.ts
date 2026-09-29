@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { uploadCharacterPayloadToR2, uploadSharePayloadToR2, deleteCharacterPayloadFromR2 } from '@/lib/r2';
+import { getSupabaseAdmin } from '@/utils/supabase/admin';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://grcpgzmqrzfdhethqgsa.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_PDYNR2FQUditnuDLGYZAdQ_AadTBRft';
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Upsert Metadata Record to Supabase (Lightweight metadata row)
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { client: supabase } = getSupabaseAdmin();
     const charTitle = title || character.fullName || character.nickname || 'ตัวละคร';
     const charNickname = nickname || character.nickname || character.fullName || 'ตัวละคร';
     const charTagline = tagline || character.punchline || character.shortIntro || character.occupation || '';
