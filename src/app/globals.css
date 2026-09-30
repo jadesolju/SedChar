@@ -6,16 +6,16 @@
 
 @layer base {
   :root {
-    /* Light Mode - High Contrast, Clean Minimalist with Luxe Accents */
-    --background: 220 16% 96%;       /* #F1F5F9 - Soft clean slate background */
-    --foreground: 224 71% 4%;        /* #0F172A - Deep charcoal for crisp readability */
-    --card: 0 0% 100%;               /* #FFFFFF - Pure white cards that stand out */
-    --card-foreground: 224 71% 4%;
-    --border: 220 13% 85%;           /* #CBD5E1 - Clean visible borders */
+    /* Light Mode - Ultra High Contrast, Crisp Typography */
+    --background: 220 16% 96%;       /* #F1F5F9 - Clean slate background */
+    --foreground: 224 71% 3%;        /* #020617 - Deep rich black for maximum contrast */
+    --card: 0 0% 100%;               /* #FFFFFF - Pure white cards */
+    --card-foreground: 224 71% 3%;
+    --border: 220 13% 82%;           /* #CBD5E1 - Sharp clear borders */
     --primary: 346 84% 53%;          /* #F43F5E - Vibrant Rose Pink */
     --primary-foreground: 0 0% 100%;
     --muted: 220 14% 92%;            /* #E2E8F0 */
-    --muted-foreground: 220 12% 35%;  /* #475569 - High-contrast readable body text */
+    --muted-foreground: 220 18% 22%;  /* #1E293B - Deep high-contrast readable text */
     --accent: 330 81% 60%;           /* #EC4899 - Sakura / Hot Pink */
     --danger: 0 84% 60%;
     --success: 142 71% 45%;

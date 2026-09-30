@@ -320,7 +320,7 @@ function UniverseShareViewContent() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 กฎเกณฑ์ของโลก / ระบบพลัง
               </h4>
-              <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
+              <p className="text-xs text-foreground font-normal dark:text-slate-200 leading-relaxed whitespace-pre-line">
                 {worldSetting?.worldRulesOrMagicSystem || 'ไม่ได้ระบุกฎเกณฑ์'}
               </p>
             </div>
@@ -329,18 +329,18 @@ function UniverseShareViewContent() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 ฝ่าย / องค์กร / กลุ่มอำนาจ
               </h4>
-              <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
+              <p className="text-xs text-foreground font-normal dark:text-slate-200 leading-relaxed whitespace-pre-line">
                 {worldSetting?.factionsOrOrganizations || 'ไม่ได้ระบุฝ่าย'}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Section 2: Lore & Timeline */}
+        {/* Section 2: Lorebook & Backstory */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-2.5">
             <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h3 className="text-base font-bold text-foreground">2. Lorebook & ไทม์ไลน์ประวัติศาสตร์</h3>
+            <h3 className="text-base font-bold text-foreground">2. Lorebook & ภูมิหลังประวัติศาสตร์</h3>
           </div>
 
           <div className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-4">
@@ -349,7 +349,7 @@ function UniverseShareViewContent() {
                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   ภูมิหลังโลก (Backstory)
                 </h4>
-                <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-xs text-foreground font-normal dark:text-slate-200 leading-relaxed whitespace-pre-line">
                   {lore.worldBackstory}
                 </p>
               </div>
@@ -360,42 +360,9 @@ function UniverseShareViewContent() {
                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   ปมความขัดแย้งหลัก (Core Conflict)
                 </h4>
-                <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-xs text-foreground font-normal dark:text-slate-200 leading-relaxed whitespace-pre-line">
                   {lore.coreConflict}
                 </p>
-              </div>
-            )}
-
-            {lore?.timelineEvents && lore.timelineEvents.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-border/50">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                  ไทม์ไลน์ลำดับเหตุการณ์สำคัญ
-                </h4>
-                <div className="space-y-2.5">
-                  {lore.timelineEvents.map((evt, idx) => (
-                    <div
-                      key={evt.id || idx}
-                      className="p-3.5 rounded-xl bg-muted/50 border border-border flex items-start gap-3 shadow-2xs"
-                    >
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[11px] font-bold shrink-0">
-                        {evt.timeLabel || 'ไม่ระบุเวลา'}
-                      </span>
-                      <div className="space-y-1">
-                        <div className="text-xs font-bold text-foreground flex items-center gap-2">
-                          <span>{evt.eventTitle}</span>
-                          {evt.isSecret && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                              ความลับ
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-foreground/80 dark:text-muted-foreground leading-relaxed">
-                          {evt.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
