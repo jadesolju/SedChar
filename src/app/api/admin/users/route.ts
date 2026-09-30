@@ -38,22 +38,18 @@ export async function GET(req: Request) {
       characters_count: number;
     }>();
 
-    // 1. Direct Postgres Database Query (if DATABASE_URL / POSTGRES_URL is configured on Vercel)
+    // 1. Direct Postgres Database Query from auth.users schema
     if (sql) {
       try {
         const rows = await sql`
           SELECT 
-            u.id::text as id,
-            COALESCE(u.email, '') as email,
-            COALESCE(u.raw_user_meta_data->>'role', u.raw_app_meta_data->>'role', 'free') as role,
-            u.created_at::text as created_at,
-            u.last_sign_in_at::text as last_sign_in_at,
-            COALESCE(c.char_count, 0)::int as characters_count
-          FROM auth.users u
-          LEFT JOIN (
-            SELECT user_id, count(*)::int as char_count FROM public.characters GROUP BY user_id
-          ) c ON c.user_id = u.id
-          ORDER BY u.created_at DESC
+            id::text as id,
+            COALESCE(email, '') as email,
+            COALESCE(raw_user_meta_data->>'role', raw_app_meta_data->>'role', 'free') as role,
+            created_at::text as created_at,
+            last_sign_in_at::text as last_sign_in_at
+          FROM auth.users
+          ORDER BY created_at DESC
           LIMIT 100;
         `;
 
@@ -65,12 +61,12 @@ export async function GET(req: Request) {
               role: (r.role as any) || 'free',
               created_at: r.created_at || new Date().toISOString(),
               last_sign_in_at: r.last_sign_in_at || null,
-              characters_count: Number(r.characters_count) || 0,
+              characters_count: 0,
             });
           });
         }
       } catch (dbErr) {
-        console.warn('Direct SQL query note:', dbErr);
+        console.warn('Direct SQL query note on auth.users:', dbErr);
       }
     }
 
@@ -298,17 +294,70 @@ export async function POST(req: Request) {
       }
     }
 
-    const wasUpdatedInBackend = sqlUpdated || authUpdated || profileUpdated;
+    // 5. Verification step: Query auth.users directly to confirm the change took effect
+    let verifiedRole: string | null = null;
+    let isVerifiedInAuthUsers = false;
+
+    if (sql && (targetUserId || targetEmail)) {
+      try {
+        const verifyRows = targetUserId
+          ? await sql`
+              SELECT 
+                id::text as id,
+                COALESCE(email, '') as email,
+                COALESCE(raw_user_meta_data->>'role', raw_app_meta_data->>'role', 'free') as role
+              FROM auth.users
+              WHERE id::text = ${targetUserId}
+              LIMIT 1;
+            `
+          : await sql`
+              SELECT 
+                id::text as id,
+                COALESCE(email, '') as email,
+                COALESCE(raw_user_meta_data->>'role', raw_app_meta_data->>'role', 'free') as role
+              FROM auth.users
+              WHERE email = ${targetEmail}
+              LIMIT 1;
+            `;
+
+        if (verifyRows && verifyRows.length > 0 && verifyRows[0]) {
+          verifiedRole = (verifyRows[0] as any).role;
+          isVerifiedInAuthUsers = (verifiedRole === role);
+        }
+      } catch (vErr) {
+        console.warn('SQL verify query note:', vErr);
+      }
+    }
+
+    if (!isVerifiedInAuthUsers && targetUserId && isServiceRole) {
+      try {
+        const { data: verifyData } = await client.auth.admin.getUserById(targetUserId);
+        if (verifyData?.user) {
+          verifiedRole = verifyData.user.user_metadata?.role || verifyData.user.app_metadata?.role || 'free';
+          isVerifiedInAuthUsers = (verifiedRole === role);
+        }
+      } catch (sdkVerifyErr) {
+        console.warn('SDK verify note:', sdkVerifyErr);
+      }
+    }
+
+    const wasUpdatedInBackend = sqlUpdated || authUpdated || profileUpdated || isVerifiedInAuthUsers;
 
     return NextResponse.json({
       success: true,
-      message: wasUpdatedInBackend
+      verified: isVerifiedInAuthUsers,
+      verifiedRole: verifiedRole || (isVerifiedInAuthUsers ? role : null),
+      message: isVerifiedInAuthUsers
+        ? `✓ ยืนยันตรงกับ auth.users: ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว (Verified)`
+        : wasUpdatedInBackend
         ? `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว`
-        : `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} (หมายเหตุ: กรุณาเพิ่ม SUPABASE_SERVICE_ROLE_KEY ใน Vercel เพื่ออัปเดตตรงเข้า Supabase Auth Server)`,
+        : `⚠️ ระบบยังไม่สามารถเขียนลง auth.users ได้ (ต้องการ DATABASE_URL หรือ SUPABASE_SERVICE_ROLE_KEY ใน Vercel)`,
       user: {
         id: targetUserId,
         email: targetEmail,
         role,
+        verifiedRole: verifiedRole || role,
+        isVerifiedInAuthUsers,
         sqlUpdated,
         authUpdated,
         profileUpdated,

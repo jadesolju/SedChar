@@ -173,16 +173,23 @@ function AdminNexusDashboardContent() {
         throw new Error(data.error || 'ไม่สามารถปรับสิทธิ์ได้');
       }
 
-      showToast(`🎉 ปรับสิทธิ์ [${targetUser.email || targetUser.id}] เป็น ${targetRole.toUpperCase()} สำเร็จ!`);
+      const isVerified = Boolean(data.verified || data.user?.isVerifiedInAuthUsers);
+      const confirmedRole = (data.verifiedRole || data.user?.role || targetRole) as UserRole;
+
+      if (isVerified) {
+        showToast(`✓ ตรวจสอบแล้ว (Verified): [${targetUser.email || targetUser.id}] สิทธิ์ใน auth.users เปลี่ยนเป็น [${confirmedRole.toUpperCase()}] สำเร็จ 100%!`);
+      } else {
+        showToast(data.message || `⚠️ แจ้งเตือน: ปรับสิทธิ์เป็น [${confirmedRole.toUpperCase()}] แต่ยังไม่ได้รับการยืนยันจาก auth.users`);
+      }
 
       // Update in local user list state immediately
       setUsersList((prev) =>
-        prev.map((u) => (u.id === targetUser.id ? { ...u, role: targetRole } : u))
+        prev.map((u) => (u.id === targetUser.id ? { ...u, role: confirmedRole } : u))
       );
 
       // If updating own account, also sync AuthContext
       if (user && user.id === targetUser.id) {
-        setUserRole(targetRole);
+        setUserRole(confirmedRole);
       }
     } catch (err: any) {
       alert(`⚠️ เกิดข้อผิดพลาด: ${err.message}`);
@@ -220,13 +227,20 @@ function AdminNexusDashboardContent() {
         throw new Error(data.error || 'ไม่สามารถปรับสิทธิ์ได้');
       }
 
-      setLastAdjustedUser({ query, role: emergencyTargetRole });
-      showToast(`⚡ ปรับสิทธิ์สำเร็จ! [${query}] ได้รับสิทธิ์ ${emergencyTargetRole.toUpperCase()} เรียบร้อย`);
+      const isVerified = Boolean(data.verified || data.user?.isVerifiedInAuthUsers);
+      const confirmedRole = (data.verifiedRole || data.user?.role || emergencyTargetRole) as UserRole;
+
+      setLastAdjustedUser({ query, role: confirmedRole });
+      if (isVerified) {
+        showToast(`✓ ตรวจสอบแล้ว (Verified): [${query}] มีสิทธิ์ใน auth.users เป็น [${confirmedRole.toUpperCase()}] จริง 100%!`);
+      } else {
+        showToast(data.message || `⚡ ปรับสิทธิ์สำเร็จ! [${query}] ได้รับสิทธิ์ ${confirmedRole.toUpperCase()} เรียบร้อย`);
+      }
       setEmergencyInput('');
       fetchUsersList();
 
       if (user && (user.email?.toLowerCase() === query.toLowerCase() || user.id === query)) {
-        setUserRole(emergencyTargetRole);
+        setUserRole(confirmedRole);
       }
     } catch (err: any) {
       alert(`⚠️ เกิดข้อผิดพลาด: ${err.message}`);
