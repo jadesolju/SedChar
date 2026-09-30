@@ -149,38 +149,27 @@ export function LoreTimelineSection({
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {lore.timelineEvents.map((event, idx) => (
                 <div
                   key={event.id}
-                  className="p-3.5 rounded-2xl border border-border bg-card/60 hover:border-amber-500/40 transition-all space-y-3"
+                  className="p-4 rounded-2xl border border-border bg-card/60 hover:border-amber-500/40 transition-all space-y-3 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
-                      <input
-                        type="text"
-                        value={event.timeLabel}
-                        onChange={(e) => onUpdateEvent(idx, { timeLabel: e.target.value })}
-                        placeholder="ช่วงเวลา เช่น 5 ปีก่อน / ปัจจุบัน..."
-                        className="w-32 sm:w-44 px-2.5 py-1 rounded-lg bg-muted/60 border border-border text-xs text-foreground outline-hidden font-medium"
-                      />
-                      <input
-                        type="text"
-                        value={event.eventTitle}
-                        onChange={(e) => onUpdateEvent(idx, { eventTitle: e.target.value })}
-                        placeholder="ชื่อเหตุการณ์สำคัญ..."
-                        className="flex-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border text-xs text-foreground outline-hidden font-semibold"
-                      />
+                      <span className="text-xs font-bold text-foreground">
+                        เหตุการณ์ที่ {idx + 1}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => onUpdateEvent(idx, { isSecret: !event.isSecret })}
-                        className={"px-2 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 transition-all cursor-pointer " + (event.isSecret ? "bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300" : "bg-muted border-border text-muted-foreground")}
+                        className={"px-2.5 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 transition-all cursor-pointer " + (event.isSecret ? "bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300" : "bg-muted border-border text-muted-foreground")}
                         title={event.isSecret ? 'ข้อมูลลับเฉพาะตัวละครที่ระบุ' : 'ข้อมูลที่ทุกคนรู้'}
                       >
                         {event.isSecret ? <Lock className="w-3 h-3 text-rose-500" /> : <Unlock className="w-3 h-3" />}
@@ -198,13 +187,47 @@ export function LoreTimelineSection({
                     </div>
                   </div>
 
-                  <ExpandableTextarea
-                    id={`timeline-event-${event.id}`}
-                    rows={2}
-                    value={event.description}
-                    onChange={(val) => onUpdateEvent(idx, { description: val })}
-                    placeholder="รายละเอียดของเหตุการณ์นี้ และผลกระทบต่อเรื่องราว..."
-                  />
+                  {/* Grid for Event Title & Time Period with explicit labels */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[11px] font-bold text-foreground block">
+                        หัวข้อเหตุการณ์ (Event Title) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={event.eventTitle}
+                        onChange={(e) => onUpdateEvent(idx, { eventTitle: e.target.value })}
+                        placeholder="เช่น การสถาปนากฎเหล็กกริมสโตน, สงครามผลึกเวทมนตร์..."
+                        className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground outline-hidden font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-foreground block">
+                        ช่วงเวลา (Time / Era)
+                      </label>
+                      <input
+                        type="text"
+                        value={event.timeLabel}
+                        onChange={(e) => onUpdateEvent(idx, { timeLabel: e.target.value })}
+                        placeholder="เช่น 100 ปีก่อน, ปัจจุบัน..."
+                        className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground outline-hidden font-medium focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-foreground block">
+                      รายละเอียดเหตุการณ์ (Event Description)
+                    </label>
+                    <ExpandableTextarea
+                      id={`timeline-event-${event.id}`}
+                      rows={2}
+                      value={event.description}
+                      onChange={(val) => onUpdateEvent(idx, { description: val })}
+                      placeholder="รายละเอียดของเหตุการณ์นี้ และผลกระทบต่อเรื่องราว..."
+                    />
+                  </div>
                 </div>
               ))}
             </div>
