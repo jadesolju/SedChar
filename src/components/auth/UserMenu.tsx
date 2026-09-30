@@ -280,13 +280,10 @@ export function UserMenu({
               </Link>
             )}
 
-            {/* Profile Settings Link */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                openProfileModal();
-              }}
+            {/* Profile Settings Link (Navigates to dedicated /profile page) */}
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
             >
               <Settings className="w-4 h-4 text-purple-500 flex-shrink-0" />
@@ -296,7 +293,7 @@ export function UserMenu({
                   เปลี่ยนชื่อ, อัปโหลด Avatar, ข้อมูลส่วนตัว
                 </div>
               </div>
-            </button>
+            </Link>
 
             {/* Secret Control Nexus Link - ONLY FOR ADMIN ROLE */}
             {userRole === 'admin' && (
@@ -339,9 +336,6 @@ export function UserMenu({
           </div>
         </div>
       )}
-
-      {/* Global Profile Settings Modal */}
-      <ProfileSettingsModal isOpen={isProfileModalOpen} onClose={closeProfileModal} />
     </div>
   );
 }
