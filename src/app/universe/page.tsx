@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { RubiiMultiWorkspace } from '@/components/rubii-multi/RubiiMultiWorkspace';
 import { AuthProvider } from '@/context/AuthContext';
 
-const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
+const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   title: 'Universe & Lorebook Studio | SedChar.AI',

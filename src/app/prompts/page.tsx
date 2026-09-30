@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/AuthContext';
 import { PromptLibraryPageClient } from '@/components/prompt-library/PromptLibraryPageClient';
 
-const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
+const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   title: 'Prompt Library | SedChar.AI — คลังคำสั่งและกฎพฤติกรรม AI',

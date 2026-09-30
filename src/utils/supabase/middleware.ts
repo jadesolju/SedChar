@@ -10,6 +10,54 @@ const PUBLIC_API_ROUTES = ['/api/health', '/api/auth/callback', '/api/ai', '/api
 export const updateSession = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
 
+  // Domain Redirection & Seamless Session Migration for Old Domains
+  const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  const currentHost = (rawHost.toLowerCase().split(':')[0] || '').trim();
+  const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost.endsWith('.local');
+
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
+  let targetOrigin = 'https://sedchar.online';
+  let targetHost = 'sedchar.online';
+  try {
+    const parsed = new URL(appBaseUrl);
+    targetOrigin = parsed.origin;
+    targetHost = (parsed.host.toLowerCase().split(':')[0] || 'sedchar.online').trim();
+  } catch {}
+
+  const isOldDomain = !isLocalhost && Boolean(currentHost) && (
+    currentHost === 'sedchar.vercel.app' ||
+    (currentHost.endsWith('.vercel.app') && currentHost !== targetHost && !targetHost.endsWith('.vercel.app'))
+  );
+
+  if (isOldDomain) {
+    try {
+      const tempSupabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {},
+        },
+      });
+
+      const { data: { session } } = await tempSupabase.auth.getSession();
+
+      if (session?.access_token && session?.refresh_token) {
+        const migrateUrl = new URL('/auth/migrate-session', targetOrigin);
+        migrateUrl.searchParams.set('access_token', session.access_token);
+        migrateUrl.searchParams.set('refresh_token', session.refresh_token);
+        const nextDest = request.nextUrl.pathname + request.nextUrl.search;
+        migrateUrl.searchParams.set('next', nextDest);
+        return NextResponse.redirect(migrateUrl, 307);
+      }
+    } catch (e) {
+      console.warn('Session check during old domain redirect error:', e);
+    }
+
+    const targetUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, targetOrigin);
+    return NextResponse.redirect(targetUrl, 308);
+  }
+
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,

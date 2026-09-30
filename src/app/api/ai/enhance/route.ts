@@ -141,7 +141,7 @@ async function callOpenRouterSingle(apiKey: string, prompt: string, model: strin
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://sedchar.vercel.app',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online',
         'X-Title': 'SedChar Studio'
       },
       body: JSON.stringify({

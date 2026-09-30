@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { decodeCharacterFromShareUrl } from '@/shared/shareUtils';
 import { MainWorkspaceClient } from '@/components/workspace/MainWorkspaceClient';
@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const shareId = searchParams.share;
   const dataParam = searchParams.data;
   // Always use the public production domain so Discord and social bots never get blocked by Vercel deployment login
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
 
   // 1. Cloud Share Metadata (via Supabase database)
   if (shareId) {

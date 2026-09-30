@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const { userId, userEmail, plan = 'supporter_29' } = body;
-    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app';
+    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online';
 
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
       return NextResponse.json(

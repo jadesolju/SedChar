@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Always use public production domain
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
     const shareUrl = `${baseUrl}/?share=${shareId}&mode=${permission}`;
 
     return NextResponse.json({

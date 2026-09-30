@@ -50,7 +50,7 @@ async function callOpenRouter(apiKey: string, prompt: string, model: string = FA
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://sedchar.vercel.app',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online',
       'X-Title': 'SedChar Universe AI',
     },
     body: JSON.stringify({

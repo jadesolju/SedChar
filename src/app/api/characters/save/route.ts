@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app').replace(/\/+$/, '');
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
     const shareUrl = finalShareId ? `${baseUrl}/?share=${finalShareId}&mode=${share_permission}` : '';
 
     return NextResponse.json({

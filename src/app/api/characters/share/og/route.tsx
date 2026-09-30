@@ -1,4 +1,4 @@
-﻿import { ImageResponse } from 'next/og';
+import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -48,7 +48,7 @@ async function fetchImageWithTimeout(url: string, timeoutMs = 1800): Promise<str
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SedCharBot/1.0; +https://sedchar.vercel.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; SedCharBot/1.0; +https://sedchar.online)',
         'Accept': 'image/png,image/jpeg,image/*;q=0.8',
       },
     });
