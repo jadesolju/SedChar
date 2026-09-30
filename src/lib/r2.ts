@@ -352,6 +352,76 @@ export async function deleteUniversePayloadFromR2(shareId: string): Promise<void
   }
 }
 
+/**
+ * Saves a user's Multi-Character project to their personal R2 library
+ */
+export async function saveUserUniverseToR2(userId: string, projectId: string, payload: any): Promise<string> {
+  const cleanUserId = (userId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '');
+  const key = `user_universes/${cleanUserId}/${projectId}.json`;
+  const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=60, stale-while-revalidate=86400',
+    })
+  );
+
+  return `${R2_PUBLIC_URL}/${key}`;
+}
+
+/**
+ * Fetches all saved Multi-Character projects for a user from R2
+ */
+export async function fetchUserUniversesFromR2(userId: string): Promise<any[]> {
+  const cleanUserId = (userId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '');
+  const indexKey = `user_universes/${cleanUserId}/index.json`;
+  const cdnUrl = `${R2_PUBLIC_URL}/${indexKey}`;
+  try {
+    const res = await fetch(cdnUrl, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+    }
+  } catch {}
+
+  try {
+    const getRes = await r2Client.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: indexKey,
+      })
+    );
+    const bodyStr = await getRes.Body?.transformToString();
+    if (bodyStr) {
+      const parsed = JSON.parse(bodyStr);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+
+  return [];
+}
+
+/**
+ * Updates the user's Multi-Character projects index in R2
+ */
+export async function saveUserUniverseIndexToR2(userId: string, records: any[]): Promise<void> {
+  const cleanUserId = (userId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '');
+  const indexKey = `user_universes/${cleanUserId}/index.json`;
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: indexKey,
+      Body: JSON.stringify(records, null, 2),
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=5, stale-while-revalidate=60',
+    })
+  );
+}
+
 export interface UniverseInteractionData {
   reactions: {
     love: number;

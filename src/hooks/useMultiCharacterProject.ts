@@ -31,6 +31,40 @@ export interface SavedMultiProjectRecord {
   updatedAt: string;
 }
 
+function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
+  if (typeof window === 'undefined') return [];
+  const candidateKeys = [
+    MULTI_CHAR_LIBRARY_KEY,
+    'sedchar_multi_projects_library',
+    'sedchar_universe_projects',
+    'sedchar_universe_library',
+    'rubii_multi_projects_library',
+    'sedchar_multi_char_library',
+  ];
+
+  const map = new Map<string, SavedMultiProjectRecord>();
+
+  candidateKeys.forEach((k) => {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item) => {
+            if (item && item.id && !map.has(item.id)) {
+              map.set(item.id, item);
+            }
+          });
+        }
+      }
+    } catch {}
+  });
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
+  );
+}
+
 export function useMultiCharacterProject() {
   const [project, setProject] = useState<MultiCharacterProjectDraft>(() => {
     if (typeof window === 'undefined') return DEFAULT_MULTI_PROJECT_DRAFT;
@@ -67,20 +101,37 @@ export function useMultiCharacterProject() {
     } catch {}
   }, []);
 
-  // Saved Projects Library State
+  // Saved Projects Library State (Multi-Key Local Recovery)
   const [savedProjects, setSavedProjects] = useState<SavedMultiProjectRecord[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch {}
-    return [];
+    return loadLocalMultiProjects();
   });
+
+  // Cloud Sync on Mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    fetch('/api/universe/library')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.projects) && data.projects.length > 0) {
+          const currentLocal = loadLocalMultiProjects();
+          const map = new Map<string, SavedMultiProjectRecord>();
+          currentLocal.forEach((p) => map.set(p.id, p));
+          data.projects.forEach((cloudP: SavedMultiProjectRecord) => {
+            if (cloudP && cloudP.id) {
+              map.set(cloudP.id, cloudP);
+            }
+          });
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
+          );
+          setSavedProjects(merged);
+          try {
+            localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(merged));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Auto-save active draft to LocalStorage whenever project changes
   useEffect(() => {
@@ -92,14 +143,22 @@ export function useMultiCharacterProject() {
     }
   }, [project]);
 
-  // Persist Saved Projects Library
-  const persistLibrary = (records: SavedMultiProjectRecord[]) => {
+  // Persist Saved Projects Library to LocalStorage and Cloud
+  const persistLibrary = (records: SavedMultiProjectRecord[], targetRecordToSync?: SavedMultiProjectRecord) => {
     setSavedProjects(records);
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(records));
     } catch (e) {
       console.error('Failed to persist multi-char project library', e);
+    }
+
+    if (targetRecordToSync) {
+      fetch('/api/universe/library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ record: targetRecordToSync }),
+      }).catch(() => {});
     }
   };
 
@@ -131,9 +190,10 @@ export function useMultiCharacterProject() {
 
       if (targetId) {
         // Overwrite existing record
+        let updatedRecord: SavedMultiProjectRecord | undefined = undefined;
         const next = savedProjects.map((rec) => {
           if (rec.id === targetId) {
-            return {
+            updatedRecord = {
               ...rec,
               title: projectTitle,
               description: summaryDesc,
@@ -148,10 +208,11 @@ export function useMultiCharacterProject() {
               },
               updatedAt: now,
             };
+            return updatedRecord;
           }
           return rec;
         });
-        persistLibrary(next);
+        persistLibrary(next, updatedRecord);
         setActiveLibraryProjectId(targetId);
         return { success: true, id: targetId, mode: 'overwrite' as const };
       } else {
@@ -173,7 +234,7 @@ export function useMultiCharacterProject() {
           createdAt: now,
           updatedAt: now,
         };
-        persistLibrary([newRecord, ...savedProjects]);
+        persistLibrary([newRecord, ...savedProjects], newRecord);
         setActiveLibraryProjectId(newId);
         return { success: true, id: newId, mode: 'new' as const };
       }
@@ -204,6 +265,7 @@ export function useMultiCharacterProject() {
       if (activeLibraryProjectId === id) {
         setActiveLibraryProjectId(null);
       }
+      fetch(`/api/universe/library?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
     },
     [savedProjects, activeLibraryProjectId, setActiveLibraryProjectId]
   );
