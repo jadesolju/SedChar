@@ -15,6 +15,7 @@ import {
   Gem,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { compressImageToAvatar } from '@/utils/imageCompressor';
 
 const AVATAR_PRESETS = [
   { id: 'sakura', label: 'ซากุระ', emoji: '🌸', bg: 'bg-pink-500/20 text-pink-500 border-pink-500/30' },
@@ -66,30 +67,22 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   if (!isOpen || !user) return null;
 
   // Handle image upload from local file
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('รูปภาพมีขนาดใหญ่เกินไป กรุณาใช้รูปภาพขนาดไม่เกิน 2MB');
-      return;
-    }
-
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
-        setAvatarUrl(base64);
-        setSelectedPreset(null);
-      }
+    try {
+      // Auto compress and square crop for crisp avatar (~20KB)
+      const compressedDataUrl = await compressImageToAvatar(file, 320, 0.85);
+      setAvatarUrl(compressedDataUrl);
+      setSelectedPreset(null);
+    } catch (err: any) {
+      alert(err.message || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+    } finally {
       setIsUploading(false);
-    };
-    reader.onerror = () => {
-      alert('เกิดข้อผิดพลาดในการอ่านไฟล์รูปภาพ');
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // Handle Preset Choice
@@ -228,7 +221,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  รองรับ PNG, JPG, GIF ขนาดไม่เกิน 2MB
+                  รองรับรูปภาพทุกขนาด (ระบบบีบอัดความละเอียดสูงอัตโนมัติ)
                 </p>
                 <input
                   ref={fileInputRef}
