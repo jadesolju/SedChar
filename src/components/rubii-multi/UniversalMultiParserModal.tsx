@@ -182,31 +182,33 @@ export function UniversalMultiParserModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="fixed inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[90vh] z-10 animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-gradient-to-tr from-purple-500/20 to-indigo-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30">
-              <Sparkles className="w-5 h-5" />
+        <div className="flex-shrink-0 flex items-start justify-between p-3.5 sm:px-6 sm:py-4 border-b border-border bg-muted/30 gap-2.5">
+          <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-purple-500/20 to-indigo-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h3 className="text-xs sm:text-base font-bold text-foreground">
                   Universal Multi-Parser
                 </h3>
                 {isUnlimitedTier ? (
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-amber-500" />
+                  <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 inline-flex items-center gap-1 shrink-0">
+                    <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
                     Pro Suite Unlocked
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                    ทดลองใช้ฟรี: เหลือ {freeTrialRemaining}/{MAX_FREE_TRIAL} ครั้ง
+                  <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                    ทดลองฟรี: เหลือ {freeTrialRemaining}/{MAX_FREE_TRIAL} ครั้ง
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 leading-snug">
                 วางเรื่องย่อ / พล็อตนิยาย / หรือนำเข้าไฟล์ เพื่อให้ AI สกัด World + Lore + Characters พร้อมกัน
               </p>
             </div>
@@ -214,17 +216,18 @@ export function UniversalMultiParserModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+            aria-label="ปิดหน้าต่าง"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-3.5 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto custom-scrollbar flex-1">
           {/* Quick Action Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -235,7 +238,7 @@ export function UniversalMultiParserModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-xl border border-border bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-border bg-muted/60 hover:bg-muted text-[11px] sm:text-xs font-semibold text-foreground flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <Upload className="w-3.5 h-3.5 text-primary" />
                 <span>นำเข้าไฟล์ (.txt, .md, .json)</span>
@@ -244,7 +247,7 @@ export function UniversalMultiParserModal({
               <button
                 type="button"
                 onClick={handleLoadSample}
-                className="px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-[11px] sm:text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
                 <FileText className="w-3.5 h-3.5 text-purple-500" />
                 <span>โหลดตัวอย่างพล็อต</span>
@@ -255,7 +258,7 @@ export function UniversalMultiParserModal({
               <button
                 type="button"
                 onClick={() => setRawText('')}
-                className="text-xs text-muted-foreground hover:text-rose-500 transition-colors"
+                className="text-[11px] sm:text-xs text-muted-foreground hover:text-rose-500 transition-colors py-1 cursor-pointer"
               >
                 ล้างข้อความ
               </button>
@@ -263,78 +266,78 @@ export function UniversalMultiParserModal({
           </div>
 
           {/* Large Text Input */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <textarea
-              rows={8}
+              rows={5}
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
               placeholder="วางพล็อตเรื่องย่อ, ปูมหลังโลก, กฎเกณฑ์, ไทม์ไลน์ หรือประวัติตัวละครทั้งหมดที่นี่..."
-              className="w-full px-4 py-3 rounded-2xl bg-muted/40 border border-border text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-purple-500/40 leading-relaxed font-sans resize-none"
+              className="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl bg-muted/40 border border-border text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-purple-500/40 leading-relaxed font-sans resize-none"
             />
           </div>
 
           {/* Live Section Requirements Detector */}
-          <div className="p-3.5 rounded-2xl bg-card border border-border/80 space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-              <span>การตรวจจับองค์ประกอบหลักในข้อความ (Requirements)</span>
+          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-card border border-border/80 space-y-1.5 sm:space-y-2">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>การตรวจจับองค์ประกอบหลัก (Requirements)</span>
               <span className="text-[10px] text-muted-foreground lowercase">
                 {rawText ? `${rawText.length} ตัวอักษร` : 'ยังไม่มีข้อมูล'}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 pt-0.5">
               <div
-                className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all ${
+                className={`p-2 sm:p-2.5 rounded-xl border flex items-center gap-2 text-[11px] sm:text-xs font-semibold transition-all ${
                   detectedSections.hasWorld
                     ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400'
                     : 'bg-muted/30 border-border/50 text-muted-foreground'
                 }`}
               >
-                <Globe className="w-4 h-4 shrink-0" />
-                <span>1. World Setting</span>
-                {detectedSections.hasWorld && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
+                <Globe className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">1. World Setting</span>
+                {detectedSections.hasWorld && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500 shrink-0" />}
               </div>
 
               <div
-                className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all ${
+                className={`p-2 sm:p-2.5 rounded-xl border flex items-center gap-2 text-[11px] sm:text-xs font-semibold transition-all ${
                   detectedSections.hasLore
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
                     : 'bg-muted/30 border-border/50 text-muted-foreground'
                 }`}
               >
-                <BookOpen className="w-4 h-4 shrink-0" />
-                <span>2. Lore & Timeline</span>
-                {detectedSections.hasLore && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">2. Lore & Timeline</span>
+                {detectedSections.hasLore && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500 shrink-0" />}
               </div>
 
               <div
-                className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all ${
+                className={`p-2 sm:p-2.5 rounded-xl border flex items-center gap-2 text-[11px] sm:text-xs font-semibold transition-all ${
                   detectedSections.hasChars
                     ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
                     : 'bg-muted/30 border-border/50 text-muted-foreground'
                 }`}
               >
-                <Users className="w-4 h-4 shrink-0" />
-                <span>3. Main Characters (≥1)</span>
-                {detectedSections.hasChars && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
+                <Users className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">3. Main Characters (≥1)</span>
+                {detectedSections.hasChars && <Check className="w-3.5 h-3.5 ml-auto text-emerald-500 shrink-0" />}
               </div>
             </div>
           </div>
 
           {/* Auto-Fill Missing Switch */}
-          <label className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-start gap-3 cursor-pointer hover:bg-muted/60 transition-colors">
+          <label className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-muted/40 border border-border flex items-start gap-2.5 sm:gap-3 cursor-pointer hover:bg-muted/60 transition-colors">
             <input
               type="checkbox"
               checked={autoFillMissing}
               onChange={(e) => setAutoFillMissing(e.target.checked)}
-              className="mt-0.5 rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+              className="mt-0.5 rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer shrink-0"
             />
-            <div className="text-xs space-y-0.5">
-              <span className="font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                ให้ AI ช่วยคิดเติมองค์ประกอบส่วนที่ขาดให้ครบสมบูรณ์
+            <div className="text-xs space-y-0.5 min-w-0 flex-1">
+              <span className="font-bold text-foreground flex items-center gap-1.5 flex-wrap">
+                <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                <span>ให้ AI ช่วยคิดเติมองค์ประกอบส่วนที่ขาดให้ครบสมบูรณ์</span>
               </span>
-              <p className="text-muted-foreground leading-relaxed text-[11px]">
+              <p className="text-muted-foreground leading-relaxed text-[10px] sm:text-[11px]">
                 หากข้อความของคุณมีเพียงฉากหรือ Lore แต่ยังไม่มีตัวละคร AI จะออกแบบตัวละครเอกและสายสัมพันธ์ที่เข้ากับโลกให้โดยอัตโนมัติ
               </p>
             </div>
@@ -342,7 +345,7 @@ export function UniversalMultiParserModal({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+            <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -350,8 +353,8 @@ export function UniversalMultiParserModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 sm:px-6 py-4 border-t border-border bg-muted/20 flex items-center justify-between gap-3">
-          <div className="text-xs text-muted-foreground">
+        <div className="flex-shrink-0 p-3.5 sm:px-6 sm:py-4 border-t border-border bg-muted/20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2 text-[11px] sm:text-xs text-muted-foreground">
             {!isUnlimitedTier && (
               <span>
                 {isTrialExhausted
@@ -365,7 +368,7 @@ export function UniversalMultiParserModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer text-center"
             >
               ยกเลิก
             </button>
@@ -374,27 +377,27 @@ export function UniversalMultiParserModal({
               <button
                 type="button"
                 onClick={onOpenUpgradeModal}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
               >
-                <Crown className="w-4 h-4" />
-                <span>ปลดล็อค Universe Pro (99.-)</span>
+                <Crown className="w-4 h-4 shrink-0" />
+                <span>ปลดล็อค Pro (99.-)</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleStartParse}
                 disabled={isLoading || !rawText.trim()}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+                className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังสกัดโครงสร้างจักรวาล...</span>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span className="truncate">กำลังสกัดโครงสร้าง...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>สกัดและนำเข้าสู่ Studio</span>
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span className="truncate">สกัดและนำเข้าสู่ Studio</span>
                   </>
                 )}
               </button>
@@ -405,3 +408,4 @@ export function UniversalMultiParserModal({
     </div>
   );
 }
+

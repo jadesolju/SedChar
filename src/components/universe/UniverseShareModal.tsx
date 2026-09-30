@@ -96,22 +96,25 @@ export function UniverseShareModal({
   const projectName = project.worldSetting?.projectName || project.title || 'จักรวาลที่ยังไม่ได้ตั้งชื่อ';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="fixed inset-0" onClick={onClose} />
+      <div className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] z-10 animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
-              <Share2 className="w-5 h-5" />
+        <div className="flex-shrink-0 flex items-start justify-between p-3.5 sm:px-6 sm:py-4 border-b border-border bg-muted/30 gap-2.5">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Share2 className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                แชร์จักรวาลแบบ Unlisted Link
-                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h3 className="text-xs sm:text-base font-bold text-foreground">
+                  แชร์จักรวาลแบบ Unlisted Link
+                </h3>
+                <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
                   Secret Only
                 </span>
-              </h3>
-              <p className="text-xs text-muted-foreground line-clamp-1">
+              </div>
+              <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 {projectName}
               </p>
             </div>
@@ -119,9 +122,10 @@ export function UniverseShareModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+            aria-label="ปิดหน้าต่าง"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
