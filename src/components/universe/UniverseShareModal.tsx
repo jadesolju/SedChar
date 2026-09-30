@@ -14,8 +14,11 @@ import {
   Loader2,
   ShieldCheck,
   Layers,
+  Cloud,
+  CloudOff,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
+import { MULTI_CHAR_LIBRARY_KEY } from '@/hooks/useMultiCharacterProject';
 import { useAuth } from '@/context/AuthContext';
 
 interface UniverseShareModalProps {
@@ -31,7 +34,7 @@ export function UniverseShareModal({
   project,
   onShowToast,
 }: UniverseShareModalProps) {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
@@ -67,7 +70,37 @@ export function UniverseShareModal({
         const fullUrl = `${origin}/universe/share/${data.shareId}`;
         setShareUrl(fullUrl);
         setShareId(data.shareId);
-        onShowToast('สร้างลิงก์ Secret Share สำเร็จแล้ว!');
+
+        // Auto-sync to local project library immediately
+        try {
+          const raw = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+          let list = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(list)) list = [];
+          const projectTitle =
+            project.worldSetting?.projectName?.trim() || project.title || 'จักรวาลและคลังความจำ';
+          const newRecord = {
+            id: data.shareId,
+            title: projectTitle,
+            description:
+              project.worldSetting?.genreTone ||
+              project.worldSetting?.mainLocation ||
+              'จักรวาลและคลังความจำ',
+            mainCharCount: project.mainCharacters?.length || 0,
+            subCharCount: project.supportingCharacters?.length || 0,
+            routeCount: project.routes?.length || 0,
+            projectData: project,
+            shareId: data.shareId,
+            shareUrl: fullUrl,
+            isShared: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          const filtered = list.filter((p: any) => p.id !== data.shareId && p.id !== project.id);
+          localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify([newRecord, ...filtered]));
+          window.dispatchEvent(new Event('storage'));
+        } catch (e) {}
+
+        onShowToast('บันทึกลง Cloud Library และสร้างลิงก์ Secret Share สำเร็จแล้ว!');
       } else {
         alert(data.error || 'สร้างลิงก์แชร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       }
@@ -139,7 +172,32 @@ export function UniverseShareModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 overflow-y-auto">
+        <div className="p-6 space-y-4 overflow-y-auto">
+          {/* Cloud Sync Status Banner */}
+          {user ? (
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-2.5 text-xs text-purple-700 dark:text-purple-300">
+              <Cloud className="w-4 h-4 text-purple-500 shrink-0" />
+              <div className="min-w-0 flex-1 leading-snug">
+                <span className="font-bold">Cloud Auto-Save: </span>
+                <span>จักรวาลนี้จะถูกบันทึกและซิงค์ลงใน Cloud Library ของคุณอัตโนมัติเมื่อสร้างลิงก์</span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <CloudOff className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="truncate">ยังไม่ได้เข้าสู่ระบบ — บันทึกลง Cloud ถาวร</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => openAuthModal('signin')}
+                className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-bold text-[11px] shrink-0 cursor-pointer shadow-xs"
+              >
+                เข้าสู่ระบบ
+              </button>
+            </div>
+          )}
+
           {/* Privacy Notice Banner */}
           <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-start gap-3 text-xs leading-relaxed text-muted-foreground">
             <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
@@ -152,7 +210,7 @@ export function UniverseShareModal({
           {/* Project Summary */}
           <div className="p-4 rounded-xl bg-card border border-border/80 space-y-2">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              ข้อมูลที่จะถูกรวมในลิงก์แชร์
+              ข้อมูลที่จะถูกรวมในลิงก์แชร์ &amp; Cloud Library
             </div>
             <div className="grid grid-cols-3 gap-2 text-center pt-1">
               <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
@@ -180,7 +238,7 @@ export function UniverseShareModal({
           {!shareUrl && (
             <div className="p-4 rounded-xl bg-card border border-border space-y-3">
               <div className="text-xs font-bold text-foreground flex items-center justify-between">
-                <span>การตั้งค่าสิทธิ์และการป้องกัน (Permissions & Protection)</span>
+                <span>การตั้งค่าสิทธิ์และการป้องกัน (Permissions &amp; Protection)</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
               </div>
 
@@ -235,6 +293,14 @@ export function UniverseShareModal({
           {/* Share Link Result */}
           {shareUrl ? (
             <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">บันทึกลง Cloud Library สำเร็จแล้ว! </span>
+                  <span>จักรวาลนี้ถูกจัดเก็บอย่างปลอดภัยบน Cloud และพร้อมส่งต่อให้เพื่อนแล้ว</span>
+                </div>
+              </div>
+
               <label className="text-xs font-bold text-foreground flex items-center justify-between">
                 <span>ลิงก์สำหรับส่งต่อให้เพื่อน</span>
                 <span className="text-emerald-500 flex items-center gap-1 text-[11px]">
@@ -297,12 +363,12 @@ export function UniverseShareModal({
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังสร้างลิงก์และบันทึกข้อมูล...</span>
+                    <span>กำลังบันทึกข้อมูลและสร้างลิงก์...</span>
                   </>
                 ) : (
                   <>
                     <LinkIcon className="w-4 h-4" />
-                    <span>สร้าง Secret Share Link สำหรับจักรวาลนี้</span>
+                    <span>บันทึก &amp; สร้าง Secret Share Link</span>
                   </>
                 )}
               </button>
@@ -313,3 +379,4 @@ export function UniverseShareModal({
     </div>
   );
 }
+

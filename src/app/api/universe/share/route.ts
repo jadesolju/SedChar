@@ -76,6 +76,33 @@ export async function POST(req: NextRequest) {
     // 1. Upload to Cloudflare R2
     const cdnUrl = await uploadUniversePayloadToR2(shareId, payload);
 
+    // 2. Automatically save & sync into user's personal Cloud Library in R2
+    if (userId && userId !== 'anonymous' && userId !== 'guest') {
+      try {
+        const { saveUserUniverseToR2, fetchUserUniversesFromR2, saveUserUniverseIndexToR2 } = await import('@/lib/r2');
+        const userRecord = {
+          id: shareId,
+          title: projectTitle,
+          description: project.worldSetting?.genreTone || project.worldSetting?.mainLocation || 'จักรวาลและคลังความจำ',
+          mainCharCount: project.mainCharacters?.length || 0,
+          subCharCount: project.supportingCharacters?.length || 0,
+          routeCount: project.routes?.length || 0,
+          projectData: project,
+          shareId,
+          shareUrl: `/universe/share/${shareId}`,
+          isShared: true,
+          createdAt: payload.createdAt,
+          updatedAt: payload.updatedAt,
+        };
+        await saveUserUniverseToR2(userId, shareId, userRecord);
+        const existing = await fetchUserUniversesFromR2(userId);
+        const filtered = existing.filter((p) => p.id !== shareId && p.shareId !== shareId);
+        await saveUserUniverseIndexToR2(userId, [userRecord, ...filtered]);
+      } catch (saveLibErr) {
+        console.warn('Auto-save universe share to user library note:', saveLibErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       shareId,

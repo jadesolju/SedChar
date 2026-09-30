@@ -630,43 +630,79 @@ function UniverseShareViewContent() {
         {/* Discussion & Cute Reactions Section */}
         <UniverseDiscussionSection shareId={shareId} projectName={projectName} />
 
-        {/* Bottom CTA to Clone or Co-Create */}
+        {/* Bottom CTA to Clone or Co-Create or Owner Actions */}
         <div className="p-6 rounded-3xl bg-muted/40 border border-border text-center space-y-3">
           <h4 className="text-sm font-bold text-foreground">
-            {canClone ? 'ชอบจักรวาลนี้และอยากนำไปต่อยอดไหม?' : 'ร่วมเป็นส่วนหนึ่งในการขยายจักรวาลนี้'}
+            {isOwner
+              ? '👑 คุณคือเจ้าของจักรวาลนี้ (Owner)'
+              : canClone
+              ? 'ชอบจักรวาลนี้และอยากนำไปต่อยอดไหม?'
+              : 'ร่วมเป็นส่วนหนึ่งในการขยายจักรวาลนี้'}
           </h4>
           <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            {canClone
+            {isOwner
+              ? 'จักรวาลนี้ถูกบันทึกและซิงค์อยู่ใน Cloud Library ของคุณเรียบร้อยแล้ว คุณสามารถกลับไปแก้ไขใน Studio หรือส่งลิงก์นี้ให้เพื่อนๆ ได้ตลอดเวลา'
+              : canClone
               ? 'คุณสามารถกดปุ่มด้านล่างเพื่อคัดลอกข้อมูลทั้งหมดเข้า Studio ส่วนตัวของคุณเพื่อแก้ไขและแปลงเป็น Prompt สำหรับเล่นได้ทันที'
               : 'จักรวาลนี้เปิดให้ร่วมสร้างสรรค์ คุณสามารถยื่นตัวละครของคุณเข้าร่วมเพื่อขยายเรื่องราวไปพร้อมกับผู้สร้างคนอื่นๆ'}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-            {canClone && (
-              <button
-                type="button"
-                onClick={handleCloneToMyStudio}
-                disabled={isCloning}
-                className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                <span>คัดลอกจักรวาลนี้ไปแต่งต่อใน Studio</span>
-              </button>
-            )}
-            {allowCoCreation && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user) {
-                    openAuthModal('signin');
-                  } else {
-                    setIsProposeModalOpen(true);
-                  }
-                }}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>ยื่นตัวละครเข้าร่วมจักรวาลนี้</span>
-              </button>
+            {isOwner ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(project));
+                      router.push('/multi');
+                    } catch {
+                      router.push('/multi');
+                    }
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Edit3 className="w-4 h-4 text-amber-300" />
+                  <span>เปิดแก้ไขจักรวาลนี้ใน Studio</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-bold shadow-xs transition-all inline-flex items-center gap-2 cursor-pointer"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์แชร์'}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {canClone && (
+                  <button
+                    type="button"
+                    onClick={handleCloneToMyStudio}
+                    disabled={isCloning}
+                    className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    <span>คัดลอกจักรวาลนี้ไปแต่งต่อใน Studio</span>
+                  </button>
+                )}
+                {allowCoCreation && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!user) {
+                        openAuthModal('signin');
+                      } else {
+                        setIsProposeModalOpen(true);
+                      }
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>ยื่นตัวละครเข้าร่วมจักรวาลนี้</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
