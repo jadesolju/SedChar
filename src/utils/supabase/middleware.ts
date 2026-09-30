@@ -8,6 +8,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.
 const PUBLIC_API_ROUTES = [
   '/api/health',
   '/api/auth',
+  '/api/avatar',
   '/api/ai',
   '/api/characters/share',
   '/api/characters/load',

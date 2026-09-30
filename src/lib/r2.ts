@@ -57,6 +57,31 @@ export async function uploadSharePayloadToR2(shareId: string, payload: any): Pro
 }
 
 /**
+ * Uploads an avatar image to Cloudflare R2 and returns CDN URL
+ */
+export async function uploadAvatarToR2(
+  userId: string,
+  imageBuffer: Buffer,
+  contentType: string = 'image/webp'
+): Promise<string> {
+  const ext = contentType.includes('png') ? 'png' : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : contentType.includes('svg') ? 'svg' : 'webp';
+  const cleanUserId = (userId || 'user').replace(/[^a-zA-Z0-9_-]/g, '');
+  const key = `avatars/${cleanUserId}_${Date.now()}.${ext}`;
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: imageBuffer,
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+    })
+  );
+
+  return `${R2_PUBLIC_URL}/${key}`;
+}
+
+/**
  * Reads a character JSON payload from R2 (via CDN or direct S3 API fallback)
  */
 export async function fetchCharacterPayloadFromR2(characterId: string): Promise<any | null> {

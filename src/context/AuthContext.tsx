@@ -153,13 +153,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (data: { displayName?: string; avatarUrl?: string; bio?: string; avatarBgTheme?: string; bannerTheme?: string }) => {
       if (!user) return { error: new Error('User not authenticated') };
 
+      let finalAvatarUrl = data.avatarUrl;
+      // Auto-upload base64 data URL to Cloudflare R2 CDN to prevent Cookie bloat (494 header error)
+      if (finalAvatarUrl && finalAvatarUrl.startsWith('data:')) {
+        try {
+          const res = await fetch('/api/avatar/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: finalAvatarUrl, userId: user.id }),
+          });
+          if (res.ok) {
+            const upData = await res.json();
+            if (upData.url) {
+              finalAvatarUrl = upData.url;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Avatar auto-upload to CDN warning:', uploadErr);
+        }
+      }
+
       const currentMetadata = user.user_metadata || {};
       const updatedMetadata = {
         ...currentMetadata,
         ...(data.displayName !== undefined
           ? { display_name: data.displayName, full_name: data.displayName }
           : {}),
-        ...(data.avatarUrl !== undefined ? { avatar_url: data.avatarUrl } : {}),
+        ...(finalAvatarUrl !== undefined ? { avatar_url: finalAvatarUrl } : {}),
         ...(data.bio !== undefined ? { bio: data.bio } : {}),
         ...(data.avatarBgTheme !== undefined ? { avatar_bg_theme: data.avatarBgTheme } : {}),
         ...(data.bannerTheme !== undefined ? { banner_theme: data.bannerTheme } : {}),
@@ -387,9 +407,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch {}
 
-          setUser(currentUser);
-
-          // Role extracted strictly from Supabase Auth metadata
+          // Auto-healing: If user_metadata has a huge base64 avatar_url causing cookie bloat, migrate it to R2 CDN
+          if (currentUser.user_metadata?.avatar_url?.startsWith('data:')) {
+            const rawAvatar = currentUser.user_metadata.avatar_url;
+            fetch('/api/avatar/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: rawAvatar, userId: currentUser.id }),
+            })
+              .then((res) => res.json())
+              .then((upData) => {
+                if (upData.url) {
+                  supabase.auth.updateUser({
+                    data: { avatar_url: upData.url },
+                  });
+                }
+              })
+              .catch(() => {});
+          }
           const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
           const authRole: UserRole = ['admin', 'premium', 'supporter', 'free'].includes(rawRole) ? rawRole : 'free';
           setUserRoleState(authRole);

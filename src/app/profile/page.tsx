@@ -122,9 +122,26 @@ function ProfileContent() {
 
     setIsUploading(true);
     try {
-      // Auto compress and square crop for crisp avatar (~20KB)
+      // 1. Auto compress and square crop for crisp avatar (~20KB)
       const compressedDataUrl = await compressImageToAvatar(file, 320, 0.85);
-      setAvatarUrl(compressedDataUrl);
+      
+      // 2. Upload to Cloudflare R2 CDN immediately (returns ~60 char URL)
+      const res = await fetch('/api/avatar/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: compressedDataUrl, userId: user?.id }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setAvatarUrl(data.url);
+        } else {
+          setAvatarUrl(compressedDataUrl);
+        }
+      } else {
+        setAvatarUrl(compressedDataUrl);
+      }
       setSelectedPreset(null);
     } catch (err: any) {
       alert(err.message || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
@@ -134,11 +151,25 @@ function ProfileContent() {
     }
   };
 
-  const handleChoosePreset = (preset: typeof AVATAR_PRESETS[0]) => {
+  const handleChoosePreset = async (preset: typeof AVATAR_PRESETS[0]) => {
     setSelectedPreset(preset.id);
     const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#18181b"/><text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" font-size="52">${preset.emoji}</text></svg>`;
     const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
     setAvatarUrl(dataUrl);
+
+    try {
+      const res = await fetch('/api/avatar/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, userId: user?.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setAvatarUrl(data.url);
+        }
+      }
+    } catch {}
   };
 
   const handleSave = async (e: React.FormEvent) => {
