@@ -16,6 +16,7 @@ import {
   Layers,
   Cloud,
   CloudOff,
+  AlertCircle,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import { MULTI_CHAR_LIBRARY_KEY } from '@/hooks/useMultiCharacterProject';
@@ -287,6 +288,15 @@ export function UniverseShareModal({
                   className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
                 />
               </label>
+
+              {/* UID Ownership Warning Box */}
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed pt-2.5 mt-2">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">การควบคุมสิทธิ์ (UID Security): </span>
+                  เมื่อสร้างลิงก์แชร์แล้ว สิทธิ์ทั้งหมดจะถูกผูกกับบัญชีนี้ (UID ผู้สร้าง) บัญชีอื่นที่ <strong>UID ไม่ตรงกันจะไม่สามารถปรับสิทธิ์หรือยกเลิกลิงก์แชร์ได้</strong>
+                </div>
+              </div>
             </div>
           )}
 
