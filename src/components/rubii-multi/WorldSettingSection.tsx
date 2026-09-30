@@ -1,14 +1,27 @@
 'use client';
-import React from 'react';
-import { Globe, Sparkles, Building, Landmark, Compass, ShieldAlert, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Globe, Sparkles, Building, Landmark, Compass, ShieldAlert, Building2, Wand2 } from 'lucide-react';
 import type { WorldSettingDraft } from '@/shared/multiCharTypes';
+import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
 
 interface WorldSettingSectionProps {
   worldSetting: WorldSettingDraft;
   onUpdate: <K extends keyof WorldSettingDraft>(key: K, value: WorldSettingDraft[K]) => void;
+  onShowToast?: (msg: string) => void;
 }
 
-export function WorldSettingSection({ worldSetting, onUpdate }: WorldSettingSectionProps) {
+export function WorldSettingSection({ worldSetting, onUpdate, onShowToast }: WorldSettingSectionProps) {
+  const [isAutoModalOpen, setIsAutoModalOpen] = useState(false);
+
+  const handleApplyAuto = (data: Partial<WorldSettingDraft>) => {
+    if (!data) return;
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== undefined) {
+        onUpdate(k as keyof WorldSettingDraft, v as any);
+      }
+    });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
@@ -28,7 +41,25 @@ export function WorldSettingSection({ worldSetting, onUpdate }: WorldSettingSect
             </p>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsAutoModalOpen(true)}
+          className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto active:scale-95 shadow-xs"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+          <span>AI ช่วยคิด World Setting</span>
+        </button>
       </div>
+
+      <SectionAutoPromptModal
+        isOpen={isAutoModalOpen}
+        onClose={() => setIsAutoModalOpen(false)}
+        section="world"
+        context={worldSetting}
+        onApply={handleApplyAuto}
+        onShowToast={onShowToast || (() => {})}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5 md:col-span-2">

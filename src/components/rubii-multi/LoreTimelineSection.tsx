@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BookOpen,
   Clock,
@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { LoreDraft, LoreTimelineItem, MainCharacterDraft } from '@/shared/multiCharTypes';
+import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
 
 interface LoreTimelineSectionProps {
   lore: LoreDraft;
@@ -21,6 +22,7 @@ interface LoreTimelineSectionProps {
   onAddEvent: (event?: Partial<LoreTimelineItem>) => void;
   onUpdateEvent: (index: number, event: Partial<LoreTimelineItem>) => void;
   onRemoveEvent: (index: number) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export function LoreTimelineSection({
@@ -30,7 +32,29 @@ export function LoreTimelineSection({
   onAddEvent,
   onUpdateEvent,
   onRemoveEvent,
+  onShowToast,
 }: LoreTimelineSectionProps) {
+  const [isAutoModalOpen, setIsAutoModalOpen] = useState(false);
+
+  const handleApplyAuto = (data: any) => {
+    if (!data) return;
+    if (data.worldBackstory !== undefined) onUpdateLore('worldBackstory', data.worldBackstory);
+    if (data.coreConflict !== undefined) onUpdateLore('coreConflict', data.coreConflict);
+    if (data.commonKnowledge !== undefined) onUpdateLore('commonKnowledge', data.commonKnowledge);
+    if (data.taboosOrMyths !== undefined) onUpdateLore('taboosOrMyths', data.taboosOrMyths);
+    if (Array.isArray(data.timelineEvents)) {
+      data.timelineEvents.forEach((evt: any) => {
+        onAddEvent({
+          timeLabel: evt.timeLabel || '',
+          eventTitle: evt.eventTitle || '',
+          description: evt.description || '',
+          isSecret: !!evt.isSecret,
+          knownByCharacters: evt.knownByCharacters || [],
+        });
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
@@ -51,15 +75,35 @@ export function LoreTimelineSection({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onAddEvent()}
-          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>เพิ่มเหตุการณ์ (Timeline Event)</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsAutoModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>AI ช่วยคิด Lore</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAddEvent()}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>เพิ่มเหตุการณ์</span>
+          </button>
+        </div>
       </div>
+
+      <SectionAutoPromptModal
+        isOpen={isAutoModalOpen}
+        onClose={() => setIsAutoModalOpen(false)}
+        section="lore"
+        context={lore}
+        onApply={handleApplyAuto}
+        onShowToast={onShowToast || (() => {})}
+      />
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

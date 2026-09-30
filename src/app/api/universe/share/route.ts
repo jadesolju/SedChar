@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { uploadUniversePayloadToR2, fetchUniversePayloadFromR2, deleteUniversePayloadFromR2 } from '@/lib/r2';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+function generateShortId(prefix: string = 'uni'): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let str = '';
+  for (let i = 0; i < 8; i++) {
+    str += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `${prefix}_${str}`;
+}
+
+// GET /api/universe/share?shareId=...
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const shareId = searchParams.get('shareId') || searchParams.get('id');
+
+  if (!shareId) {
+    return NextResponse.json({ error: 'Missing shareId parameter' }, { status: 400 });
+  }
+
+  try {
+    // 1. Fetch payload from Cloudflare R2
+    const r2Payload = await fetchUniversePayloadFromR2(shareId);
+    if (r2Payload) {
+      return NextResponse.json({
+        success: true,
+        project: r2Payload.project || r2Payload,
+        metadata: {
+          shareId,
+          title: r2Payload.title || r2Payload.project?.worldSetting?.projectName || 'Universe Project',
+          author: r2Payload.author || 'Anonymous Creator',
+          createdAt: r2Payload.createdAt || new Date().toISOString(),
+        },
+      });
+    }
+
+    return NextResponse.json({ error: 'ไม่พบข้อมูลจักรวาล หรือลิงก์ถูกยกเลิกแล้ว' }, { status: 404 });
+  } catch (err: any) {
+    console.error('Error fetching universe share payload:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST /api/universe/share
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { project, shareId: requestedShareId, author, userId } = body;
+
+    if (!project) {
+      return NextResponse.json({ error: 'Missing project data' }, { status: 400 });
+    }
+
+    const shareId = requestedShareId?.trim() || generateShortId('uni');
+    const projectTitle = project.worldSetting?.projectName?.trim() || project.title || 'จักรวาลและคลังความจำ';
+
+    const payload = {
+      shareId,
+      userId: userId || 'anonymous',
+      author: author || 'ผู้สร้าง SedChar',
+      title: projectTitle,
+      project,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Upload to Cloudflare R2
+    const cdnUrl = await uploadUniversePayloadToR2(shareId, payload);
+
+    return NextResponse.json({
+      success: true,
+      shareId,
+      cdnUrl,
+      shareUrl: `/universe/share/${shareId}`,
+    });
+  } catch (err: any) {
+    console.error('Error sharing universe project:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
+// DELETE /api/universe/share?shareId=...
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const shareId = searchParams.get('shareId');
+
+  if (!shareId) {
+    return NextResponse.json({ error: 'Missing shareId' }, { status: 400 });
+  }
+
+  try {
+    await deleteUniversePayloadFromR2(shareId);
+    return NextResponse.json({ success: true, message: 'Unlisted link revoked' });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState } from 'react';
 import {
   FolderOpen,
@@ -17,11 +17,13 @@ import {
   FileJson,
   RotateCcw,
   Lock,
+  Share2,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import type { SavedMultiProjectRecord } from '@/hooks/useMultiCharacterProject';
 import { compileRubiiProjectMarkdown } from './RubiiDraftPreviewSection';
 import { useAuth } from '@/context/AuthContext';
+import { UniverseShareModal } from '@/components/universe/UniverseShareModal';
 
 interface MultiCharLibraryModalProps {
   isOpen: boolean;
@@ -49,6 +51,7 @@ export function MultiCharLibraryModal({
   const { user, openAuthModal } = useAuth();
   const [activeTab, setActiveTab] = useState<'list' | 'save'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [shareProject, setShareProject] = useState<MultiCharacterProjectDraft | null>(null);
   const [saveTitle, setSaveTitle] = useState(
     currentProject.worldSetting.projectName || currentProject.title || ''
   );
@@ -316,6 +319,16 @@ export function MultiCharLibraryModal({
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
+                              onClick={() => setShareProject(rec.projectData)}
+                              className="px-2.5 py-1.5 rounded-lg border border-purple-500/30 hover:bg-purple-500/10 text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1 transition-all cursor-pointer"
+                              title="แชร์จักรวาลแบบ Unlisted Link"
+                            >
+                              <Share2 className="w-3.5 h-3.5 text-purple-500" />
+                              <span className="hidden sm:inline">แชร์</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => handleDownloadMd(rec)}
                               className="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1 transition-all cursor-pointer"
                               title="ดาวน์โหลดเป็น Markdown (.md)"
@@ -512,6 +525,15 @@ export function MultiCharLibraryModal({
           )}
         </div>
       </div>
+
+      {shareProject && (
+        <UniverseShareModal
+          isOpen={!!shareProject}
+          onClose={() => setShareProject(null)}
+          project={shareProject}
+          onShowToast={showToast}
+        />
+      )}
     </div>
   );
 }

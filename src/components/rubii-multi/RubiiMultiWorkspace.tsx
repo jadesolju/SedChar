@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -19,6 +19,7 @@ import {
   Save,
   Download,
   Coffee,
+  Share2,
 } from 'lucide-react';
 import { useMultiCharacterProject } from '@/hooks/useMultiCharacterProject';
 import { WorldSettingSection } from './WorldSettingSection';
@@ -28,6 +29,7 @@ import { MainCharactersSection } from './MainCharactersSection';
 import { CastRulesSection } from './CastRulesSection';
 import { RubiiDraftPreviewSection } from './RubiiDraftPreviewSection';
 import { MultiCharLibraryModal } from './MultiCharLibraryModal';
+import { UniverseShareModal } from '@/components/universe/UniverseShareModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -83,6 +85,7 @@ export function RubiiMultiWorkspace() {
   const [activeTab, setActiveTab] = useState<TabId>('world');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -138,6 +141,17 @@ export function RubiiMultiWorkspace() {
 
         {/* Action Buttons Right */}
         <div className="flex items-center gap-2">
+          {/* Share Universe Button */}
+          <button
+            type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="hidden sm:flex px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-xs font-bold text-purple-600 dark:text-purple-400 transition-all items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            title="สร้าง Secret Share Link สำหรับจักรวาลนี้"
+          >
+            <Share2 className="w-3.5 h-3.5 text-purple-500" />
+            <span>แชร์ลิงก์</span>
+          </button>
+
           {/* Project Library Button (Desktop/Tablet) */}
           <button
             type="button"
@@ -399,6 +413,7 @@ export function RubiiMultiWorkspace() {
               <WorldSettingSection
                 worldSetting={project.worldSetting}
                 onUpdate={updateWorldSetting}
+                onShowToast={showToast}
               />
             )}
 
@@ -410,6 +425,7 @@ export function RubiiMultiWorkspace() {
                 onAddEvent={addTimelineEvent}
                 onUpdateEvent={updateTimelineEvent}
                 onRemoveEvent={removeTimelineEvent}
+                onShowToast={showToast}
               />
             )}
 
@@ -429,6 +445,7 @@ export function RubiiMultiWorkspace() {
                 onAddCharacter={addMainCharacter}
                 onUpdateCharacter={updateMainCharacter}
                 onRemoveCharacter={removeMainCharacter}
+                onShowToast={showToast}
               />
             )}
 
@@ -487,6 +504,14 @@ export function RubiiMultiWorkspace() {
         onLoadFromLibrary={loadProjectFromLibrary}
         onDeleteFromLibrary={deleteProjectFromLibrary}
         showToast={showToast}
+      />
+
+      {/* Universe Secret Link Sharing Modal */}
+      <UniverseShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        project={project}
+        onShowToast={showToast}
       />
 
       {/* Auth Modal & Upgrade Modal */}

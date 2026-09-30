@@ -258,3 +258,71 @@ export async function likeCommunityPromptInR2(promptId: string, delta: number = 
 
   return newLikes;
 }
+
+/**
+ * Uploads a Universe & Lorebook project JSON payload to Cloudflare R2
+ */
+export async function uploadUniversePayloadToR2(shareId: string, payload: any): Promise<string> {
+  const key = `universes/${shareId}.json`;
+  const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=86400, stale-while-revalidate=604800',
+    })
+  );
+
+  return `${R2_PUBLIC_URL}/${key}`;
+}
+
+/**
+ * Fetches a Universe & Lorebook project JSON payload from Cloudflare R2
+ */
+export async function fetchUniversePayloadFromR2(shareId: string): Promise<any | null> {
+  // 1. Try public CDN fast-path
+  const cdnUrl = `${R2_PUBLIC_URL}/universes/${encodeURIComponent(shareId)}.json`;
+  try {
+    const res = await fetch(cdnUrl, { cache: 'no-store' });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {}
+
+  // 2. Direct S3 GetObject fallback
+  try {
+    const getRes = await r2Client.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: `universes/${shareId}.json`,
+      })
+    );
+    const bodyStr = await getRes.Body?.transformToString();
+    if (bodyStr) {
+      return JSON.parse(bodyStr);
+    }
+  } catch (err) {
+    console.warn('R2 GetObject error for universe:', shareId, err);
+  }
+
+  return null;
+}
+
+/**
+ * Deletes a Universe JSON payload from Cloudflare R2
+ */
+export async function deleteUniversePayloadFromR2(shareId: string): Promise<void> {
+  try {
+    await r2Client.send(
+      new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: `universes/${shareId}.json`,
+      })
+    );
+  } catch (err) {
+    console.warn('R2 Delete error for universe:', shareId, err);
+  }
+}

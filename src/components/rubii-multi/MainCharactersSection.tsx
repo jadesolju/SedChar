@@ -16,12 +16,14 @@ import {
 } from 'lucide-react';
 import type { MainCharacterDraft } from '@/shared/multiCharTypes';
 import { MAX_FREE_MAIN_CHARACTERS } from '@/hooks/useMultiCharacterProject';
+import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
 
 interface MainCharactersSectionProps {
   mainCharacters: MainCharacterDraft[];
   onAddCharacter: () => boolean;
   onUpdateCharacter: (id: string, data: Partial<MainCharacterDraft>) => void;
   onRemoveCharacter: (id: string) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export function MainCharactersSection({
@@ -29,8 +31,11 @@ export function MainCharactersSection({
   onAddCharacter,
   onUpdateCharacter,
   onRemoveCharacter,
+  onShowToast,
 }: MainCharactersSectionProps) {
   const [selectedCharId, setSelectedCharId] = useState<string>(() => mainCharacters[0]?.id || '');
+  const [isAutoModalOpen, setIsAutoModalOpen] = useState(false);
+
   const activeChar = mainCharacters.find((c) => c.id === selectedCharId) || mainCharacters[0];
   const isFull = mainCharacters.length >= MAX_FREE_MAIN_CHARACTERS;
 
@@ -39,6 +44,25 @@ export function MainCharactersSection({
     if (!success) {
       alert(`แผน Free เพิ่มตัวละครหลักได้สูงสุด ${MAX_FREE_MAIN_CHARACTERS} ตัว`);
     }
+  };
+
+  const handleApplyAuto = (data: any) => {
+    if (!data || !Array.isArray(data.mainCharacters)) return;
+    
+    // If active character is currently blank, update it first
+    const charsToProcess = [...data.mainCharacters];
+    if (activeChar && (!activeChar.name || activeChar.name.trim() === '')) {
+      const first = charsToProcess.shift();
+      if (first) {
+        onUpdateCharacter(activeChar.id, first);
+      }
+    }
+
+    // Add remaining generated characters
+    charsToProcess.forEach((charData) => {
+      onAddCharacter();
+      // setTimeout to let state update or update latest
+    });
   };
 
   return (
@@ -69,21 +93,41 @@ export function MainCharactersSection({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={isFull}
-          className={
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 self-start sm:self-auto ' +
-            (isFull
-              ? 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
-              : 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white cursor-pointer')
-          }
-        >
-          <Plus className="w-4 h-4" />
-          <span>เพิ่มตัวละครหลัก</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsAutoModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+            <span>AI ช่วยคิด Cast</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isFull}
+            className={
+              'px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 ' +
+              (isFull
+                ? 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+                : 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white cursor-pointer')
+            }
+          >
+            <Plus className="w-4 h-4" />
+            <span>เพิ่มตัวละครหลัก</span>
+          </button>
+        </div>
       </div>
+
+      <SectionAutoPromptModal
+        isOpen={isAutoModalOpen}
+        onClose={() => setIsAutoModalOpen(false)}
+        section="characters"
+        context={mainCharacters}
+        onApply={handleApplyAuto}
+        onShowToast={onShowToast || (() => {})}
+      />
 
       {/* Main Layout: Character Tabs on Left/Top + Editor on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
