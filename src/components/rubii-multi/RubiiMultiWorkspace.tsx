@@ -30,6 +30,7 @@ import { CastRulesSection } from './CastRulesSection';
 import { RubiiDraftPreviewSection } from './RubiiDraftPreviewSection';
 import { MultiCharLibraryModal } from './MultiCharLibraryModal';
 import { UniverseShareModal } from '@/components/universe/UniverseShareModal';
+import { UniversalMultiParserModal } from './UniversalMultiParserModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -86,6 +87,7 @@ export function RubiiMultiWorkspace() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isUniversalParserOpen, setIsUniversalParserOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -141,6 +143,17 @@ export function RubiiMultiWorkspace() {
 
         {/* Action Buttons Right */}
         <div className="flex items-center gap-2">
+          {/* Universal Multi-Parser Button */}
+          <button
+            type="button"
+            onClick={() => setIsUniversalParserOpen(true)}
+            className="hidden sm:flex px-3 py-1.5 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-purple-500/15 hover:border-purple-500 text-xs font-bold text-purple-700 dark:text-purple-300 transition-all items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            title="นำเข้าไฟล์ หรือแปลงเนื้อเรื่องเป็น Universe ทั้งก้อนด้วย AI"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+            <span>AI Parser แบบรวม</span>
+          </button>
+
           {/* Share Universe Button */}
           <button
             type="button"
@@ -512,6 +525,17 @@ export function RubiiMultiWorkspace() {
         onClose={() => setIsShareModalOpen(false)}
         project={project}
         onShowToast={showToast}
+      />
+
+      {/* Universal Multi-Parser Modal */}
+      <UniversalMultiParserModal
+        isOpen={isUniversalParserOpen}
+        onClose={() => setIsUniversalParserOpen(false)}
+        onApplyProject={(newProj) => {
+          importProjectJson(newProj);
+        }}
+        onShowToast={showToast}
+        onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)}
       />
 
       {/* Auth Modal & Upgrade Modal */}

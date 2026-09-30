@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { userId, userEmail } = body;
+    const { userId, userEmail, plan = 'supporter_29' } = body;
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.vercel.app';
 
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
@@ -17,6 +17,15 @@ export async function POST(req: Request) {
       );
     }
 
+    const isUniversePro = plan === 'universe_pro_99';
+    const productName = isUniversePro
+      ? 'SedChar Universe Studio Pro (สิทธิ์ตลอดชีพ 99 บาท)'
+      : 'SedChar Creator Supporter (โปรโมชั่น 29 บาท)';
+    const productDesc = isUniversePro
+      ? 'ปลดล็อค Universal Multi-Parser ไม่จำกัด, AI เติมส่วนที่ขาด, คลังจักรวาลตลอดชีพ, และ AI Quota 100 ครั้ง/วัน'
+      : 'ปลดล็อค AI Auto-Enhance 50 ครั้ง/วัน, คลังโปรเจกต์ไม่จำกัด, และระบบประมวลผลความเร็วสูง';
+    const unitAmount = isUniversePro ? 9900 : 2900; // in satangs (99.00 THB or 29.00 THB)
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'promptpay'],
       line_items: [
@@ -24,10 +33,10 @@ export async function POST(req: Request) {
           price_data: {
             currency: 'thb',
             product_data: {
-              name: 'SedChar Creator Premium (โปรโมชั่น 29 บาท)',
-              description: 'ปลดล็อก AI Auto-Enhance 50 ครั้ง/วัน, คลังโปรเจกต์ไม่จำกัด, และระบบประมวลผลความเร็วสูง',
+              name: productName,
+              description: productDesc,
             },
-            unit_amount: 2900, // 29.00 THB in satangs
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },
@@ -38,7 +47,8 @@ export async function POST(req: Request) {
       metadata: {
         userId: userId || 'anonymous',
         userEmail: userEmail || '',
-        product: 'sedchar_premium_promo_29thb',
+        plan: isUniversePro ? 'universe_pro_99' : 'supporter_29',
+        product: isUniversePro ? 'sedchar_universe_pro_99thb' : 'sedchar_premium_promo_29thb',
       },
       success_url: `${origin}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?payment=cancelled`,

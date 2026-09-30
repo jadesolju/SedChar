@@ -630,10 +630,24 @@ function AdminNexusDashboardContent() {
 
         {/* SECTION 3: ROLE & QUOTA CONFIGURATION (ADMIN SESSION TOGGLE) */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            สิทธิ์ของเซสชันที่กำลังใช้งาน (Active Browser Session):
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              สิทธิ์ของเซสชันที่กำลังใช้งาน (Active Browser Session):
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('sedchar_multi_parser_trial_used_v1');
+                  setRoleUpdatedToast('รีเซ็ตสิทธิ์ทดลอง Universal Multi-Parser (3 ครั้ง) เรียบร้อย');
+                } catch {}
+              }}
+              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>🔄 รีเซ็ตสิทธิ์ทดลอง Multi-Parser (3 ครั้ง)</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* CARD 1: ADMIN ROLE */}
             <div
               className={`p-5 rounded-2xl border transition-all space-y-4 ${
@@ -658,7 +672,7 @@ function AdminNexusDashboardContent() {
                 <div className="text-xs text-muted-foreground">Unlimited AI Calls / Day</div>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                สิทธิ์ผู้ดูแลระบบสูงสุด ไม่จำกัดโควตา สามารถเข้าถึงคอนโซลและฟังก์ชันพิเศษทั้งหมด
+                สิทธิ์ผู้ดูแลระบบสูงสุด ไม่จำกัดโควตา เข้าถึงคอนโซลและทุกฟังก์ชัน
               </p>
               <button
                 type="button"
@@ -670,43 +684,73 @@ function AdminNexusDashboardContent() {
               </button>
             </div>
 
-            {/* CARD 2: PREMIUM ROLE */}
+            {/* CARD 2: UNIVERSE PRO 99.- */}
             <div
               className={`p-5 rounded-2xl border transition-all space-y-4 ${
                 userRole === 'premium'
-                  ? 'bg-rose-500/10 border-rose-500/40 shadow-lg ring-2 ring-rose-500/30'
+                  ? 'bg-purple-500/10 border-purple-500/40 shadow-lg ring-2 ring-purple-500/30'
                   : 'bg-card border-border hover:border-border/80'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">💎</span>
-                  <h3 className="text-sm font-bold text-foreground">Premium Role</h3>
+                  <span className="text-xl">🌌</span>
+                  <h3 className="text-sm font-bold text-foreground">Universe Pro (99.-)</h3>
                 </div>
                 {userRole === 'premium' && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-600 text-white">
                     ACTIVE
                   </span>
                 )}
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-black text-purple-600 dark:text-purple-400">100 ครั้ง / วัน</div>
+                <div className="text-xs text-muted-foreground">Universal Parser ไม่จำกัด</div>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                ปลดล็อคเครื่องมือสร้างจักรวาล Multi-Parser และ AI เติมส่วนที่ขาดตลอดชีพ
+              </p>
+              <button
+                type="button"
+                onClick={() => handleRoleChange('premium')}
+                disabled={userRole === 'premium'}
+                className="w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40"
+              >
+                {userRole === 'premium' ? 'กำลังใช้งานสิทธิ์นี้' : 'สลับเป็น Pro (99.-)'}
+              </button>
+            </div>
+
+            {/* CARD 3: SUPPORTER 29.- */}
+            <div
+              className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                userRole === 'premium'
+                  ? 'bg-rose-500/5 border-rose-500/30'
+                  : 'bg-card border-border hover:border-border/80'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">☕</span>
+                  <h3 className="text-sm font-bold text-foreground">Supporter (29.-)</h3>
+                </div>
               </div>
               <div className="space-y-1">
                 <div className="text-2xl font-black text-rose-500">50 ครั้ง / วัน</div>
                 <div className="text-xs text-muted-foreground">High Quota AI Role</div>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                สำหรับสมาชิกระดับพรีเมียม โควตา 50 ครั้งต่อวัน รองรับการสร้างตัวละครจำนวนมาก
+                สำหรับผู้สนับสนุน 29 บาท โควตา 50 ครั้งต่อวัน รองรับการสร้างตัวละคร
               </p>
               <button
                 type="button"
                 onClick={() => handleRoleChange('premium')}
-                disabled={userRole === 'premium'}
-                className="w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40"
+                className="w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer bg-rose-500 hover:bg-rose-600 text-white"
               >
-                {userRole === 'premium' ? 'กำลังใช้งานสิทธิ์นี้' : 'สลับเป็น Premium'}
+                สลับเป็น Supporter (29.-)
               </button>
             </div>
 
-            {/* CARD 3: FREE ROLE */}
+            {/* CARD 4: FREE ROLE */}
             <div
               className={`p-5 rounded-2xl border transition-all space-y-4 ${
                 userRole === 'free'
@@ -727,10 +771,10 @@ function AdminNexusDashboardContent() {
               </div>
               <div className="space-y-1">
                 <div className="text-2xl font-black text-foreground">15 ครั้ง / วัน</div>
-                <div className="text-xs text-muted-foreground">Default Standard Quota</div>
+                <div className="text-xs text-muted-foreground">ทดลอง Multi-Parser 3 ครั้ง</div>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                สิทธิ์ผู้ใช้ทั่วไปเริ่มต้น โควตา 15 ครั้งต่อวัน รีเซ็ตใหม่ทุกเที่ยงคืน
+                สิทธิ์ผู้ใช้ทั่วไปเริ่มต้น โควตา 15 ครั้งต่อวัน และสิทธิ์ลอง Multi-Parser 3 ครั้ง
               </p>
               <button
                 type="button"
