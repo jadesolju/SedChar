@@ -248,7 +248,23 @@ function UniverseShareViewContent() {
       <main className="flex-1 max-w-5xl w-full mx-auto p-3.5 sm:p-8 space-y-6 sm:space-y-8 pb-16 sm:pb-8">
         {/* Banner Hero */}
         <div className="p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-500/10 via-indigo-500/5 to-transparent border border-purple-500/20 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* Main Title at the very top */}
+          <div className="space-y-1.5">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-foreground break-words leading-tight tracking-tight">
+              {projectName}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>สร้างโดย <strong className="text-foreground font-semibold">{metadata?.author || 'ผู้สร้าง'}</strong></span>
+              <span>•</span>
+              <span className="text-purple-500 font-semibold inline-flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                <span>Unlisted</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Tags & Badges */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
             <span className="px-3 py-1.5 rounded-2xl sm:rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold inline-flex items-start gap-1.5 max-w-full leading-relaxed break-words">
               <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span className="break-words">{worldSetting?.genreTone || 'แนวเรื่องยังไม่ได้ระบุ'}</span>
@@ -264,10 +280,6 @@ function UniverseShareViewContent() {
               </span>
             )}
           </div>
-
-          <h2 className="text-xl sm:text-3xl font-extrabold text-foreground break-words leading-tight">
-            {projectName}
-          </h2>
 
           {worldSetting?.atmosphereTheme && (
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">

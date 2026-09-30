@@ -30,7 +30,7 @@ interface UserMenuProps {
 
 export function UserMenu({
   onOpenUpgradeModal,
-  showLibraryButton = true,
+  showLibraryButton = false,
   onOpenCustomLibrary,
   customLibraryLabel,
   customLibraryCount,
