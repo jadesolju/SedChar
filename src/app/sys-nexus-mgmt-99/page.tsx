@@ -348,7 +348,7 @@ function AdminNexusDashboardContent() {
                   onChange={(e) => setEmergencyTargetRole(e.target.value as UserRole)}
                   className="px-3 py-3 rounded-xl bg-card border border-border text-xs sm:text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-xs cursor-pointer"
                 >
-                  <option value="premium">💎 Premium (50 ครั้ง/วัน)</option>
+                  <option value="premium">🌌 Universe Pro (99.-) / Premium (100 ครั้ง/วัน)</option>
                   <option value="admin">👑 Admin (∞ ไม่จำกัด)</option>
                   <option value="free">🌱 Free (15 ครั้ง/วัน)</option>
                 </select>
@@ -377,7 +377,7 @@ function AdminNexusDashboardContent() {
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                 <span>
-                  ล่าสุด: ได้ทำการปรับสิทธิ์ <strong>{lastAdjustedUser.query}</strong> เป็น <strong>[{lastAdjustedUser.role.toUpperCase()}]</strong> เรียบร้อยแล้ว
+                  ล่าสุด: ได้ทำการปรับสิทธิ์ <strong>{lastAdjustedUser.query}</strong> เป็น <strong>[{lastAdjustedUser.role === 'premium' ? 'UNIVERSE PRO (99.-)' : lastAdjustedUser.role.toUpperCase()}]</strong> เรียบร้อยแล้ว
                 </span>
               </div>
             )}
@@ -399,7 +399,7 @@ function AdminNexusDashboardContent() {
                   </span>
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  ตรวจสอบสถานะ Role ปัจจุบัน และคลิกปุ่มด้านขวาเพื่อสลับสิทธิ์ได้ทันที
+                  ตรวจสอบสถานะ Role ปัจจุบัน และเลือก Dropdown เพื่อสลับสิทธิ์ได้ทันที
                 </p>
               </div>
             </div>
@@ -456,11 +456,11 @@ function AdminNexusDashboardContent() {
                 onClick={() => setRoleFilter('premium')}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                   roleFilter === 'premium'
-                    ? 'bg-rose-500 text-white font-bold'
-                    : 'bg-muted/50 text-rose-500 hover:bg-rose-500/10'
+                    ? 'bg-purple-600 text-white font-bold'
+                    : 'bg-muted/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10'
                 }`}
               >
-                💎 Premium ({usersList.filter((u) => u.role === 'premium').length})
+                🌌 Universe Pro ({usersList.filter((u) => u.role === 'premium').length})
               </button>
               <button
                 type="button"
@@ -510,7 +510,7 @@ function AdminNexusDashboardContent() {
                     <th className="p-3.5">สิทธิ์ปัจจุบัน (Role)</th>
                     <th className="p-3.5">คลังตัวละคร</th>
                     <th className="p-3.5">วันที่สมัคร / เข้าใช้งาน</th>
-                    <th className="p-3.5 text-right">ปรับ Role ทันที (One-Click Action)</th>
+                    <th className="p-3.5 text-right">ปรับ Role ทันที (Dropdown)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
@@ -558,9 +558,9 @@ function AdminNexusDashboardContent() {
                               ADMIN (∞)
                             </span>
                           ) : item.role === 'premium' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[11px] font-bold">
                               <Sparkles className="w-3 h-3" />
-                              PREMIUM (50)
+                              UNIVERSE PRO (99.-)
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border text-[11px] font-medium">
@@ -583,39 +583,28 @@ function AdminNexusDashboardContent() {
                         </td>
 
                         <td className="p-3.5 text-right">
-                          <div className="inline-flex items-center gap-1.5">
+                          <div className="inline-flex items-center gap-1.5 justify-end">
                             {isCurrentUpdating ? (
-                              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                กำลังบันทึก...
+                              <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 border border-border">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+                                <span>กำลังบันทึก...</span>
                               </span>
                             ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateTargetUserRole(item, 'free')}
-                                  disabled={item.role === 'free'}
-                                  className="px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-[11px] font-semibold text-foreground transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  Free
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateTargetUserRole(item, 'premium')}
-                                  disabled={item.role === 'premium'}
-                                  className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-600 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-xs"
-                                >
-                                  💎 Set Premium
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateTargetUserRole(item, 'admin')}
-                                  disabled={item.role === 'admin'}
-                                  className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  👑 Set Admin
-                                </button>
-                              </>
+                              <select
+                                value={item.role}
+                                onChange={(e) => handleUpdateTargetUserRole(item, e.target.value as UserRole)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs ${
+                                  item.role === 'admin'
+                                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                                    : item.role === 'premium'
+                                    ? 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-300'
+                                    : 'bg-muted/80 border-border text-foreground'
+                                }`}
+                              >
+                                <option value="free" className="bg-card text-foreground font-normal">🌱 Free (15 ครั้ง/วัน)</option>
+                                <option value="premium" className="bg-card text-purple-600 dark:text-purple-400 font-bold">🌌 Universe Pro (99.-)</option>
+                                <option value="admin" className="bg-card text-amber-600 dark:text-amber-400 font-bold">👑 Admin (∞ ไม่จำกัด)</option>
+                              </select>
                             )}
                           </div>
                         </td>
@@ -630,10 +619,21 @@ function AdminNexusDashboardContent() {
 
         {/* SECTION 3: ROLE & QUOTA CONFIGURATION (ADMIN SESSION TOGGLE) */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              สิทธิ์ของเซสชันที่กำลังใช้งาน (Active Browser Session):
-            </h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                สิทธิ์ของเซสชันที่กำลังใช้งาน (Active Session):
+              </h3>
+              <select
+                value={userRole}
+                onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                className="px-3 py-1 rounded-lg bg-card border border-border text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs cursor-pointer"
+              >
+                <option value="admin">👑 Admin (∞ ไม่จำกัด)</option>
+                <option value="premium">🌌 Universe Pro (99.- / 100 ครั้ง)</option>
+                <option value="free">🌱 Free (15 ครั้ง/วัน)</option>
+              </select>
+            </div>
             <button
               type="button"
               onClick={() => {
