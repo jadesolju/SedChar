@@ -18,12 +18,13 @@ import {
   Shield,
   ArrowRight,
   UserPlus,
+  Coffee,
 } from 'lucide-react';
 
 interface SystemUserRecord {
   id: string;
   email: string;
-  role: 'admin' | 'premium' | 'free';
+  role: 'admin' | 'premium' | 'supporter' | 'free';
   created_at: string;
   last_sign_in_at: string | null;
   characters_count: number;
@@ -47,7 +48,7 @@ function AdminNexusDashboardContent() {
   const [usersError, setUsersError] = useState<string | null>(null);
   const [hasServiceRole, setHasServiceRole] = useState<boolean>(true);
   const [userSearch, setUserSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'premium' | 'free'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'premium' | 'supporter' | 'free'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -348,7 +349,8 @@ function AdminNexusDashboardContent() {
                   onChange={(e) => setEmergencyTargetRole(e.target.value as UserRole)}
                   className="px-3 py-3 rounded-xl bg-card border border-border text-xs sm:text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-xs cursor-pointer"
                 >
-                  <option value="premium">🌌 Universe Pro (99.-) / Premium (100 ครั้ง/วัน)</option>
+                  <option value="supporter">☕ Supporter Pass (29.-) (50 ครั้ง/วัน)</option>
+                  <option value="premium">🌌 Universe Pro (99.-) (100 ครั้ง/วัน)</option>
                   <option value="admin">👑 Admin (∞ ไม่จำกัด)</option>
                   <option value="free">🌱 Free (15 ครั้ง/วัน)</option>
                 </select>
@@ -453,6 +455,17 @@ function AdminNexusDashboardContent() {
               </button>
               <button
                 type="button"
+                onClick={() => setRoleFilter('supporter')}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                  roleFilter === 'supporter'
+                    ? 'bg-rose-500 text-white font-bold'
+                    : 'bg-muted/50 text-rose-500 hover:bg-rose-500/10'
+                }`}
+              >
+                ☕ Supporter ({usersList.filter((u) => u.role === 'supporter').length})
+              </button>
+              <button
+                type="button"
                 onClick={() => setRoleFilter('premium')}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                   roleFilter === 'premium'
@@ -478,7 +491,7 @@ function AdminNexusDashboardContent() {
                 onClick={() => setRoleFilter('free')}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   roleFilter === 'free'
-                    ? 'bg-muted text-foreground font-bold'
+                    ? 'bg-muted-foreground text-background font-bold'
                     : 'bg-muted/50 text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -562,6 +575,11 @@ function AdminNexusDashboardContent() {
                               <Sparkles className="w-3 h-3" />
                               UNIVERSE PRO (99.-)
                             </span>
+                          ) : item.role === 'supporter' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                              <Coffee className="w-3 h-3" />
+                              SUPPORTER (29.-)
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border text-[11px] font-medium">
                               FREE (15)
@@ -598,11 +616,14 @@ function AdminNexusDashboardContent() {
                                     ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
                                     : item.role === 'premium'
                                     ? 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-300'
+                                    : item.role === 'supporter'
+                                    ? 'bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300'
                                     : 'bg-muted/80 border-border text-foreground'
                                 }`}
                               >
                                 <option value="free" className="bg-card text-foreground font-normal">🌱 Free (15 ครั้ง/วัน)</option>
-                                <option value="premium" className="bg-card text-purple-600 dark:text-purple-400 font-bold">🌌 Universe Pro (99.-)</option>
+                                <option value="supporter" className="bg-card text-rose-600 dark:text-rose-400 font-bold">☕ Supporter (29.-) (50 ครั้ง/วัน)</option>
+                                <option value="premium" className="bg-card text-purple-600 dark:text-purple-400 font-bold">🌌 Universe Pro (99.-) (100 ครั้ง/วัน)</option>
                                 <option value="admin" className="bg-card text-amber-600 dark:text-amber-400 font-bold">👑 Admin (∞ ไม่จำกัด)</option>
                               </select>
                             )}
@@ -631,6 +652,7 @@ function AdminNexusDashboardContent() {
               >
                 <option value="admin">👑 Admin (∞ ไม่จำกัด)</option>
                 <option value="premium">🌌 Universe Pro (99.- / 100 ครั้ง)</option>
+                <option value="supporter">☕ Supporter Pass (29.- / 50 ครั้ง)</option>
                 <option value="free">🌱 Free (15 ครั้ง/วัน)</option>
               </select>
             </div>
@@ -723,8 +745,8 @@ function AdminNexusDashboardContent() {
             {/* CARD 3: SUPPORTER 29.- */}
             <div
               className={`p-5 rounded-2xl border transition-all space-y-4 ${
-                userRole === 'premium'
-                  ? 'bg-rose-500/5 border-rose-500/30'
+                userRole === 'supporter'
+                  ? 'bg-rose-500/10 border-rose-500/40 shadow-lg ring-2 ring-rose-500/30'
                   : 'bg-card border-border hover:border-border/80'
               }`}
             >
@@ -733,6 +755,11 @@ function AdminNexusDashboardContent() {
                   <span className="text-xl">☕</span>
                   <h3 className="text-sm font-bold text-foreground">Supporter (29.-)</h3>
                 </div>
+                {userRole === 'supporter' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white">
+                    ACTIVE
+                  </span>
+                )}
               </div>
               <div className="space-y-1">
                 <div className="text-2xl font-black text-rose-500">50 ครั้ง / วัน</div>
@@ -743,10 +770,11 @@ function AdminNexusDashboardContent() {
               </p>
               <button
                 type="button"
-                onClick={() => handleRoleChange('premium')}
-                className="w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer bg-rose-500 hover:bg-rose-600 text-white"
+                onClick={() => handleRoleChange('supporter')}
+                disabled={userRole === 'supporter'}
+                className="w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40"
               >
-                สลับเป็น Supporter (29.-)
+                {userRole === 'supporter' ? 'กำลังใช้งานสิทธิ์นี้' : 'สลับเป็น Supporter (29.-)'}
               </button>
             </div>
 

@@ -5,11 +5,12 @@ import { createClient } from '@/utils/supabase/client';
 import type { ThaiMasterCharacter } from '@/shared/types';
 import { encodeCharacterToShareUrl } from '@/shared/shareUtils';
 
-export type UserRole = 'admin' | 'premium' | 'free';
+export type UserRole = 'admin' | 'premium' | 'supporter' | 'free';
 
 export const ROLE_QUOTA_MAP: Record<UserRole, number> = {
   admin: 999999, // Unlimited / ไม่จำกัด
-  premium: 50,   // 50 ครั้งต่อวัน
+  premium: 100,  // Universe Pro (99.-) 100 ครั้งต่อวัน
+  supporter: 50, // Supporter (29.-) 50 ครั้งต่อวัน
   free: 15,      // 15 ครั้งต่อวัน
 };
 
@@ -323,7 +324,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Role extracted strictly from Supabase Auth metadata
           const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
-          const authRole: UserRole = ['admin', 'premium', 'free'].includes(rawRole) ? rawRole : 'free';
+          const authRole: UserRole = ['admin', 'premium', 'supporter', 'free'].includes(rawRole) ? rawRole : 'free';
           setUserRoleState(authRole);
           syncQuota(currentUser, authRole);
         } else {
@@ -355,7 +356,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
 
         const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
-        const authRole: UserRole = ['admin', 'premium', 'free'].includes(rawRole) ? rawRole : 'free';
+        const authRole: UserRole = ['admin', 'premium', 'supporter', 'free'].includes(rawRole) ? rawRole : 'free';
         setUserRoleState(authRole);
         syncQuota(currentUser, authRole);
       } else {

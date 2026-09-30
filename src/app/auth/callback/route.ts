@@ -43,12 +43,13 @@ export async function GET(request: Request) {
     targetHost = (parsed.host.toLowerCase().split(':')[0] || 'sedchar.online').trim();
   } catch {}
 
-  const forwardedHost = (request.headers.get('x-forwarded-host') || requestUrl.host).toLowerCase().split(':')[0];
+  const rawHost = request.headers.get('x-forwarded-host') || requestUrl.host || '';
+  const forwardedHost = (rawHost.toLowerCase().split(':')[0] || '').trim();
   const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
   const isLocalhost = forwardedHost === 'localhost' || forwardedHost === '127.0.0.1';
 
   // If callback was received on old domain, redirect user directly to the new domain
-  if (!isLocalhost && (forwardedHost === 'sedchar.vercel.app' || (forwardedHost.endsWith('.vercel.app') && forwardedHost !== targetHost && !targetHost.endsWith('.vercel.app')))) {
+  if (!isLocalhost && Boolean(forwardedHost) && (forwardedHost === 'sedchar.vercel.app' || (forwardedHost.endsWith('.vercel.app') && forwardedHost !== targetHost && !targetHost.endsWith('.vercel.app')))) {
     return NextResponse.redirect(`${targetOrigin}${next}`);
   }
   

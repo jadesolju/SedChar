@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     const userMap = new Map<string, {
       id: string;
       email: string;
-      role: 'admin' | 'premium' | 'free';
+      role: 'admin' | 'premium' | 'supporter' | 'free';
       created_at: string;
       last_sign_in_at: string | null;
       characters_count: number;
@@ -193,9 +193,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const { userId, email, role } = body;
 
-    if (!role || !['admin', 'premium', 'free'].includes(role)) {
+    if (!role || !['admin', 'premium', 'supporter', 'free'].includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be free, premium, or admin.' },
+        { error: 'Invalid role. Must be free, supporter, premium, or admin.' },
         { status: 400 }
       );
     }
@@ -298,9 +298,13 @@ export async function POST(req: Request) {
       }
     }
 
+    const wasUpdatedInBackend = sqlUpdated || authUpdated || profileUpdated;
+
     return NextResponse.json({
       success: true,
-      message: `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว`,
+      message: wasUpdatedInBackend
+        ? `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว`
+        : `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} (หมายเหตุ: กรุณาเพิ่ม SUPABASE_SERVICE_ROLE_KEY ใน Vercel เพื่ออัปเดตตรงเข้า Supabase Auth Server)`,
       user: {
         id: targetUserId,
         email: targetEmail,
@@ -308,6 +312,7 @@ export async function POST(req: Request) {
         sqlUpdated,
         authUpdated,
         profileUpdated,
+        hasServiceRole: isServiceRole,
       },
     });
   } catch (err: any) {

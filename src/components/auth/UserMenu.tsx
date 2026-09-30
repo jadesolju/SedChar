@@ -73,8 +73,13 @@ export function UserMenu({
   const initial = user.email ? user.email.charAt(0).toUpperCase() : 'U';
   const avatarUrl = user.user_metadata?.avatar_url;
 
-  // Role badges configuration
-  const roleConfig = {
+  const fallbackRoleInfo = {
+    name: 'Free',
+    badge: 'bg-primary/10 text-primary border-primary/20',
+    icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
+  };
+
+  const roleConfig: Record<string, { name: string; badge: string; icon: React.ReactNode }> = {
     admin: {
       name: 'Admin',
       badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
@@ -86,20 +91,19 @@ export function UserMenu({
       icon: <Gem className="w-3.5 h-3.5 text-purple-500" />,
     },
     premium: {
-      name: 'Premium',
+      name: 'Universe Pro',
+      badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      icon: <Crown className="w-3.5 h-3.5 text-purple-500" />,
+    },
+    supporter: {
+      name: 'Supporter (29.-)',
       badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30',
-      icon: <Crown className="w-3.5 h-3.5 text-rose-500" />,
+      icon: <Coffee className="w-3.5 h-3.5 text-rose-500" />,
     },
-    free: {
-      name: 'Free',
-      badge: 'bg-primary/10 text-primary border-primary/20',
-      icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
-    },
-  }[userRole] || {
-    name: 'Free',
-    badge: 'bg-primary/10 text-primary border-primary/20',
-    icon: <UserIcon className="w-3.5 h-3.5 text-primary" />,
+    free: fallbackRoleInfo,
   };
+
+  const currentRoleInfo = (roleConfig[userRole] || fallbackRoleInfo)!;
 
   const handleLibraryClick = () => {
     if (onOpenCustomLibrary) {
@@ -136,8 +140,8 @@ export function UserMenu({
           className="flex items-center gap-2 p-1 pl-2 pr-1.5 rounded-xl border border-border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-xs"
         >
           {/* Daily Quota Pill */}
-          <span className={`hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md border ${roleConfig.badge}`}>
-            {roleConfig.icon}
+          <span className={`hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md border ${currentRoleInfo.badge}`}>
+            {currentRoleInfo.icon}
             <span>{userRole === 'admin' ? 'AI: ∞ ไม่จำกัด' : `AI: ${quotaRemaining}/${quotaMax}`}</span>
           </span>
 
@@ -160,10 +164,10 @@ export function UserMenu({
           <div className="p-2.5 mb-1.5 rounded-xl bg-muted/50 border border-border">
             <div className="text-[11px] uppercase font-bold tracking-wider mb-0.5 flex items-center justify-between">
               <span className="text-foreground flex items-center gap-1.5">
-                {roleConfig.icon}
-                <span>{roleConfig.name} Role</span>
+                {currentRoleInfo.icon}
+                <span>{currentRoleInfo.name} Role</span>
               </span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-bold ${roleConfig.badge}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded border font-bold ${currentRoleInfo.badge}`}>
                 {userRole.toUpperCase()}
               </span>
             </div>
