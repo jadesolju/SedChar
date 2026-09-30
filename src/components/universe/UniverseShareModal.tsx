@@ -36,6 +36,8 @@ export function UniverseShareModal({
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [allowCloning, setAllowCloning] = useState(true);
+  const [allowCoCreation, setAllowCoCreation] = useState(true);
 
   if (!isOpen) return null;
 
@@ -54,6 +56,8 @@ export function UniverseShareModal({
           project,
           userId: user?.id || 'guest',
           author: authorName,
+          allowCloning,
+          allowCoCreation,
         }),
       });
 
@@ -171,6 +175,62 @@ export function UniverseShareModal({
               </div>
             </div>
           </div>
+
+          {/* Permission Settings */}
+          {!shareUrl && (
+            <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+              <div className="text-xs font-bold text-foreground flex items-center justify-between">
+                <span>การตั้งค่าสิทธิ์และการป้องกัน (Permissions & Protection)</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
+              </div>
+
+              {/* Allow Cloning Toggle */}
+              <label className="flex items-start justify-between gap-3 cursor-pointer group">
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
+                    <span>อนุญาตให้คัดลอกเข้า Studio (Allow Cloning)</span>
+                    {!allowCloning && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+                        ป้องกันการลอก
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    {allowCloning
+                      ? 'ผู้ที่มีลิงก์สามารถกดปุ่ม Clone เพื่อคัดลอกจักรวาลนี้ไปแต่งต่อในสตูดิโอส่วนตัวได้'
+                      : 'ปิดปุ่ม Clone เพื่อให้อ่านและมีส่วนร่วมได้อย่างเดียว ป้องกันการคัดลอก Schema'}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowCloning}
+                  onChange={(e) => setAllowCloning(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
+                />
+              </label>
+
+              {/* Allow Co-Creation Toggle */}
+              <label className="flex items-start justify-between gap-3 cursor-pointer group pt-2 border-t border-border/50">
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
+                    <span>เปิดรับตัวละครร่วมสร้าง (Allow Character Proposals)</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                      Co-Creation
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    อนุญาตให้เพื่อนหรือนักเขียนท่านอื่นยื่นตัวละครเข้าร่วมจักรวาลนี้ (ใช้โควต้า AI ของตนเอง)
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowCoCreation}
+                  onChange={(e) => setAllowCoCreation(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
+                />
+              </label>
+            </div>
+          )}
 
           {/* Share Link Result */}
           {shareUrl ? (

@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ExternalLink,
   Clock,
+  UserPlus,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import { CHARACTER_FLAGS } from '@/shared/types';
@@ -29,6 +30,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UniverseDiscussionSection } from '@/components/universe/UniverseDiscussionSection';
+import { UniverseProposeCharacterModal } from '@/components/universe/UniverseProposeCharacterModal';
 
 export default function UniverseShareViewPage() {
   return (
@@ -50,6 +52,39 @@ function UniverseShareViewContent() {
   const [metadata, setMetadata] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
+  const [isProposeModalOpen, setIsProposeModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleCharacterProposed = (charData: any) => {
+    if (!project) return;
+    const newMainChar = {
+      id: 'prop_' + Date.now(),
+      name: charData.name,
+      aliasOrTitle: charData.aliasOrTitle || '',
+      gender: charData.gender || '',
+      age: charData.age || '',
+      storyRole: charData.storyRole || 'ตัวละครผู้ร่วมสร้าง',
+      corePersonality: charData.corePersonality || '',
+      primaryGoalOrDesire: '',
+      relationshipWithUser: '',
+      relationsWithOtherCast: charData.relationsWithOtherCast || '',
+      exclusiveSecretOrKnowledge: charData.exclusiveSecretOrKnowledge || '',
+      absoluteRules: '',
+      appearanceBrief: '',
+      speakingStyle: '',
+      flagType: charData.flagType || 'none',
+    };
+
+    setProject({
+      ...project,
+      mainCharacters: [...(project.mainCharacters || []), newMainChar],
+    });
+  };
 
   useEffect(() => {
     if (!shareId) return;
@@ -177,16 +212,30 @@ function UniverseShareViewContent() {
   const { worldSetting, lore, mainCharacters, supportingCharacters, routes } = project;
   const projectName = worldSetting?.projectName || project.title || 'จักรวาลและคลังความจำ';
 
-  const authorName =
+  const isOwner =
     user &&
     (user.id === metadata?.userId ||
       user.email?.split('@')[0] === metadata?.author ||
-      user.user_metadata?.display_name === metadata?.author)
+      user.user_metadata?.display_name === metadata?.author);
+
+  const authorName =
+    isOwner
       ? user.user_metadata?.display_name || user.user_metadata?.full_name || metadata?.author || 'ผู้สร้าง'
       : metadata?.author || 'ผู้สร้าง';
 
+  const canClone = metadata?.allowCloning !== false || isOwner;
+  const allowCoCreation = metadata?.allowCoCreation !== false;
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-card border border-purple-500/40 shadow-2xl text-xs font-bold text-foreground flex items-center gap-2.5 animate-in slide-in-from-bottom-4 duration-200">
+          <Sparkles className="w-4 h-4 text-purple-500 shrink-0" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2">
         {/* Left: Studio Link + Title */}
@@ -232,21 +281,31 @@ function UniverseShareViewContent() {
             <span className="hidden md:inline">{copied ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleCloneToMyStudio}
-            disabled={isCloning}
-            className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
-            title="คัดลอกเข้าคลัง (Clone)"
-          >
-            {isCloning ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5" />
-            )}
-            <span className="hidden sm:inline">คัดลอกเข้าคลัง (Clone)</span>
-            <span className="sm:hidden text-[11px]">Clone</span>
-          </button>
+          {canClone ? (
+            <button
+              type="button"
+              onClick={handleCloneToMyStudio}
+              disabled={isCloning}
+              className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+              title="คัดลอกเข้าคลัง (Clone)"
+            >
+              {isCloning ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">คัดลอกเข้าคลัง (Clone)</span>
+              <span className="sm:hidden text-[11px]">Clone</span>
+            </button>
+          ) : (
+            <div
+              className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-muted/60 border border-border text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 shrink-0"
+              title="เจ้าของสงวนสิทธิ์ต้นฉบับ ปิดการคัดลอกเข้าสตูดิโอส่วนตัว"
+            >
+              <Lock className="w-3 h-3 text-amber-500" />
+              <span className="hidden sm:inline">สงวนสิทธิ์ต้นฉบับ</span>
+            </div>
+          )}
 
           <ThemeToggle />
           <UserMenu />
@@ -432,9 +491,29 @@ function UniverseShareViewContent() {
 
         {/* Section 3: Main Characters & Relations */}
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-border pb-2.5">
-            <Users className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-            <h3 className="text-base font-bold text-foreground">3. ตัวละครหลักในจักรวาล (Main Cast)</h3>
+          <div className="flex items-center justify-between border-b border-border pb-2.5 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              <h3 className="text-base font-bold text-foreground">3. ตัวละครหลักในจักรวาล (Main Cast)</h3>
+            </div>
+
+            {allowCoCreation && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    openAuthModal('signin');
+                  } else {
+                    setIsProposeModalOpen(true);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                title="ยื่นตัวละครเข้าร่วมจักรวาลนี้โดยใช้โควต้า AI ของตนเอง"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ ยื่นตัวละครเข้าร่วม (Co-Create)</span>
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -524,25 +603,56 @@ function UniverseShareViewContent() {
         {/* Discussion & Cute Reactions Section */}
         <UniverseDiscussionSection shareId={shareId} projectName={projectName} />
 
-        {/* Bottom CTA to Clone */}
+        {/* Bottom CTA to Clone or Co-Create */}
         <div className="p-6 rounded-3xl bg-muted/40 border border-border text-center space-y-3">
           <h4 className="text-sm font-bold text-foreground">
-            ชอบจักรวาลนี้และอยากนำไปต่อยอดไหม?
+            {canClone ? 'ชอบจักรวาลนี้และอยากนำไปต่อยอดไหม?' : 'ร่วมเป็นส่วนหนึ่งในการขยายจักรวาลนี้'}
           </h4>
           <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            คุณสามารถกดปุ่มด้านล่างเพื่อคัดลอกข้อมูลทั้งหมดเข้า Studio ส่วนตัวของคุณเพื่อแก้ไขและแปลงเป็น Prompt สำหรับเล่นได้ทันที
+            {canClone
+              ? 'คุณสามารถกดปุ่มด้านล่างเพื่อคัดลอกข้อมูลทั้งหมดเข้า Studio ส่วนตัวของคุณเพื่อแก้ไขและแปลงเป็น Prompt สำหรับเล่นได้ทันที'
+              : 'จักรวาลนี้เปิดให้ร่วมสร้างสรรค์ คุณสามารถยื่นตัวละครของคุณเข้าร่วมเพื่อขยายเรื่องราวไปพร้อมกับผู้สร้างคนอื่นๆ'}
           </p>
-          <button
-            type="button"
-            onClick={handleCloneToMyStudio}
-            disabled={isCloning}
-            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span>คัดลอกจักรวาลนี้ไปแต่งต่อใน Studio</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            {canClone && (
+              <button
+                type="button"
+                onClick={handleCloneToMyStudio}
+                disabled={isCloning}
+                className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <span>คัดลอกจักรวาลนี้ไปแต่งต่อใน Studio</span>
+              </button>
+            )}
+            {allowCoCreation && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    openAuthModal('signin');
+                  } else {
+                    setIsProposeModalOpen(true);
+                  }
+                }}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>ยื่นตัวละครเข้าร่วมจักรวาลนี้</span>
+              </button>
+            )}
+          </div>
         </div>
       </main>
+
+      <UniverseProposeCharacterModal
+        isOpen={isProposeModalOpen}
+        onClose={() => setIsProposeModalOpen(false)}
+        shareId={shareId}
+        projectName={projectName}
+        onSuccess={handleCharacterProposed}
+        onShowToast={showToast}
+      />
 
       <AuthModal />
     </div>

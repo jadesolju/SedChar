@@ -31,8 +31,11 @@ export async function GET(req: NextRequest) {
         project: r2Payload.project || r2Payload,
         metadata: {
           shareId,
+          userId: r2Payload.userId,
           title: r2Payload.title || r2Payload.project?.worldSetting?.projectName || 'Universe Project',
           author: r2Payload.author || 'Anonymous Creator',
+          allowCloning: r2Payload.allowCloning !== false,
+          allowCoCreation: r2Payload.allowCoCreation !== false,
           createdAt: r2Payload.createdAt || new Date().toISOString(),
         },
       });
@@ -49,7 +52,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { project, shareId: requestedShareId, author, userId } = body;
+    const { project, shareId: requestedShareId, author, userId, allowCloning = true, allowCoCreation = true } = body;
 
     if (!project) {
       return NextResponse.json({ error: 'Missing project data' }, { status: 400 });
@@ -64,6 +67,8 @@ export async function POST(req: NextRequest) {
       author: author || 'ผู้สร้าง SedChar',
       title: projectTitle,
       project,
+      allowCloning: allowCloning !== false,
+      allowCoCreation: allowCoCreation !== false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

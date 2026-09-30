@@ -50,6 +50,7 @@ export function MultiCharLibraryModal({
 }: MultiCharLibraryModalProps) {
   const { user, openAuthModal } = useAuth();
   const [activeTab, setActiveTab] = useState<'list' | 'save'>('list');
+  const [listFilter, setListFilter] = useState<'all' | 'mine' | 'shared'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [shareProject, setShareProject] = useState<MultiCharacterProjectDraft | null>(null);
   const [saveTitle, setSaveTitle] = useState(
@@ -88,7 +89,18 @@ export function MultiCharLibraryModal({
 
   if (!isOpen) return null;
 
-  const filteredProjects = savedProjects.filter(
+  // Categorize projects
+  const myProjects = savedProjects.filter(
+    (p) => !p.id.startsWith('cloned_') && !p.description.includes('Secret Share Link') && !p.title.includes('(Cloned)')
+  );
+  const sharedProjects = savedProjects.filter(
+    (p) => p.id.startsWith('cloned_') || p.description.includes('Secret Share Link') || p.title.includes('(Cloned)')
+  );
+
+  const currentPool =
+    listFilter === 'mine' ? myProjects : listFilter === 'shared' ? sharedProjects : savedProjects;
+
+  const filteredProjects = currentPool.filter(
     (p) =>
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -287,6 +299,45 @@ export function MultiCharLibraryModal({
                 >
                   <Plus className="w-4 h-4" />
                   <span>บันทึกดราฟต์นี้</span>
+                </button>
+              </div>
+
+              {/* Category Filter Switcher Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setListFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                    listFilter === 'all'
+                      ? 'bg-foreground text-background shadow-xs'
+                      : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  ทั้งหมด ({savedProjects.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListFilter('mine')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                    listFilter === 'mine'
+                      ? 'bg-foreground text-background shadow-xs'
+                      : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>โปรเจกต์ของฉัน ({myProjects.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListFilter('shared')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                    listFilter === 'shared'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>จักรวาลที่แชร์ร่วมกัน ({sharedProjects.length})</span>
                 </button>
               </div>
 
