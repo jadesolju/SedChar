@@ -2,6 +2,7 @@
 import React from 'react';
 import { Sparkles, Plus, Trash2, Shield, Users, UserCheck } from 'lucide-react';
 import type { SubCharacter } from '@/shared/types';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 interface CastRulesSectionProps {
   supportingCharacters: SubCharacter[];
@@ -53,19 +54,14 @@ export function CastRulesSection({
       </div>
 
       {/* Cast Interaction & Turn-Taking Rules */}
-      <div className="p-4 rounded-2xl border border-border bg-card/60 space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-4 h-4 text-emerald-500" />
-            <span>กติกาการโต้ตอบและลำดับการตอบในฉากรวม (Turn-Taking & Multi-Cast Logic)</span>
-          </label>
-        </div>
-        <textarea
+      <div className="p-4 rounded-2xl border border-border bg-card/60">
+        <ExpandableTextarea
+          id="cast-interaction-rules"
+          label="กติกาการโต้ตอบและลำดับการตอบในฉากรวม (Turn-Taking & Multi-Cast Logic)"
           rows={3}
           value={castInteractionRules}
-          onChange={(e) => onUpdateRules(e.target.value)}
+          onChange={(val) => onUpdateRules(val)}
           placeholder="- เมื่อกฎชนกัน ให้เรียงลำดับ: การกระทำของผู้เล่น -> เหตุการณ์ -> ตัวละครที่ถูกพูดถึงตรงๆ ตอบก่อน&#10;- ในฉากรวม: จำกัดการตอบรับหลักครั้งละ 1-2 คน เพื่อป้องกันความสับสน"
-          className="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border focus:border-emerald-500/60 text-xs text-foreground outline-hidden resize-none"
         />
       </div>
 

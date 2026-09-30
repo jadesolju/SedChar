@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useRef } from 'react';
 import {
   FileText,
@@ -10,6 +10,11 @@ import {
   ChevronDown,
   Sparkles,
   FileCode2,
+  Maximize2,
+  Minimize2,
+  X,
+  Edit3,
+  Eye,
 } from 'lucide-react';
 import type {
   MultiCharacterProjectDraft,
@@ -340,10 +345,30 @@ export function RubiiDraftPreviewSection({
   const [copiedJson, setCopiedJson] = useState(false);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [customMarkdown, setCustomMarkdown] = useState<string | null>(null);
   const [currentImportAccept, setCurrentImportAccept] = useState<string>('.json,.md,.txt');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const markdownText = compileRubiiProjectMarkdown(project);
+  const compiledMarkdown = compileRubiiProjectMarkdown(project);
+  const markdownText = customMarkdown !== null ? customMarkdown : compiledMarkdown;
+
+  // Handle ESC key to close fullscreen
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
+
+  // Sync custom markdown when project updates
+  React.useEffect(() => {
+    setCustomMarkdown(null);
+  }, [project]);
   const jsonText = JSON.stringify(project, null, 2);
   const baseFilename = (project.worldSetting.projectName || project.title || 'multi_char_project')
     .replace(/[\\/:*?"<>|]/g, '_')
@@ -652,17 +677,166 @@ export function RubiiDraftPreviewSection({
 
       {/* Code / Markdown View Area */}
       <div className="rounded-2xl border border-border bg-neutral-950 overflow-hidden shadow-2xl">
-        <div className="px-4 py-2.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-          <span className="font-mono text-[11px] font-semibold text-rose-300">multi_character_project_draft.md</span>
-          <span className="text-[10px] text-neutral-500">Multi-Char Studio</span>
+        <div className="px-4 py-2.5 bg-neutral-900/90 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-400">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] font-semibold text-rose-300">multi_character_project_draft.md</span>
+            <span className="text-[10px] text-neutral-500 hidden sm:inline">Multi-Char Studio</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
+              {markdownText.length.toLocaleString('th-TH')} ตัวอักษร
+            </span>
+
+            {/* Fullscreen Expand Button */}
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(true)}
+              title="ขยายดูแบบเต็มจอ (Fullscreen View)"
+              className="p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-all cursor-pointer"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Edit / View Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              title={isEditing ? 'สลับไปโหมดดูตัวอย่าง' : 'แก้ไขข้อความในช่องนี้โดยตรง'}
+              className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                isEditing
+                  ? 'bg-rose-600 text-white font-bold'
+                  : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700'
+              }`}
+            >
+              {isEditing ? (
+                <>
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>ดูผลลัพธ์</span>
+                </>
+              ) : (
+                <>
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>แก้ไข</span>
+                </>
+              )}
+            </button>
+
+            {/* Quick Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopyMd}
+              className="text-xs px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              {copiedMd ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">คัดลอกแล้ว</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>คัดลอก</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="p-4 max-h-[550px] overflow-y-auto custom-scrollbar">
-          <pre className="font-mono text-xs text-neutral-200 whitespace-pre-wrap leading-relaxed">
-            {markdownText}
-          </pre>
+          {isEditing ? (
+            <textarea
+              value={markdownText}
+              onChange={(e) => setCustomMarkdown(e.target.value)}
+              placeholder="แก้ไขข้อความร่าง Master Draft..."
+              className="w-full min-h-[300px] p-3 rounded-lg bg-neutral-900 border border-neutral-700 focus:border-rose-500 text-xs font-mono text-neutral-100 placeholder:text-neutral-500 resize-y leading-relaxed outline-none"
+            />
+          ) : (
+            <pre
+              onClick={() => setIsEditing(true)}
+              title="คลิกเพื่อแก้ไขข้อความ"
+              className="font-mono text-xs text-neutral-200 whitespace-pre-wrap leading-relaxed cursor-text hover:bg-neutral-900/40 p-1 rounded transition-colors"
+            >
+              {markdownText}
+            </pre>
+          )}
         </div>
       </div>
+
+      {/* Fullscreen Modal View (Matching Single Studio Focus View) */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-5xl h-[90vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/40 gap-3 sm:gap-4 flex-shrink-0">
+              <div className="flex items-start justify-between sm:justify-start gap-3 min-w-0 flex-1">
+                <div className="flex flex-col min-w-0">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
+                    <span>Master Draft (Full Expanded View)</span>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                      {markdownText.length.toLocaleString('th-TH')} ตัวอักษร
+                    </span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                    โครงร่างรวมทุกหมวดหมู่ของโปรเจกต์ Multi-Character Studio
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="sm:hidden w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer flex-shrink-0"
+                  title="ปิดหน้าต่าง"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 w-full sm:w-auto flex-shrink-0 pt-1.5 sm:pt-0 border-t border-border/40 sm:border-t-0">
+                <button
+                  type="button"
+                  onClick={handleCopyMd}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-card hover:bg-muted text-foreground border border-border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+                >
+                  {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <span>{copiedMd ? 'คัดลอกแล้ว' : 'คัดลอก MD'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  title="ปิดหน้าต่าง"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-background flex flex-col">
+              <textarea
+                value={markdownText}
+                onChange={(e) => setCustomMarkdown(e.target.value)}
+                placeholder="แก้ไข Master Draft..."
+                className="w-full flex-1 p-4 rounded-xl bg-card border border-border focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 text-xs font-mono text-foreground resize-none leading-relaxed outline-none"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 border-t border-border bg-muted/20 flex justify-between items-center flex-shrink-0">
+              <span className="text-xs text-muted-foreground">
+                โหมดขยายเต็มหน้าจอ (กด Esc หรือคลิกปิดเพื่อย้อนกลับ)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

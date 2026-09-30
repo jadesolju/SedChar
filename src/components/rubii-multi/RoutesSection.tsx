@@ -11,6 +11,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import type { RouteDraft, MainCharacterDraft } from '@/shared/multiCharTypes';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 interface RoutesSectionProps {
   routes: RouteDraft[];
@@ -142,61 +143,49 @@ export function RoutesSection({
               </div>
 
               {/* Route Summary */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                  <span>สรุปเนื้อหาของเส้นทางนี้ (Route Summary)</span>
-                </label>
-                <textarea
+              <div>
+                <ExpandableTextarea
+                  id={`route-summary-${route.id}`}
+                  label="สรุปเนื้อหาของเส้นทางนี้ (Route Summary)"
                   rows={2}
                   value={route.summary}
-                  onChange={(e) => onUpdateRoute(idx, { summary: e.target.value })}
+                  onChange={(val) => onUpdateRoute(idx, { summary: val })}
                   placeholder="ภาพรวมของเรื่องราวและบรรยากาศในเส้นทางนี้..."
-                  className="w-full px-3 py-2 rounded-xl bg-background/80 border border-border focus:border-blue-500/60 text-xs text-foreground transition-all outline-hidden resize-none"
                 />
               </div>
 
               {/* Conditions & Endings Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                    <Target className="w-3 h-3 text-emerald-500" />
-                    <span>เงื่อนไขการเข้าสู่ Route</span>
-                  </label>
-                  <textarea
+                <div>
+                  <ExpandableTextarea
+                    id={`route-entry-${route.id}`}
+                    label="เงื่อนไขการเข้าสู่ Route"
                     rows={2}
                     value={route.entryCondition}
-                    onChange={(e) => onUpdateRoute(idx, { entryCondition: e.target.value })}
+                    onChange={(val) => onUpdateRoute(idx, { entryCondition: val })}
                     placeholder="เช่น เลือกเข้าพบผู้บัญชาการ..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/80 border border-border text-xs text-foreground transition-all outline-hidden resize-none"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                    <GitFork className="w-3 h-3 text-amber-500" />
-                    <span>เงื่อนไขแตกแขนง / ออก</span>
-                  </label>
-                  <textarea
+                <div>
+                  <ExpandableTextarea
+                    id={`route-exit-${route.id}`}
+                    label="เงื่อนไขแตกแขนง / ออก"
                     rows={2}
                     value={route.exitOrBranchCondition}
-                    onChange={(e) => onUpdateRoute(idx, { exitOrBranchCondition: e.target.value })}
+                    onChange={(val) => onUpdateRoute(idx, { exitOrBranchCondition: val })}
                     placeholder="เช่น ค้นพบความลับของสภา..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/80 border border-border text-xs text-foreground transition-all outline-hidden resize-none"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                    <Award className="w-3 h-3 text-purple-500" />
-                    <span>ตอนจบที่เป็นไปได้ (Endings)</span>
-                  </label>
-                  <textarea
+                <div>
+                  <ExpandableTextarea
+                    id={`route-endings-${route.id}`}
+                    label="ตอนจบที่เป็นไปได้ (Endings)"
                     rows={2}
                     value={route.possibleEndings}
-                    onChange={(e) => onUpdateRoute(idx, { possibleEndings: e.target.value })}
+                    onChange={(val) => onUpdateRoute(idx, { possibleEndings: val })}
                     placeholder="Good End / Bad End..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/80 border border-border text-xs text-foreground transition-all outline-hidden resize-none"
                   />
                 </div>
               </div>

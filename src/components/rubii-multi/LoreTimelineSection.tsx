@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { LoreDraft, LoreTimelineItem, MainCharacterDraft } from '@/shared/multiCharTypes';
 import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 interface LoreTimelineSectionProps {
   lore: LoreDraft;
@@ -107,31 +108,25 @@ export function LoreTimelineSection({
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>ภูมิหลังและประวัติศาสตร์ของเรื่อง (World Backstory)</span>
-            </label>
-            <textarea
+          <div>
+            <ExpandableTextarea
+              id="lore-backstory"
+              label="ภูมิหลังและประวัติศาสตร์ของเรื่อง (World Backstory)"
               rows={3}
               value={lore.worldBackstory}
-              onChange={(e) => onUpdateLore('worldBackstory', e.target.value)}
+              onChange={(val) => onUpdateLore('worldBackstory', val)}
               placeholder="จุดเริ่มต้นของโลก หรือเหตุการณ์ใหญ่ในอดีตที่ส่งผลถึงปัจจุบัน..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Swords className="w-3.5 h-3.5 text-rose-500" />
-              <span>ความขัดแย้งหลัก (Core Conflict)</span>
-            </label>
-            <textarea
+          <div>
+            <ExpandableTextarea
+              id="lore-conflict"
+              label="ความขัดแย้งหลัก (Core Conflict)"
               rows={3}
               value={lore.coreConflict}
-              onChange={(e) => onUpdateLore('coreConflict', e.target.value)}
+              onChange={(val) => onUpdateLore('coreConflict', val)}
               placeholder="จุดขัดแย้งหรือเป้าหมายที่ทำให้ตัวละครต้องเข้ามาพัวพันกัน..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
             />
           </div>
         </div>
@@ -203,12 +198,12 @@ export function LoreTimelineSection({
                     </div>
                   </div>
 
-                  <textarea
+                  <ExpandableTextarea
+                    id={`timeline-event-${event.id}`}
                     rows={2}
                     value={event.description}
-                    onChange={(e) => onUpdateEvent(idx, { description: e.target.value })}
+                    onChange={(val) => onUpdateEvent(idx, { description: val })}
                     placeholder="รายละเอียดของเหตุการณ์นี้ และผลกระทบต่อเรื่องราว..."
-                    className="w-full px-3 py-2 rounded-xl bg-background/80 border border-border/80 focus:border-amber-500/50 text-xs text-foreground transition-all outline-hidden resize-none"
                   />
                 </div>
               ))}
@@ -217,31 +212,25 @@ export function LoreTimelineSection({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Megaphone className="w-3.5 h-3.5 text-amber-500" />
-              <span>สิ่งที่คนทั่วไปในเรื่องรู้ร่วมกัน (Common Knowledge)</span>
-            </label>
-            <textarea
+          <div>
+            <ExpandableTextarea
+              id="lore-common-knowledge"
+              label="สิ่งที่คนทั่วไปในเรื่องรู้ร่วมกัน (Common Knowledge)"
               rows={2}
               value={lore.commonKnowledge}
-              onChange={(e) => onUpdateLore('commonKnowledge', e.target.value)}
+              onChange={(val) => onUpdateLore('commonKnowledge', val)}
               placeholder="ข้อเท็จจริงสาธารณะ เช่น ใครเป็นผู้นำองค์กร..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-amber-500/60 text-xs text-foreground transition-all outline-hidden resize-none"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-              <span>ข้อห้าม / ความเชื่อต้องห้าม (Taboos & Myths)</span>
-            </label>
-            <textarea
+          <div>
+            <ExpandableTextarea
+              id="lore-taboos"
+              label="ข้อห้าม / ความเชื่อต้องห้าม (Taboos & Myths)"
               rows={2}
               value={lore.taboosOrMyths}
-              onChange={(e) => onUpdateLore('taboosOrMyths', e.target.value)}
+              onChange={(val) => onUpdateLore('taboosOrMyths', val)}
               placeholder="ข้อห้ามเด็ดขาด เช่น ห้ามลักลอบกลั่นผลึกอีเธอร์เรียมดิบ..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-amber-500/60 text-xs text-foreground transition-all outline-hidden resize-none"
             />
           </div>
         </div>

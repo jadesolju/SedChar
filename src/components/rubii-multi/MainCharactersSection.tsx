@@ -17,6 +17,7 @@ import {
 import type { MainCharacterDraft } from '@/shared/multiCharTypes';
 import { MAX_FREE_MAIN_CHARACTERS } from '@/hooks/useMultiCharacterProject';
 import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 interface MainCharactersSectionProps {
   mainCharacters: MainCharacterDraft[];
@@ -287,119 +288,95 @@ export function MainCharactersSection({
                 />
               </div>
 
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-rose-500" />
-                  <span>แก่นบุคลิกภาพ & จุดเด่นนิสัย (Core Personality Brief)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div className="sm:col-span-2">
+                <ExpandableTextarea
+                  id={`char-core-${activeChar.id}`}
+                  label="แก่นบุคลิกภาพ & จุดเด่นนิสัย (Core Personality Brief)"
                   value={activeChar.corePersonality}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { corePersonality: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { corePersonality: val })}
                   placeholder="เช่น สุขุม เคร่งครัดในหน้าที่ ปากแข็งแต่จิตใจอ่อนโยน รักษาคำพูดอย่างยิ่งยวด..."
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border focus:border-rose-500/60 text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
               {/* Primary Goal & User Relationship */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-amber-500" />
-                  <span>เป้าหมายหรือความปรารถนาหลัก (Primary Goal)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-goal-${activeChar.id}`}
+                  label="เป้าหมายหรือความปรารถนาหลัก (Primary Goal)"
                   value={activeChar.primaryGoalOrDesire}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { primaryGoalOrDesire: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { primaryGoalOrDesire: val })}
                   placeholder="เช่น ปกป้องความสงบสุขของพลเมือง และค้นหาความจริง..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Heart className="w-3.5 h-3.5 text-pink-500" />
-                  <span>ความสัมพันธ์กับ {'{{user}}'} (Relationship with User)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-user-rel-${activeChar.id}`}
+                  label="ความสัมพันธ์กับ {{user}} (Relationship with User)"
                   value={activeChar.relationshipWithUser}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { relationshipWithUser: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { relationshipWithUser: val })}
                   placeholder="เช่น มองเป็นบุคคลสำคัญที่ต้องคุ้มครอง แต่ค่อยๆ เปิดใจ..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
               {/* Relations with other cast */}
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-blue-500" />
-                  <span>ความสัมพันธ์กับตัวละครอื่นในเรื่อง (Relations with other Cast)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div className="sm:col-span-2">
+                <ExpandableTextarea
+                  id={`char-cast-rel-${activeChar.id}`}
+                  label="ความสัมพันธ์กับตัวละครอื่นในเรื่อง (Relations with other Cast)"
                   value={activeChar.relationsWithOtherCast}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { relationsWithOtherCast: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { relationsWithOtherCast: val })}
                   placeholder="เช่น ไม่ไว้ใจกิลด์วิศวกรเงา แต่ยอมร่วมมือชั่วคราวเมื่อสถานการณ์คับขัน..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
               {/* Secrets & Absolute Rules */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Key className="w-3.5 h-3.5 text-amber-500" />
-                  <span>ข้อมูลลับ / สิ่งที่รู้เฉพาะตัว (Exclusive Secret / Knowledge)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-secret-${activeChar.id}`}
+                  label="ข้อมูลลับ / สิ่งที่รู้เฉพาะตัว (Exclusive Secret / Knowledge)"
                   value={activeChar.exclusiveSecretOrKnowledge}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { exclusiveSecretOrKnowledge: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { exclusiveSecretOrKnowledge: val })}
                   placeholder="เช่น แอบเก็บตัวอย่างผลึกเวทจากแล็บ 7 ไว้เพื่อสืบหาคนทรยศ..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <Ban className="w-3.5 h-3.5 text-rose-500" />
-                  <span>กฎเหล็ก / สิ่งที่จะไม่ทำเด็ดขาด (Absolute Rules)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-rules-${activeChar.id}`}
+                  label="กฎเหล็ก / สิ่งที่จะไม่ทำเด็ดขาด (Absolute Rules)"
                   value={activeChar.absoluteRules}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { absoluteRules: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { absoluteRules: val })}
                   placeholder="เช่น ไม่ยอมหักหลังหน้าที่ และไม่ทำร้ายผู้บริสุทธิ์เด็ดขาด..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
               {/* Appearance & Speaking Style */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                  <span>รูปลักษณ์ภายนอกย่อ (Appearance Brief)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-app-${activeChar.id}`}
+                  label="รูปลักษณ์ภายนอกย่อ (Appearance Brief)"
                   value={activeChar.appearanceBrief}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { appearanceBrief: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { appearanceBrief: val })}
                   placeholder="เช่น ชุดเกราะเงินประดับผ้าคลุมสีน้ำเงินกรมท่า ผมสีบลอนด์เงิน สูง 172 ซม...."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
-                  <span>สไตล์การพูด & คำติดปาก (Speaking Style & Catchphrase)</span>
-                </label>
-                <textarea
-                  rows={2}
+              <div>
+                <ExpandableTextarea
+                  id={`char-speak-${activeChar.id}`}
+                  label="สไตล์การพูด & คำติดปาก (Speaking Style & Catchphrase)"
                   value={activeChar.speakingStyle}
-                  onChange={(e) => onUpdateCharacter(activeChar.id, { speakingStyle: e.target.value })}
+                  onChange={(val) => onUpdateCharacter(activeChar.id, { speakingStyle: val })}
                   placeholder="เช่น สุภาพ ทางการ หนักแน่น ลงท้ายด้วยความเคารพแต่แฝงความเด็ดขาด..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border text-xs text-foreground outline-hidden resize-none"
+                  rows={2}
                 />
               </div>
             </div>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Globe, Sparkles, Building, Landmark, Compass, ShieldAlert, Building2, Wand2 } from 'lucide-react';
 import type { WorldSettingDraft } from '@/shared/multiCharTypes';
 import { SectionAutoPromptModal } from '@/components/universe/SectionAutoPromptModal';
+import { ExpandableTextarea } from '@/components/ui/ExpandableTextarea';
 
 interface WorldSettingSectionProps {
   worldSetting: WorldSettingDraft;
@@ -104,59 +105,47 @@ export function WorldSettingSection({ worldSetting, onUpdate, onShowToast }: Wor
           />
         </div>
 
-        <div className="space-y-1.5 md:col-span-2">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <Building className="w-3.5 h-3.5 text-emerald-500" />
-            <span>สถานที่หลัก & ฉากหลังของเรื่อง (Main Locations & Setting)</span>
-          </label>
-          <textarea
+        <div className="md:col-span-2">
+          <ExpandableTextarea
+            id="world-main-location"
+            label="สถานที่หลัก & ฉากหลังของเรื่อง (Main Locations & Setting)"
             rows={3}
             value={worldSetting.mainLocation}
-            onChange={(e) => onUpdate('mainLocation', e.target.value)}
+            onChange={(val) => onUpdate('mainLocation', val)}
             placeholder="เช่น นครลอยฟ้าแอริออน, สถาบันวิจัยศิลานิรันดร์, สลัมเขตชั้นล่างใต้หมอกควัน..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
           />
         </div>
 
-        <div className="space-y-1.5 md:col-span-2">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
-            <span>กฎของโลก / ระบบพลัง / กฎที่ต้องยึดร่วมกัน (World Rules & Constraints)</span>
-          </label>
-          <textarea
+        <div className="md:col-span-2">
+          <ExpandableTextarea
+            id="world-rules"
+            label="กฎของโลก / ระบบพลัง / กฎที่ต้องยึดร่วมกัน (World Rules & Constraints)"
             rows={4}
             value={worldSetting.worldRulesOrMagicSystem}
-            onChange={(e) => onUpdate('worldRulesOrMagicSystem', e.target.value)}
+            onChange={(val) => onUpdate('worldRulesOrMagicSystem', val)}
             placeholder="เช่น ศิลาเวทมนตร์อีเธอร์เรียมเป็นแหล่งพลังงานเดียว หากใช้เกินขีดจำกัดจะเกิดสภาวะผลึกกัดกินร่างกาย..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-purple-500" />
-            <span>ฝ่าย / ตระกูล / องค์กรสำคัญ (Factions & Organizations)</span>
-          </label>
-          <textarea
+        <div>
+          <ExpandableTextarea
+            id="world-factions"
+            label="ฝ่าย / ตระกูล / องค์กรสำคัญ (Factions & Organizations)"
             rows={3}
             value={worldSetting.factionsOrOrganizations}
-            onChange={(e) => onUpdate('factionsOrOrganizations', e.target.value)}
+            onChange={(val) => onUpdate('factionsOrOrganizations', val)}
             placeholder="เช่น สภาสูงแห่งจักรวรรดิ, กิลด์วิศวกรเงา, ขบวนการปลดแอกเขตลอยฟ้า..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-pink-500" />
-            <span>มู้ดและบรรยากาศโดยรวม (Atmosphere & Aesthetic)</span>
-          </label>
-          <textarea
+        <div>
+          <ExpandableTextarea
+            id="world-atmosphere"
+            label="มู้ดและบรรยากาศโดยรวม (Atmosphere & Aesthetic)"
             rows={3}
             value={worldSetting.atmosphereTheme}
-            onChange={(e) => onUpdate('atmosphereTheme', e.target.value)}
+            onChange={(val) => onUpdate('atmosphereTheme', val)}
             placeholder="เช่น กลิ่นไอน้ำผสมไอเวทมนตร์ แสงโคมไฟนีออนโบราณ ความหรูหราของชนชั้นสูงตัดกับความดิบเถื่อน..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden resize-none"
           />
         </div>
       </div>
