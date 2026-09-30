@@ -311,25 +311,25 @@ function UniverseShareViewContent() {
         {/* Section 1: World Rules & Factions */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-2.5">
-            <Globe className="w-5 h-5 text-purple-500" />
+            <Globe className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <h3 className="text-base font-bold text-foreground">1. World Setting & กฎเกณฑ์โลก</h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider text-purple-500">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-2.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 กฎเกณฑ์ของโลก / ระบบพลัง
               </h4>
-              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+              <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
                 {worldSetting?.worldRulesOrMagicSystem || 'ไม่ได้ระบุกฎเกณฑ์'}
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider text-purple-500">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-2.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 ฝ่าย / องค์กร / กลุ่มอำนาจ
               </h4>
-              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+              <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
                 {worldSetting?.factionsOrOrganizations || 'ไม่ได้ระบุฝ่าย'}
               </p>
             </div>
@@ -339,17 +339,17 @@ function UniverseShareViewContent() {
         {/* Section 2: Lore & Timeline */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-2.5">
-            <BookOpen className="w-5 h-5 text-amber-500" />
+            <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h3 className="text-base font-bold text-foreground">2. Lorebook & ไทม์ไลน์ประวัติศาสตร์</h3>
           </div>
 
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
+          <div className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-4">
             {lore?.worldBackstory && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider text-amber-500">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   ภูมิหลังโลก (Backstory)
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
                   {lore.worldBackstory}
                 </p>
               </div>
@@ -357,10 +357,10 @@ function UniverseShareViewContent() {
 
             {lore?.coreConflict && (
               <div className="space-y-1.5 pt-2 border-t border-border/50">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider text-amber-500">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   ปมความขัดแย้งหลัก (Core Conflict)
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed whitespace-pre-line">
                   {lore.coreConflict}
                 </p>
               </div>
@@ -368,28 +368,28 @@ function UniverseShareViewContent() {
 
             {lore?.timelineEvents && lore.timelineEvents.length > 0 && (
               <div className="space-y-3 pt-3 border-t border-border/50">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider text-amber-500">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   ไทม์ไลน์ลำดับเหตุการณ์สำคัญ
                 </h4>
                 <div className="space-y-2.5">
                   {lore.timelineEvents.map((evt, idx) => (
                     <div
                       key={evt.id || idx}
-                      className="p-3.5 rounded-xl bg-muted/40 border border-border/60 flex items-start gap-3"
+                      className="p-3.5 rounded-xl bg-muted/50 border border-border flex items-start gap-3 shadow-2xs"
                     >
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[11px] font-bold shrink-0">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[11px] font-bold shrink-0">
                         {evt.timeLabel || 'ไม่ระบุเวลา'}
                       </span>
                       <div className="space-y-1">
                         <div className="text-xs font-bold text-foreground flex items-center gap-2">
                           <span>{evt.eventTitle}</span>
                           {evt.isSecret && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                            <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                               ความลับ
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        <p className="text-[11px] text-foreground/80 dark:text-muted-foreground leading-relaxed">
                           {evt.description}
                         </p>
                       </div>
@@ -404,7 +404,7 @@ function UniverseShareViewContent() {
         {/* Section 3: Main Characters & Relations */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-2.5">
-            <Users className="w-5 h-5 text-rose-500" />
+            <Users className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             <h3 className="text-base font-bold text-foreground">3. ตัวละครหลักในจักรวาล (Main Cast)</h3>
           </div>
 
@@ -415,7 +415,7 @@ function UniverseShareViewContent() {
                 return (
                   <div
                     key={char.id || idx}
-                    className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-3 flex flex-col justify-between"
+                    className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-3 flex flex-col justify-between"
                   >
                     <div className="space-y-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -428,7 +428,7 @@ function UniverseShareViewContent() {
                               </span>
                             )}
                           </h4>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-medium text-purple-600 dark:text-purple-400">
                             {char.storyRole || 'บทบาทในเรื่อง'}
                           </p>
                         </div>
@@ -440,23 +440,23 @@ function UniverseShareViewContent() {
                       </div>
 
                       {char.corePersonality && (
-                        <div className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                        <div className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed line-clamp-3">
                           <span className="font-semibold text-foreground">นิสัย: </span>
                           {char.corePersonality}
                         </div>
                       )}
 
                       {char.relationsWithOtherCast && (
-                        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] text-muted-foreground">
-                          <span className="font-semibold text-rose-500">สายสัมพันธ์กับตัวละครอื่น: </span>
+                        <div className="p-2.5 rounded-xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 text-[11px] text-foreground/85 dark:text-muted-foreground">
+                          <span className="font-semibold text-rose-600 dark:text-rose-400">สายสัมพันธ์กับตัวละครอื่น: </span>
                           {char.relationsWithOtherCast}
                         </div>
                       )}
                     </div>
 
-                    <div className="pt-2 border-t border-border/50 text-[10px] text-muted-foreground flex items-center justify-between">
+                    <div className="pt-2 border-t border-border/60 text-[10px] text-muted-foreground flex items-center justify-between">
                       <span>เพศ: {char.gender || '-'} | อายุ: {char.age || '-'}</span>
-                      {char.mbti && <span className="font-mono">{char.mbti}</span>}
+                      {char.mbti && <span className="font-mono font-bold text-foreground">{char.mbti}</span>}
                     </div>
                   </div>
                 );
@@ -473,17 +473,17 @@ function UniverseShareViewContent() {
         {routes && routes.length > 0 && (
           <section className="space-y-4">
             <div className="flex items-center gap-2 border-b border-border pb-2.5">
-              <GitFork className="w-5 h-5 text-blue-500" />
+              <GitFork className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h3 className="text-base font-bold text-foreground">4. เส้นทางเนื้อเรื่อง (Routes & Branches)</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {routes.map((route, idx) => (
-                <div key={route.id || idx} className="p-4 rounded-2xl bg-card border border-border space-y-2">
-                  <h4 className="text-xs font-bold text-foreground text-blue-500">
+                <div key={route.id || idx} className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-2">
+                  <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400">
                     {route.routeName || `เส้นทางที่ ${idx + 1}`}
                   </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-foreground/85 dark:text-muted-foreground leading-relaxed">
                     {route.summary || 'ไม่มีคำอธิบาย'}
                   </p>
                 </div>

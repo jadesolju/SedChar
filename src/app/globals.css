@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    /* Light Mode - Soft, gentle contrast with Luxe Rose Pink */
-    --background: 330 20% 98%;       /* #FAF7F8 */
-    --foreground: 224 71% 4%;        /* #111827 */
-    --card: 0 0% 100%;               /* #FFFFFF */
+    /* Light Mode - High Contrast, Clean Minimalist with Luxe Accents */
+    --background: 220 16% 96%;       /* #F1F5F9 - Soft clean slate background */
+    --foreground: 224 71% 4%;        /* #0F172A - Deep charcoal for crisp readability */
+    --card: 0 0% 100%;               /* #FFFFFF - Pure white cards that stand out */
     --card-foreground: 224 71% 4%;
-    --border: 330 13% 90%;           /* #F0E6EA */
+    --border: 220 13% 85%;           /* #CBD5E1 - Clean visible borders */
     --primary: 346 84% 53%;          /* #F43F5E - Vibrant Rose Pink */
     --primary-foreground: 0 0% 100%;
-    --muted: 330 14% 95%;            /* #F7EEF1 */
-    --muted-foreground: 330 9% 46%;  /* #7E6C74 */
+    --muted: 220 14% 92%;            /* #E2E8F0 */
+    --muted-foreground: 220 12% 35%;  /* #475569 - High-contrast readable body text */
     --accent: 330 81% 60%;           /* #EC4899 - Sakura / Hot Pink */
     --danger: 0 84% 60%;
     --success: 142 71% 45%;
     --radius: 0.5rem;
 
-    /* Form Input Colors - Soft Gray for Light Mode */
-    --input-bg: 330 10% 97%;         /* #F6F4F5 */
-    --input-border: 330 10% 86%;     /* #DBD3D7 */
-    --input-foreground: 224 71% 4%;  /* #111827 */
-    --input-placeholder: 330 8% 50%; /* #7E6C74 */
+    /* Form Input Colors - Crisp White with defined border for Light Mode */
+    --input-bg: 0 0% 100%;           /* #FFFFFF */
+    --input-border: 220 13% 82%;     /* #CBD5E1 */
+    --input-foreground: 224 71% 4%;  /* #0F172A */
+    --input-placeholder: 220 10% 48%; /* #64748B */
   }
 
   .dark {

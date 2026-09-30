@@ -65,48 +65,54 @@ const REACTION_CONFIGS = [
     label: 'ใจฟู',
     iconName: 'love',
     emoji: '💖',
-    color: 'text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20',
-    activeColor: 'bg-rose-500 text-white border-rose-600 shadow-sm shadow-rose-500/30',
+    color: 'bg-rose-50/90 hover:bg-rose-100 border-rose-200/90 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-950/60 dark:border-rose-800/60 dark:text-rose-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-rose-500 to-pink-600 text-white border-rose-600 shadow-md shadow-rose-500/30 ring-2 ring-rose-400/40',
+    iconColor: 'text-rose-500 dark:text-rose-400',
   },
   {
     key: 'sakura',
     label: 'ละมุน',
     iconName: 'sakura',
     emoji: '🌸',
-    color: 'text-pink-500 bg-pink-500/10 hover:bg-pink-500/20 border-pink-500/20',
-    activeColor: 'bg-pink-500 text-white border-pink-600 shadow-sm shadow-pink-500/30',
+    color: 'bg-pink-50/90 hover:bg-pink-100 border-pink-200/90 text-pink-700 dark:bg-pink-950/40 dark:hover:bg-pink-950/60 dark:border-pink-800/60 dark:text-pink-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-pink-500 to-rose-600 text-white border-pink-600 shadow-md shadow-pink-500/30 ring-2 ring-pink-400/40',
+    iconColor: 'text-pink-500 dark:text-pink-400',
   },
   {
     key: 'sparkle',
     label: 'ว้าวมาก',
     iconName: 'sparkle',
     emoji: '✨',
-    color: 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20',
-    activeColor: 'bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/30',
+    color: 'bg-amber-50/90 hover:bg-amber-100 border-amber-200/90 text-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-950/60 dark:border-amber-800/60 dark:text-amber-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-amber-500 to-orange-500 text-white border-amber-600 shadow-md shadow-amber-500/30 ring-2 ring-amber-400/40',
+    iconColor: 'text-amber-500 dark:text-amber-400',
   },
   {
     key: 'chill',
     label: 'ชวนคุย',
     iconName: 'chill',
     emoji: '☕',
-    color: 'text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20',
-    activeColor: 'bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/30',
+    color: 'bg-emerald-50/90 hover:bg-emerald-100 border-emerald-200/90 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60 dark:border-emerald-800/60 dark:text-emerald-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-emerald-600 shadow-md shadow-emerald-500/30 ring-2 ring-emerald-400/40',
+    iconColor: 'text-emerald-500 dark:text-emerald-400',
   },
   {
     key: 'fire',
     label: 'สุดยอด',
     iconName: 'fire',
     emoji: '🔥',
-    color: 'text-orange-500 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20',
-    activeColor: 'bg-orange-500 text-white border-orange-600 shadow-sm shadow-orange-500/30',
+    color: 'bg-orange-50/90 hover:bg-orange-100 border-orange-200/90 text-orange-800 dark:bg-orange-950/40 dark:hover:bg-orange-950/60 dark:border-orange-800/60 dark:text-orange-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-orange-500 to-red-600 text-white border-orange-600 shadow-md shadow-orange-500/30 ring-2 ring-orange-400/40',
+    iconColor: 'text-orange-500 dark:text-orange-400',
   },
   {
     key: 'idea',
     label: 'ได้ไอเดีย',
     iconName: 'idea',
     emoji: '💡',
-    color: 'text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/20',
-    activeColor: 'bg-cyan-500 text-white border-cyan-600 shadow-sm shadow-cyan-500/30',
+    color: 'bg-sky-50/90 hover:bg-sky-100 border-sky-200/90 text-sky-800 dark:bg-sky-950/40 dark:hover:bg-sky-950/60 dark:border-sky-800/60 dark:text-sky-300 shadow-2xs',
+    activeColor: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white border-sky-600 shadow-md shadow-sky-500/30 ring-2 ring-sky-400/40',
+    iconColor: 'text-sky-500 dark:text-sky-400',
   },
 ] as const;
 
@@ -123,11 +129,11 @@ const AVATAR_COLORS = [
 ];
 
 // Cute Sakura Flower SVG
-function CuteSakuraIcon({ className = 'w-4 h-4' }: { className?: string }) {
+function CuteSakuraIcon({ className = 'w-4 h-4', isActive = false }: { className?: string; isActive?: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 3C11.3 5 9.5 6.8 7.5 7.5C5.5 8.2 3 7.5 3 8.7C3 9.9 4.8 11.2 5.5 13C6.2 14.8 5.5 17.5 6.7 18.2C7.9 18.9 10.2 17.6 12 18.5C13.8 17.6 16.1 18.9 17.3 18.2C18.5 17.5 17.8 14.8 18.5 13C19.2 11.2 21 9.9 21 8.7C21 7.5 18.5 8.2 16.5 7.5C14.5 6.8 12.7 5 12 3Z" opacity="0.9" />
-      <circle cx="12" cy="12" r="2.5" fill="#fff" opacity="0.8" />
+      <path d="M12 3C11.3 5 9.5 6.8 7.5 7.5C5.5 8.2 3 7.5 3 8.7C3 9.9 4.8 11.2 5.5 13C6.2 14.8 5.5 17.5 6.7 18.2C7.9 18.9 10.2 17.6 12 18.5C13.8 17.6 16.1 18.9 17.3 18.2C18.5 17.5 17.8 14.8 18.5 13C19.2 11.2 21 9.9 21 8.7C21 7.5 18.5 8.2 16.5 7.5C14.5 6.8 12.7 5 12 3Z" opacity={isActive ? 1 : 0.9} />
+      <circle cx="12" cy="12" r="2.5" fill={isActive ? '#ffe4e6' : '#fff'} opacity={0.9} />
     </svg>
   );
 }
@@ -478,21 +484,52 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
               >
                 <div className="flex items-center gap-1.5 text-base sm:text-lg transition-transform group-hover:scale-125">
                   {cfg.iconName === 'sakura' ? (
-                    <CuteSakuraIcon className="w-5 h-5 text-pink-400 group-hover:rotate-12 transition-transform" />
+                    <CuteSakuraIcon
+                      isActive={isActive}
+                      className={`w-5 h-5 transition-transform group-hover:rotate-12 ${
+                        isActive ? 'text-white fill-white' : cfg.iconColor
+                      }`}
+                    />
                   ) : cfg.iconName === 'love' ? (
-                    <Heart className={`w-4 h-4 ${isActive ? 'fill-current' : 'text-rose-500'}`} />
+                    <Heart
+                      className={`w-4 h-4 transition-transform ${
+                        isActive ? 'text-white fill-white' : `${cfg.iconColor} fill-current`
+                      }`}
+                    />
                   ) : cfg.iconName === 'sparkle' ? (
-                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <Sparkles
+                      className={`w-4 h-4 transition-transform ${
+                        isActive ? 'text-white fill-white' : cfg.iconColor
+                      }`}
+                    />
                   ) : cfg.iconName === 'chill' ? (
-                    <Coffee className="w-4 h-4 text-emerald-500" />
+                    <Coffee
+                      className={`w-4 h-4 transition-transform ${
+                        isActive ? 'text-white' : cfg.iconColor
+                      }`}
+                    />
                   ) : cfg.iconName === 'fire' ? (
-                    <Flame className="w-4 h-4 text-orange-500" />
+                    <Flame
+                      className={`w-4 h-4 transition-transform ${
+                        isActive ? 'text-white fill-white' : `${cfg.iconColor} fill-current`
+                      }`}
+                    />
                   ) : (
-                    <Lightbulb className="w-4 h-4 text-cyan-500" />
+                    <Lightbulb
+                      className={`w-4 h-4 transition-transform ${
+                        isActive ? 'text-white fill-white' : cfg.iconColor
+                      }`}
+                    />
                   )}
-                  <span className="text-xs font-bold leading-none">{count}</span>
+                  <span className={`text-xs font-bold leading-none ${isActive ? 'text-white' : 'text-foreground'}`}>
+                    {count}
+                  </span>
                 </div>
-                <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-white' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                <span
+                  className={`text-[10px] font-semibold leading-none ${
+                    isActive ? 'text-white' : 'text-foreground/80 group-hover:text-foreground'
+                  }`}
+                >
                   {cfg.label}
                 </span>
               </button>
