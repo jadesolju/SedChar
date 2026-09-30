@@ -326,3 +326,91 @@ export async function deleteUniversePayloadFromR2(shareId: string): Promise<void
     console.warn('R2 Delete error for universe:', shareId, err);
   }
 }
+
+export interface UniverseInteractionData {
+  reactions: {
+    love: number;
+    sparkle: number;
+    sakura: number;
+    chill: number;
+    fire: number;
+    idea: number;
+  };
+  comments: Array<{
+    id: string;
+    authorName: string;
+    authorEmail?: string;
+    authorRole?: string;
+    avatarSeed?: string;
+    avatarColor?: string;
+    text: string;
+    createdAt: string;
+    likes: number;
+    badge?: string;
+  }>;
+}
+
+/**
+ * Fetches interactions (reactions and discussion comments) for a shared universe
+ */
+export async function fetchUniverseInteractionsFromR2(shareId: string): Promise<UniverseInteractionData> {
+  const key = `interactions/uni_${shareId}.json`;
+  const defaultData: UniverseInteractionData = {
+    reactions: { love: 0, sparkle: 0, sakura: 0, chill: 0, fire: 0, idea: 0 },
+    comments: [],
+  };
+
+  // 1. Try CDN fast-path
+  const cdnUrl = `${R2_PUBLIC_URL}/${key}`;
+  try {
+    const res = await fetch(cdnUrl, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        reactions: { ...defaultData.reactions, ...(data.reactions || {}) },
+        comments: Array.isArray(data.comments) ? data.comments : [],
+      };
+    }
+  } catch {}
+
+  // 2. Direct S3 GetObject fallback
+  try {
+    const getRes = await r2Client.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      })
+    );
+    const bodyStr = await getRes.Body?.transformToString();
+    if (bodyStr) {
+      const parsed = JSON.parse(bodyStr);
+      return {
+        reactions: { ...defaultData.reactions, ...(parsed.reactions || {}) },
+        comments: Array.isArray(parsed.comments) ? parsed.comments : [],
+      };
+    }
+  } catch (err) {
+    // Key might not exist yet
+  }
+
+  return defaultData;
+}
+
+/**
+ * Saves interactions (reactions and discussion comments) for a shared universe
+ */
+export async function saveUniverseInteractionsToR2(shareId: string, data: UniverseInteractionData): Promise<void> {
+  const key = `interactions/uni_${shareId}.json`;
+  const body = JSON.stringify(data, null, 2);
+
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: 'application/json; charset=utf-8',
+      CacheControl: 'public, max-age=5, stale-while-revalidate=60',
+    })
+  );
+}
+

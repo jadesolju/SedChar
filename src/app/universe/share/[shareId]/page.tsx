@@ -27,6 +27,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { UniverseDiscussionSection } from '@/components/universe/UniverseDiscussionSection';
 
 export default function UniverseShareViewPage() {
   return (
@@ -471,6 +472,9 @@ function UniverseShareViewContent() {
             </div>
           </section>
         )}
+
+        {/* Discussion & Cute Reactions Section */}
+        <UniverseDiscussionSection shareId={shareId} projectName={projectName} />
 
         {/* Bottom CTA to Clone */}
         <div className="p-6 rounded-3xl bg-muted/40 border border-border text-center space-y-3">
