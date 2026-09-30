@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://grcpgzmqrzfdhethqgsa.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_PDYNR2FQUditnuDLGYZAdQ_AadTBRft';
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
@@ -10,8 +13,8 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      supabaseUrl,
+      supabaseKey,
       {
         cookies: {
           getAll() {
@@ -31,10 +34,25 @@ export async function GET(request: Request) {
   }
 
   // Handle preview & production deployments behind Vercel edge reverse proxy
-  const forwardedHost = request.headers.get('x-forwarded-host');
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online').replace(/\/+$/, '');
+  let targetOrigin = 'https://sedchar.online';
+  let targetHost = 'sedchar.online';
+  try {
+    const parsed = new URL(appBaseUrl);
+    targetOrigin = parsed.origin;
+    targetHost = (parsed.host.toLowerCase().split(':')[0] || 'sedchar.online').trim();
+  } catch {}
+
+  const forwardedHost = (request.headers.get('x-forwarded-host') || requestUrl.host).toLowerCase().split(':')[0];
   const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const isLocalhost = forwardedHost === 'localhost' || forwardedHost === '127.0.0.1';
+
+  // If callback was received on old domain, redirect user directly to the new domain
+  if (!isLocalhost && (forwardedHost === 'sedchar.vercel.app' || (forwardedHost.endsWith('.vercel.app') && forwardedHost !== targetHost && !targetHost.endsWith('.vercel.app')))) {
+    return NextResponse.redirect(`${targetOrigin}${next}`);
+  }
   
-  if (forwardedHost) {
+  if (forwardedHost && !isLocalhost) {
     return NextResponse.redirect(`${forwardedProto}://${forwardedHost}${next}`);
   }
 

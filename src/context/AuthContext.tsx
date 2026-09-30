@@ -385,7 +385,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeLibraryModal = useCallback(() => setIsLibraryModalOpen(false), []);
 
   const signInWithGoogle = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const origin = (typeof window !== 'undefined' && window.location.origin)
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${origin}/auth/callback` },
@@ -394,7 +396,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithDiscord = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const origin = (typeof window !== 'undefined' && window.location.origin)
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL || 'https://sedchar.online');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: { redirectTo: `${origin}/auth/callback` },
