@@ -34,7 +34,7 @@ export async function POST(req: Request) {
             currency: 'thb',
             product_data: {
               name: productName,
-              description: productDesc,
+              description: `${productDesc} • สอบถามหรือแจ้งปัญหาได้ที่ Discord: https://discord.gg/XRgKZ8kWzv`,
             },
             unit_amount: unitAmount,
           },
@@ -42,6 +42,11 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
+      custom_text: {
+        submit: {
+          message: 'หากมีข้อสงสัยหรือต้องการความช่วยเหลือ สามารถสอบถามทีมงานได้ที่ Discord: https://discord.gg/XRgKZ8kWzv',
+        },
+      },
       client_reference_id: userId || undefined,
       customer_email: userEmail || undefined,
       metadata: {
@@ -49,6 +54,7 @@ export async function POST(req: Request) {
         userEmail: userEmail || '',
         plan: isUniversePro ? 'universe_pro_99' : 'supporter_29',
         product: isUniversePro ? 'sedchar_universe_pro_99thb' : 'sedchar_premium_promo_29thb',
+        discord: 'https://discord.gg/XRgKZ8kWzv',
       },
       success_url: `${origin}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?payment=cancelled`,
