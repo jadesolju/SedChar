@@ -43,11 +43,15 @@ interface AuthContextType {
   isLibraryLoading: boolean;
   isAuthModalOpen: boolean;
   isLibraryModalOpen: boolean;
+  isProfileModalOpen: boolean;
   authModalMode: 'signin' | 'signup' | 'reset';
   openAuthModal: (mode?: 'signin' | 'signup' | 'reset') => void;
   closeAuthModal: () => void;
   openLibraryModal: () => void;
   closeLibraryModal: () => void;
+  openProfileModal: () => void;
+  closeProfileModal: () => void;
+  updateUserProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string }) => Promise<{ error: any; data?: any }>;
   setUserRole: (role: UserRole) => void;
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithDiscord: () => Promise<{ error: any }>;
@@ -116,6 +120,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const openProfileModal = useCallback(() => {
+    setIsProfileModalOpen(true);
+  }, []);
+
+  const closeProfileModal = useCallback(() => {
+    setIsProfileModalOpen(false);
+  }, []);
+
+  const updateUserProfile = useCallback(
+    async (data: { displayName?: string; avatarUrl?: string; bio?: string }) => {
+      if (!user) return { error: new Error('User not authenticated') };
+
+      const currentMetadata = user.user_metadata || {};
+      const updatedMetadata = {
+        ...currentMetadata,
+        ...(data.displayName !== undefined
+          ? { display_name: data.displayName, full_name: data.displayName }
+          : {}),
+        ...(data.avatarUrl !== undefined ? { avatar_url: data.avatarUrl } : {}),
+        ...(data.bio !== undefined ? { bio: data.bio } : {}),
+      };
+
+      try {
+        const { data: updateData, error } = await supabase.auth.updateUser({
+          data: updatedMetadata,
+        });
+
+        if (error) throw error;
+
+        if (updateData?.user) {
+          setUser(updateData.user);
+        }
+        return { error: null, data: updateData };
+      } catch (err: any) {
+        console.warn('Profile update error:', err);
+        return { error: err };
+      }
+    },
+    [user, supabase]
+  );
 
   const getTodayKey = useCallback((userId: string) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -755,11 +801,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLibraryLoading,
         isAuthModalOpen,
         isLibraryModalOpen,
+        isProfileModalOpen,
         authModalMode,
         openAuthModal,
         closeAuthModal,
         openLibraryModal,
         closeLibraryModal,
+        openProfileModal,
+        closeProfileModal,
+        updateUserProfile,
         setUserRole,
         signInWithGoogle,
         signInWithDiscord,

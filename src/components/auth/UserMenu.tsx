@@ -14,8 +14,10 @@ import {
   Gem,
   Coffee,
   BookOpen,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ProfileSettingsModal } from './ProfileSettingsModal';
 
 interface UserMenuProps {
   onOpenUpgradeModal?: () => void;
@@ -34,7 +36,19 @@ export function UserMenu({
   customLibraryCount,
   onOpenPromptLibrary,
 }: UserMenuProps) {
-  const { user, userRole, quotaRemaining, quotaMax, signOut, openAuthModal, openLibraryModal, savedCharacters } = useAuth();
+  const {
+    user,
+    userRole,
+    quotaRemaining,
+    quotaMax,
+    signOut,
+    openAuthModal,
+    openLibraryModal,
+    savedCharacters,
+    isProfileModalOpen,
+    openProfileModal,
+    closeProfileModal,
+  } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -266,6 +280,24 @@ export function UserMenu({
               </Link>
             )}
 
+            {/* Profile Settings Link */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                openProfileModal();
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+            >
+              <Settings className="w-4 h-4 text-purple-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-foreground">ตั้งค่าโปรไฟล์ (Profile Settings)</div>
+                <div className="text-[10px] text-muted-foreground truncate">
+                  เปลี่ยนชื่อ, อัปโหลด Avatar, ข้อมูลส่วนตัว
+                </div>
+              </div>
+            </button>
+
             {/* Secret Control Nexus Link - ONLY FOR ADMIN ROLE */}
             {userRole === 'admin' && (
               <Link
@@ -307,6 +339,9 @@ export function UserMenu({
           </div>
         </div>
       )}
+
+      {/* Global Profile Settings Modal */}
+      <ProfileSettingsModal isOpen={isProfileModalOpen} onClose={closeProfileModal} />
     </div>
   );
 }
