@@ -77,31 +77,27 @@ export function WorldSettingSection({ worldSetting, onUpdate, onShowToast }: Wor
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>แนวเรื่อง & โทนหลัก (Genre & Tone)</span>
-          </label>
-          <input
-            type="text"
+        <div className="md:col-span-1">
+          <ExpandableTextarea
+            id="world-genre-tone"
+            label="แนวเรื่อง & โทนหลัก (Genre & Tone)"
+            rows={2}
             value={worldSetting.genreTone}
-            onChange={(e) => onUpdate('genreTone', e.target.value)}
-            placeholder="เช่น แฟนตาซีเวทมนตร์, สตรีมพังก์, การเมืองและการแย่งชิงอำนาจ"
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden"
+            onChange={(val) => onUpdate('genreTone', val)}
+            placeholder="เช่น แนวเรื่อง: เหนือธรรมชาติ (Supernatural), โรงเรียนป่วนกวนประสาท (School Life / Comedy), สืบสวนปมปริศนา..."
+            hint="สามารถระบุแนวเรื่องย่อย อารมณ์ และสไตล์การเล่าเรื่องแบบหลายบรรทัดได้"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-blue-500" />
-            <span>ยุคสมัย & ช่วงเวลา (Era / Time Period)</span>
-          </label>
-          <input
-            type="text"
+        <div className="md:col-span-1">
+          <ExpandableTextarea
+            id="world-era-time"
+            label="ยุคสมัย & ช่วงเวลา (Era / Time Period)"
+            rows={2}
             value={worldSetting.eraTimePeriod}
-            onChange={(e) => onUpdate('eraTimePeriod', e.target.value)}
-            placeholder="เช่น ศตวรรษที่ 19 แห่งยุคการปฏิวัติเวทจักรกล"
-            className="w-full px-3.5 py-2.5 rounded-xl bg-card border border-border focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 text-xs text-foreground transition-all outline-hidden"
+            onChange={(val) => onUpdate('eraTimePeriod', val)}
+            placeholder="เช่น ยุคปัจจุบัน (Modern Day) ยุค 2020s มีสมาร์ตโฟน โซเชียลมีเดีย ไลฟ์สด และกล้องวงจรปิดรอบโรงเรียน..."
+            hint="ระบุช่วงเวลา สภาพแวดล้อมทางเทคโนโลยี หรือข้อจำกัดของยุคสมัย"
           />
         </div>
 

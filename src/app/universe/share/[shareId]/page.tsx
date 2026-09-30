@@ -366,7 +366,7 @@ function UniverseShareViewContent() {
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>แนวเรื่อง (Genre & Tone)</span>
                 </div>
-                <p className="text-foreground leading-relaxed break-words">
+                <p className="text-foreground leading-relaxed break-words whitespace-pre-line">
                   {worldSetting.genreTone}
                 </p>
               </div>
@@ -377,7 +377,7 @@ function UniverseShareViewContent() {
                   <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>ยุคสมัย (Era)</span>
                 </div>
-                <p className="text-foreground leading-relaxed break-words">
+                <p className="text-foreground leading-relaxed break-words whitespace-pre-line">
                   {worldSetting.eraTimePeriod}
                 </p>
               </div>
@@ -388,7 +388,7 @@ function UniverseShareViewContent() {
                   <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   <span>ฉากหลัก (Main Location)</span>
                 </div>
-                <p className="text-foreground leading-relaxed break-words">
+                <p className="text-foreground leading-relaxed break-words whitespace-pre-line">
                   {worldSetting.mainLocation}
                 </p>
               </div>
