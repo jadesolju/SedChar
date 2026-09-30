@@ -20,6 +20,7 @@ import {
   Download,
   Coffee,
   Share2,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useMultiCharacterProject } from '@/hooks/useMultiCharacterProject';
 import { WorldSettingSection } from './WorldSettingSection';
@@ -89,7 +90,21 @@ export function RubiiMultiWorkspace() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isUniversalParserOpen, setIsUniversalParserOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const moreMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -141,9 +156,9 @@ export function RubiiMultiWorkspace() {
           </div>
         </div>
 
-        {/* Action Buttons Right */}
-        <div className="flex items-center gap-2">
-          {/* Universal Multi-Parser Button */}
+        {/* Action Buttons Right (Clean & Minimalist Desktop Layout) */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Universal Multi-Parser Button (Primary Action) */}
           <button
             type="button"
             onClick={() => setIsUniversalParserOpen(true)}
@@ -173,7 +188,7 @@ export function RubiiMultiWorkspace() {
             title="เปิดคลังโปรเจกต์ Multi-Char / บันทึกโปรเจกต์"
           >
             <FolderOpen className="w-3.5 h-3.5 text-rose-500" />
-            <span className="hidden sm:inline">คลังโปรเจกต์</span>
+            <span className="hidden lg:inline">คลังโปรเจกต์</span>
             {savedProjects.length > 0 && (
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono font-bold">
                 {savedProjects.length}
@@ -181,41 +196,64 @@ export function RubiiMultiWorkspace() {
             )}
           </button>
 
-          {/* Load Sample Universe */}
-          <button
-            type="button"
-            onClick={handleLoadSample}
-            className="hidden sm:flex px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all items-center gap-1.5 cursor-pointer shadow-xs"
-            title="โหลดตัวอย่างโครงสร้าง Multi-Character Universe"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>ตัวอย่าง Universe</span>
-          </button>
-
-          {/* Reset */}
-          <button
-            type="button"
-            onClick={handleReset}
-            className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center justify-center cursor-pointer shadow-xs"
-            title="ล้างโปรเจกต์"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Promotion / Donate Button for Free Tier */}
-          {userRole === 'free' && (
+          {/* More Actions Dropdown (โหลดตัวอย่าง, รีเซ็ต, กาแฟ) */}
+          <div className="relative hidden sm:block" ref={moreMenuRef}>
             <button
               type="button"
-              onClick={() => setIsUpgradeModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 border border-amber-500/30 hover:border-amber-500 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-              title="เลี้ยงกาแฟผู้พัฒนา 29 บาท พร้อมรับสิทธิ์ Premium"
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              className="w-8 h-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center justify-center cursor-pointer shadow-xs"
+              title="ตัวเลือกเพิ่มเติม"
+              aria-label="ตัวเลือกเพิ่มเติม"
             >
-              <Coffee className="w-3.5 h-3.5 text-amber-500" />
-              <span>เลี้ยงกาแฟ ☕</span>
+              <MoreHorizontal className="w-4 h-4" />
             </button>
-          )}
 
-          {/* User Menu without duplicate character library button */}
+            {isMoreMenuOpen && (
+              <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-card border border-border shadow-2xl p-1.5 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreMenuOpen(false);
+                    handleLoadSample();
+                  }}
+                  className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold text-foreground hover:bg-muted flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>โหลดตัวอย่าง Universe</span>
+                </button>
+
+                {userRole === 'free' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      setIsUpgradeModalOpen(true);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>เลี้ยงกาแฟ 29.- (Premium)</span>
+                  </button>
+                )}
+
+                <div className="border-t border-border/80 my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreMenuOpen(false);
+                    handleReset();
+                  }}
+                  className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <span>รีเซ็ตโปรเจกต์นี้</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* User Menu */}
           <UserMenu
             onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)}
             showLibraryButton={false}
@@ -303,6 +341,16 @@ export function RubiiMultiWorkspace() {
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold">
                 Save
               </span>
+            </button>
+
+            {/* Quick Load Sample in Sidebar */}
+            <button
+              type="button"
+              onClick={handleLoadSample}
+              className="w-full p-2 rounded-xl bg-card border border-border hover:bg-muted text-foreground flex items-center gap-2 transition-all cursor-pointer text-left text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="truncate text-[11px]">โหลดตัวอย่างจักรวาล</span>
             </button>
 
             <div className="p-3 rounded-xl bg-muted/40 border border-border text-[11px] text-muted-foreground space-y-1">
