@@ -14,6 +14,9 @@ import {
   Loader2,
   Clock,
   ThumbsUp,
+  Pencil,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,6 +29,8 @@ interface CommentItem {
   avatarColor?: string;
   text: string;
   createdAt: string;
+  updatedAt?: string;
+  isEdited?: boolean;
   likes: number;
   badge?: string;
 }
@@ -156,6 +161,11 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Edit Comment State
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [isEditingSaving, setIsEditingSaving] = useState(false);
 
   // Load interactions on mount
   useEffect(() => {
@@ -292,6 +302,86 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
       alert('เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle Start Edit
+  const handleStartEdit = (comment: CommentItem) => {
+    setEditingCommentId(comment.id);
+    setEditingText(comment.text);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingText('');
+  };
+
+  // Handle Save Edit
+  const handleSaveEdit = async (commentId: string) => {
+    const trimmed = editingText.trim();
+    if (!trimmed || isEditingSaving) return;
+
+    setIsEditingSaving(true);
+
+    // Optimistic UI update
+    setData((prev) => ({
+      ...prev,
+      comments: prev.comments.map((c) =>
+        c.id === commentId ? { ...c, text: trimmed, isEdited: true, updatedAt: new Date().toISOString() } : c
+      ),
+    }));
+
+    try {
+      const res = await fetch('/api/universe/share/interaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shareId,
+          action: 'edit_comment',
+          commentId,
+          text: trimmed,
+        }),
+      });
+      const result = await res.json();
+      if (result.success && result.data) {
+        setData(result.data);
+      }
+      setEditingCommentId(null);
+      setEditingText('');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการแก้ไขข้อความ');
+    } finally {
+      setIsEditingSaving(false);
+    }
+  };
+
+  // Handle Delete Comment
+  const handleDeleteComment = async (commentId: string) => {
+    const confirmDelete = window.confirm('คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?');
+    if (!confirmDelete) return;
+
+    // Optimistic UI update
+    setData((prev) => ({
+      ...prev,
+      comments: prev.comments.filter((c) => c.id !== commentId),
+    }));
+
+    try {
+      const res = await fetch('/api/universe/share/interaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shareId,
+          action: 'delete_comment',
+          commentId,
+        }),
+      });
+      const result = await res.json();
+      if (result.success && result.data) {
+        setData(result.data);
+      }
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการลบข้อความ');
     }
   };
 
@@ -551,6 +641,16 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
               const avatarColor = comment.avatarColor || 'bg-purple-500/15 text-purple-400 border-purple-500/30';
               const initial = (comment.authorName || 'U').charAt(0).toUpperCase();
 
+              // Check ownership or admin
+              const isAuthor = Boolean(
+                user &&
+                  ((comment.authorEmail && user.email && comment.authorEmail === user.email) ||
+                    comment.authorName === userDisplayName)
+              );
+              const isAdmin = userRole === 'admin';
+              const canModify = isAuthor || isAdmin;
+              const isEditingThis = editingCommentId === comment.id;
+
               return (
                 <div
                   key={comment.id}
@@ -579,13 +679,39 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                       </div>
                     </div>
 
-                    {/* Timestamp & Like */}
-                    <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {/* Timestamp, Modification Controls & Like */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 ml-auto shrink-0">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1 whitespace-nowrap shrink-0">
                         <Clock className="w-3 h-3" />
-                        {formatRelativeTime(comment.createdAt)}
+                        <span>{formatRelativeTime(comment.createdAt)}</span>
+                        {comment.isEdited && (
+                          <span className="text-[9px] text-muted-foreground/70">(แก้ไขแล้ว)</span>
+                        )}
                       </span>
 
+                      {/* Edit / Delete Actions */}
+                      {canModify && !isEditingThis && (
+                        <div className="flex items-center gap-0.5 border-l border-border/50 pl-1.5 sm:pl-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(comment)}
+                            className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                            title="แก้ไขข้อความ"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="ลบข้อความนี้"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Like Button */}
                       <button
                         type="button"
                         onClick={() => handleLikeComment(comment.id)}
@@ -602,10 +728,67 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                     </div>
                   </div>
 
-                  {/* Comment Body */}
-                  <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap pl-0 sm:pl-9 break-words">
-                    {comment.text}
-                  </p>
+                  {/* Comment Body or Inline Edit Mode */}
+                  {isEditingThis ? (
+                    <div className="space-y-2 pt-1 pl-0 sm:pl-9">
+                      <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveEdit(comment.id);
+                          }
+                        }}
+                        rows={2}
+                        maxLength={800}
+                        className="w-full p-2.5 rounded-xl bg-card border border-purple-500/60 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none leading-relaxed"
+                        autoFocus
+                      />
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        {/* Quick emojis for edit */}
+                        <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                          {QUICK_EMOJIS.slice(0, 6).map((em) => (
+                            <button
+                              key={em}
+                              type="button"
+                              onClick={() => setEditingText((prev) => prev + em)}
+                              className="p-1 rounded-md hover:bg-muted text-xs cursor-pointer"
+                            >
+                              {em}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEdit(comment.id)}
+                            disabled={!editingText.trim() || isEditingSaving}
+                            className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold shadow-xs flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                          >
+                            {isEditingSaving ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Check className="w-3 h-3" />
+                            )}
+                            <span>บันทึก</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap pl-0 sm:pl-9 break-words">
+                      {comment.text}
+                    </p>
+                  )}
                 </div>
               );
             })
@@ -615,3 +798,4 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
     </div>
   );
 }
+

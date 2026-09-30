@@ -345,6 +345,8 @@ export interface UniverseInteractionData {
     avatarColor?: string;
     text: string;
     createdAt: string;
+    updatedAt?: string;
+    isEdited?: boolean;
     likes: number;
     badge?: string;
   }>;

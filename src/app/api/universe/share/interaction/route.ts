@@ -113,6 +113,34 @@ export async function POST(req: NextRequest) {
         }
         return c;
       });
+    } else if (action === 'edit_comment') {
+      const commentId = body.commentId;
+      const newText = (body.text || '').trim();
+      if (!commentId || !newText) {
+        return NextResponse.json({ error: 'ข้อความต้องไม่เว้นว่าง' }, { status: 400 });
+      }
+      if (newText.length > 800) {
+        return NextResponse.json({ error: 'ข้อความยาวเกินกำหนด (สูงสุด 800 ตัวอักษร)' }, { status: 400 });
+      }
+
+      currentData.comments = currentData.comments.map((c) => {
+        if (c.id === commentId) {
+          return {
+            ...c,
+            text: newText,
+            updatedAt: new Date().toISOString(),
+            isEdited: true,
+          };
+        }
+        return c;
+      });
+    } else if (action === 'delete_comment') {
+      const commentId = body.commentId;
+      if (!commentId) {
+        return NextResponse.json({ error: 'Missing commentId' }, { status: 400 });
+      }
+
+      currentData.comments = currentData.comments.filter((c) => c.id !== commentId);
     } else {
       return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
