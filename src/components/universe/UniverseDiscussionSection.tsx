@@ -557,8 +557,8 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                   className="p-4 rounded-2xl bg-muted/30 border border-border/70 hover:border-border transition-colors space-y-2.5"
                 >
                   {/* Author Header */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
                       {/* Avatar Circle */}
                       <div
                         className={`w-7 h-7 rounded-xl border flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor}`}
@@ -566,13 +566,13 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                         {initial}
                       </div>
 
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-foreground">
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <span className="text-xs font-bold text-foreground truncate max-w-[140px] sm:max-w-none">
                           {comment.authorName}
                         </span>
 
                         {comment.badge && (
-                          <span className="px-1.5 py-0.2 rounded-md bg-muted border border-border text-[9px] font-semibold text-muted-foreground">
+                          <span className="px-1.5 py-0.2 rounded-md bg-muted border border-border text-[9px] font-semibold text-muted-foreground shrink-0">
                             {comment.badge}
                           </span>
                         )}
@@ -580,7 +580,7 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                     </div>
 
                     {/* Timestamp & Like */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 ml-auto">
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatRelativeTime(comment.createdAt)}
@@ -603,7 +603,7 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
                   </div>
 
                   {/* Comment Body */}
-                  <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap pl-9">
+                  <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap pl-0 sm:pl-9 break-words">
                     {comment.text}
                   </p>
                 </div>
