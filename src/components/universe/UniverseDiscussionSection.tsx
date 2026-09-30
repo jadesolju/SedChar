@@ -144,7 +144,7 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export function UniverseDiscussionSection({ shareId, projectName }: UniverseDiscussionSectionProps) {
-  const { user } = useAuth();
+  const { user, userRole, openAuthModal } = useAuth();
   const [data, setData] = useState<InteractionData>({
     reactions: { love: 0, sparkle: 0, sakura: 0, chill: 0, fire: 0, idea: 0 },
     comments: [],
@@ -153,10 +153,8 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
   const [likedCommentIds, setLikedCommentIds] = useState<Record<string, boolean>>({});
   const [particles, setParticles] = useState<FloatingParticle[]>([]);
   const [inputText, setInputText] = useState('');
-  const [guestName, setGuestName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load interactions on mount
@@ -237,32 +235,35 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
     }
   };
 
+  // User display metadata
+  const userDisplayName: string = (user?.email ? user.email.split('@')[0] : '') || 'สมาชิก';
+  const userRoleBadge =
+    userRole === 'admin'
+      ? 'Admin 👑'
+      : userRole === 'premium'
+      ? 'Universe Pro 💎'
+      : userRole === 'supporter'
+      ? 'Supporter ⭐'
+      : 'Member 🌿';
+
+  const colorIdx = Math.abs(
+    userDisplayName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  ) % AVATAR_COLORS.length;
+  const userColor = AVATAR_COLORS[colorIdx];
+  const userInitial = userDisplayName.charAt(0).toUpperCase();
+
   // Handle Send Comment
   const handleSendComment = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!user) {
+      openAuthModal('signin');
+      return;
+    }
+
     const trimmed = inputText.trim();
     if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
-
-    const authorDisplayName: string =
-      (user?.email ? user.email.split('@')[0] : '') || guestName.trim() || 'นักเดินทางนิรนาม';
-
-    const colorIdx = Math.abs(
-      authorDisplayName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    ) % AVATAR_COLORS.length;
-
-    const chosenColor = AVATAR_COLORS[colorIdx];
-
-    const roleBadge = user?.role === 'supporter'
-      ? 'Supporter ⭐'
-      : user?.role === 'vip'
-      ? 'VIP 💎'
-      : user?.role === 'admin'
-      ? 'Admin 👑'
-      : user
-      ? 'Member 🌿'
-      : 'Guest 🌸';
 
     try {
       const res = await fetch('/api/universe/share/interaction', {
@@ -271,11 +272,11 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
         body: JSON.stringify({
           shareId,
           action: 'comment',
-          authorName: authorDisplayName,
-          authorEmail: user?.email || undefined,
-          authorRole: user?.role || 'guest',
-          badge: roleBadge,
-          avatarColor: chosenColor,
+          authorName: userDisplayName,
+          authorEmail: user.email || undefined,
+          authorRole: userRole,
+          badge: userRoleBadge,
+          avatarColor: userColor,
           text: trimmed,
         }),
       });
@@ -432,88 +433,105 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
           </div>
         </div>
 
-        {/* Comment Form */}
-        <form onSubmit={handleSendComment} className="space-y-3">
-          {/* Guest Nickname Input if not logged in */}
-          {!user && (
+        {/* Comment Form or Login Prompt */}
+        {!user ? (
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent border border-purple-500/20 text-center space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center mx-auto text-base">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
+                เข้าสู่ระบบเพื่อร่วมพูดคุยและแสดงความคิดเห็น 🌸
+              </h4>
+              <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
+                เข้าสู่ระบบด้วย Google, Discord หรือ Email ใน 1 คลิก เพื่อร่วมแลกเปลี่ยนไอเดียและให้กำลังใจผู้สร้าง
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openAuthModal('signin')}
+              className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all inline-flex items-center gap-2 cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>เข้าสู่ระบบ / สมัครสมาชิก</span>
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSendComment} className="space-y-3">
+            {/* Logged in User Bar */}
             <div className="flex items-center gap-2">
-              <div className="relative flex-1 max-w-xs">
-                <input
-                  type="text"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="ชื่อเล่นของคุณ (เช่น นักเดินทาง, เม่นน้อย)"
-                  maxLength={30}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                />
-                <User className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2.5" />
+              <div
+                className={`w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-bold shrink-0 ${userColor}`}
+              >
+                {userInitial}
               </div>
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                (ล็อกอินเพื่อรับป้ายสถานะบัญชีอัตโนมัติ)
+              <span className="text-xs font-bold text-foreground">{userDisplayName}</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-muted border border-border text-[9px] font-semibold text-muted-foreground">
+                {userRoleBadge}
               </span>
             </div>
-          )}
 
-          {/* Textarea Box */}
-          <div className="relative rounded-2xl bg-muted/30 border border-border/80 focus-within:border-purple-500/60 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all p-3 space-y-2">
-            <textarea
-              ref={textareaRef}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendComment();
-                }
-              }}
-              placeholder={`พิมพ์ข้อความชวนคุยเกี่ยวกับ "${projectName || 'จักรวาลนี้'}" (Ctrl+Enter เพื่อส่ง)...`}
-              rows={3}
-              maxLength={800}
-              className="w-full bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/70 resize-none focus:outline-none leading-relaxed"
-            />
+            {/* Textarea Box */}
+            <div className="relative rounded-2xl bg-muted/30 border border-border/80 focus-within:border-purple-500/60 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all p-3 space-y-2">
+              <textarea
+                ref={textareaRef}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSendComment();
+                  }
+                }}
+                placeholder={`พิมพ์ข้อความชวนคุยเกี่ยวกับ "${projectName || 'จักรวาลนี้'}" (Ctrl+Enter เพื่อส่ง)...`}
+                rows={3}
+                maxLength={800}
+                className="w-full bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/70 resize-none focus:outline-none leading-relaxed"
+              />
 
-            {/* Bottom Toolbar inside textarea box */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
-              {/* Quick Emojis Ribbon */}
-              <div className="flex items-center gap-1 overflow-x-auto py-0.5 max-w-full">
-                <span className="text-[10px] text-muted-foreground mr-1 hidden sm:inline">อิโมจิ:</span>
-                {QUICK_EMOJIS.map((em) => (
+              {/* Bottom Toolbar inside textarea box */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
+                {/* Quick Emojis Ribbon */}
+                <div className="flex items-center gap-1 overflow-x-auto py-0.5 max-w-full">
+                  <span className="text-[10px] text-muted-foreground mr-1 hidden sm:inline">อิโมจิ:</span>
+                  {QUICK_EMOJIS.map((em) => (
+                    <button
+                      key={em}
+                      type="button"
+                      onClick={() => handleInsertEmoji(em)}
+                      className="p-1 rounded-lg hover:bg-muted text-xs hover:scale-125 transition-transform cursor-pointer"
+                      title={`ใส่อิโมจิ ${em}`}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Action Buttons & Counter */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {inputText.length}/800
+                  </span>
+
                   <button
-                    key={em}
-                    type="button"
-                    onClick={() => handleInsertEmoji(em)}
-                    className="p-1 rounded-lg hover:bg-muted text-xs hover:scale-125 transition-transform cursor-pointer"
-                    title={`ใส่อิโมจิ ${em}`}
+                    type="submit"
+                    disabled={!inputText.trim() || isSubmitting}
+                    className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {em}
+                    {isSubmitting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : submitSuccess ? (
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    <span>{submitSuccess ? 'ส่งแล้ว!' : 'ส่งข้อความ'}</span>
                   </button>
-                ))}
-              </div>
-
-              {/* Action Buttons & Counter */}
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {inputText.length}/800
-                </span>
-
-                <button
-                  type="submit"
-                  disabled={!inputText.trim() || isSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : submitSuccess ? (
-                    <Check className="w-3.5 h-3.5 text-white" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5" />
-                  )}
-                  <span>{submitSuccess ? 'ส่งแล้ว!' : 'ส่งข้อความ'}</span>
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
 
         {/* Comments Feed */}
         <div className="space-y-3 pt-2">
