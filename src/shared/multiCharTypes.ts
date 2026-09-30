@@ -70,6 +70,8 @@ export interface MultiCharacterProjectDraft {
   mainCharacters: MainCharacterDraft[]; // Free: Maximum 10
   supportingCharacters: SubCharacter[]; // Unlimited
   castInteractionRules: string; // Turn-taking & group scene rules
+  shareId?: string; // Active cloud secret share ID
+  isShared?: boolean;
   updatedAt: string;
 }
 

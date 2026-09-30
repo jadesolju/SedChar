@@ -27,6 +27,9 @@ export interface SavedMultiProjectRecord {
   subCharCount: number;
   routeCount: number;
   projectData: MultiCharacterProjectDraft;
+  shareId?: string;
+  shareUrl?: string;
+  isShared?: boolean;
   createdAt: string;
   updatedAt: string;
 }

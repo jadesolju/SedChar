@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Link as LinkIcon,
@@ -17,9 +17,13 @@ import {
   Cloud,
   CloudOff,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
-import { MULTI_CHAR_LIBRARY_KEY } from '@/hooks/useMultiCharacterProject';
+import {
+  MULTI_CHAR_LIBRARY_KEY,
+  RUBII_MULTI_DRAFT_KEY,
+} from '@/hooks/useMultiCharacterProject';
 import { useAuth } from '@/context/AuthContext';
 
 interface UniverseShareModalProps {
@@ -37,16 +41,98 @@ export function UniverseShareModal({
 }: UniverseShareModalProps) {
   const { user, openAuthModal } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [allowCloning, setAllowCloning] = useState(true);
   const [allowCoCreation, setAllowCoCreation] = useState(true);
 
+  // Auto-detect if this project was already created or shared
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const currentTitle =
+      project.worldSetting?.projectName?.trim() || project.title?.trim() || '';
+
+    // 1. Check direct project properties
+    let detectedShareId =
+      project.shareId ||
+      ((project.id && project.id.startsWith('uni_')) ? project.id : null);
+
+    // 2. Check local draft in storage
+    if (!detectedShareId && typeof window !== 'undefined') {
+      try {
+        const rawDraft = localStorage.getItem(RUBII_MULTI_DRAFT_KEY);
+        if (rawDraft) {
+          const parsed = JSON.parse(rawDraft);
+          if (parsed?.shareId) {
+            detectedShareId = parsed.shareId;
+          } else if (parsed?.id && parsed.id.startsWith('uni_')) {
+            detectedShareId = parsed.id;
+          }
+        }
+      } catch {}
+    }
+
+    // 3. Check Multi-Char Library in LocalStorage
+    if (!detectedShareId && typeof window !== 'undefined') {
+      try {
+        const rawLib = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+        if (rawLib) {
+          const list = JSON.parse(rawLib);
+          if (Array.isArray(list)) {
+            const match = list.find(
+              (p: any) =>
+                (p.id && p.id === project.id && (p.shareId || p.id.startsWith('uni_'))) ||
+                (p.shareId && (p.shareId === project.shareId || p.id === project.id)) ||
+                (currentTitle &&
+                  p.title?.trim().toLowerCase() === currentTitle.toLowerCase() &&
+                  (p.shareId || p.id?.startsWith('uni_')))
+            );
+            if (match) {
+              detectedShareId = match.shareId || (match.id?.startsWith('uni_') ? match.id : null);
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (detectedShareId) {
+      setShareId(detectedShareId);
+      setShareUrl(`${origin}/universe/share/${detectedShareId}`);
+
+      // Fetch live metadata to sync permission checkboxes
+      fetch(`/api/universe/share?shareId=${encodeURIComponent(detectedShareId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.metadata) {
+            if (typeof data.metadata.allowCloning === 'boolean') {
+              setAllowCloning(data.metadata.allowCloning);
+            }
+            if (typeof data.metadata.allowCoCreation === 'boolean') {
+              setAllowCoCreation(data.metadata.allowCoCreation);
+            }
+          }
+        })
+        .catch(() => {});
+    } else {
+      setShareId(null);
+      setShareUrl(null);
+    }
+  }, [isOpen, project]);
+
   if (!isOpen) return null;
 
-  const handleGenerateShareLink = async () => {
-    setIsGenerating(true);
+  const handleSaveOrUpdateShare = async (targetShareId?: string) => {
+    const isUpdateMode = !!targetShareId;
+    if (isUpdateMode) {
+      setIsUpdating(true);
+    } else {
+      setIsGenerating(true);
+    }
+
     try {
       const authorName =
         user?.user_metadata?.display_name ||
@@ -57,7 +143,11 @@ export function UniverseShareModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project,
+          project: {
+            ...project,
+            shareId: targetShareId || shareId || undefined,
+          },
+          shareId: targetShareId || shareId || undefined,
           userId: user?.id || 'guest',
           author: authorName,
           allowCloning,
@@ -72,13 +162,25 @@ export function UniverseShareModal({
         setShareUrl(fullUrl);
         setShareId(data.shareId);
 
-        // Auto-sync to local project library immediately
+        // Auto-sync to local project library and active draft immediately
         try {
-          const raw = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
-          let list = raw ? JSON.parse(raw) : [];
-          if (!Array.isArray(list)) list = [];
           const projectTitle =
             project.worldSetting?.projectName?.trim() || project.title || 'จักรวาลและคลังความจำ';
+
+          // 1. Update active draft
+          const rawDraft = localStorage.getItem(RUBII_MULTI_DRAFT_KEY);
+          if (rawDraft) {
+            const parsed = JSON.parse(rawDraft);
+            parsed.shareId = data.shareId;
+            parsed.isShared = true;
+            localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(parsed));
+          }
+
+          // 2. Update library
+          const rawLib = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+          let list = rawLib ? JSON.parse(rawLib) : [];
+          if (!Array.isArray(list)) list = [];
+
           const newRecord = {
             id: data.shareId,
             title: projectTitle,
@@ -89,19 +191,33 @@ export function UniverseShareModal({
             mainCharCount: project.mainCharacters?.length || 0,
             subCharCount: project.supportingCharacters?.length || 0,
             routeCount: project.routes?.length || 0,
-            projectData: project,
+            projectData: {
+              ...project,
+              shareId: data.shareId,
+              isShared: true,
+            },
             shareId: data.shareId,
             shareUrl: fullUrl,
             isShared: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
-          const filtered = list.filter((p: any) => p.id !== data.shareId && p.id !== project.id);
+
+          const filtered = list.filter(
+            (p: any) =>
+              p.id !== data.shareId &&
+              p.id !== project.id &&
+              p.shareId !== data.shareId
+          );
           localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify([newRecord, ...filtered]));
           window.dispatchEvent(new Event('storage'));
         } catch (e) {}
 
-        onShowToast('บันทึกลง Cloud Library และสร้างลิงก์ Secret Share สำเร็จแล้ว!');
+        onShowToast(
+          isUpdateMode
+            ? 'อัปเดตข้อมูลและสิทธิ์ไปยังลิงก์แชร์ & Cloud สำเร็จแล้ว!'
+            : 'บันทึกลง Cloud Library และสร้างลิงก์ Secret Share สำเร็จแล้ว!'
+        );
       } else {
         alert(data.error || 'สร้างลิงก์แชร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       }
@@ -109,6 +225,7 @@ export function UniverseShareModal({
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message);
     } finally {
       setIsGenerating(false);
+      setIsUpdating(false);
     }
   };
 
@@ -122,12 +239,49 @@ export function UniverseShareModal({
 
   const handleRevoke = async () => {
     if (!shareId) return;
-    if (!confirm('คุณต้องการยกเลิกลิงก์แชร์นี้หรือไม่? ผู้ที่มีลิงก์เดิมจะไม่สามารถเข้าดูได้อีก')) return;
+    if (
+      !confirm(
+        'คุณต้องการยกเลิกลิงก์แชร์นี้หรือไม่?\nผู้ที่มีลิงก์เดิมจะไม่สามารถเข้าดูได้อีก และระบบจะลบลิงก์นี้ออกจาก Cloud'
+      )
+    ) {
+      return;
+    }
 
     try {
       await fetch(`/api/universe/share?shareId=${encodeURIComponent(shareId)}`, {
         method: 'DELETE',
       });
+
+      // Clear from local draft and library
+      try {
+        const rawDraft = localStorage.getItem(RUBII_MULTI_DRAFT_KEY);
+        if (rawDraft) {
+          const parsed = JSON.parse(rawDraft);
+          delete parsed.shareId;
+          parsed.isShared = false;
+          localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(parsed));
+        }
+
+        const rawLib = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+        if (rawLib) {
+          const list = JSON.parse(rawLib);
+          if (Array.isArray(list)) {
+            const updated = list.map((item) => {
+              if (item.shareId === shareId || item.id === shareId) {
+                const copy = { ...item };
+                delete copy.shareId;
+                delete copy.shareUrl;
+                copy.isShared = false;
+                return copy;
+              }
+              return item;
+            });
+            localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(updated));
+            window.dispatchEvent(new Event('storage'));
+          }
+        }
+      } catch {}
+
       setShareUrl(null);
       setShareId(null);
       onShowToast('ยกเลิกลิงก์แชร์เรียบร้อยแล้ว');
@@ -136,7 +290,8 @@ export function UniverseShareModal({
     }
   };
 
-  const projectName = project.worldSetting?.projectName || project.title || 'จักรวาลที่ยังไม่ได้ตั้งชื่อ';
+  const projectName =
+    project.worldSetting?.projectName || project.title || 'จักรวาลที่ยังไม่ได้ตั้งชื่อ';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
@@ -153,9 +308,16 @@ export function UniverseShareModal({
                 <h3 className="text-xs sm:text-base font-bold text-foreground">
                   แชร์จักรวาลแบบ Unlisted Link
                 </h3>
-                <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
-                  Secret Only
-                </span>
+                {shareUrl ? (
+                  <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>สร้างแล้ว (Active)</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
+                    Secret Only
+                  </span>
+                )}
               </div>
               <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 {projectName}
@@ -179,8 +341,12 @@ export function UniverseShareModal({
             <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-2.5 text-xs text-purple-700 dark:text-purple-300">
               <Cloud className="w-4 h-4 text-purple-500 shrink-0" />
               <div className="min-w-0 flex-1 leading-snug">
-                <span className="font-bold">Cloud Auto-Save: </span>
-                <span>จักรวาลนี้จะถูกบันทึกและซิงค์ลงใน Cloud Library ของคุณอัตโนมัติเมื่อสร้างลิงก์</span>
+                <span className="font-bold">Cloud Library: </span>
+                <span>
+                  {shareUrl
+                    ? 'จักรวาลนี้เชื่อมต่อและซิงค์กับ Cloud Library บัญชีของคุณเรียบร้อยแล้ว'
+                    : 'จักรวาลนี้จะถูกบันทึกและซิงค์ลงใน Cloud Library ของคุณอัตโนมัติเมื่อสร้างลิงก์'}
+                </span>
               </div>
             </div>
           ) : (
@@ -199,12 +365,71 @@ export function UniverseShareModal({
             </div>
           )}
 
+          {/* Active Share Link Card (Always shown if already created) */}
+          {shareUrl && (
+            <div className="p-4 rounded-2xl bg-card border border-border/90 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <LinkIcon className="w-3.5 h-3.5 text-purple-500" />
+                  <span>ลิงก์ Secret สำหรับส่งต่อให้เพื่อน</span>
+                </label>
+                <span className="text-emerald-500 flex items-center gap-1 text-[11px] font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5" /> ลิงก์พร้อมใช้งาน
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={shareUrl}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border text-xs font-mono text-foreground focus:outline-none select-all font-semibold"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95 ${
+                    copied
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                  }`}
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 text-xs">
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-primary hover:underline flex items-center gap-1"
+                >
+                  <span>ทดลองเปิดดูหน้าพรีวิว</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleRevoke}
+                  className="font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ยกเลิกลิงก์แชร์</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Privacy Notice Banner */}
           <div className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-start gap-3 text-xs leading-relaxed text-muted-foreground">
             <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold text-foreground">การแชร์แบบส่วนตัว: </span>
-              จักรวาลนี้จะไม่ถูกแสดงในหน้าสาธารณะ (No Public Feed) เฉพาะผู้ที่คุณส่งลิงก์ให้เท่านั้นที่จะสามารถเปิดดูและกดคัดลอก (Clone) เข้าคลังของตนเองได้
+              จักรวาลนี้จะไม่ถูกแสดงในหน้าสาธารณะ (No Public Feed) เฉพาะผู้ที่คุณส่งลิงก์ให้เท่านั้นที่จะสามารถเปิดดูและร่วมสนุกได้
             </div>
           </div>
 
@@ -236,139 +461,95 @@ export function UniverseShareModal({
           </div>
 
           {/* Permission Settings */}
-          {!shareUrl && (
-            <div className="p-4 rounded-xl bg-card border border-border space-y-3">
-              <div className="text-xs font-bold text-foreground flex items-center justify-between">
-                <span>การตั้งค่าสิทธิ์และการป้องกัน (Permissions &amp; Protection)</span>
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
-              </div>
+          <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+            <div className="text-xs font-bold text-foreground flex items-center justify-between">
+              <span>การตั้งค่าสิทธิ์และการป้องกัน (Permissions &amp; Protection)</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
+            </div>
 
-              {/* Allow Cloning Toggle */}
-              <label className="flex items-start justify-between gap-3 cursor-pointer group">
-                <div className="space-y-0.5 min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
-                    <span>อนุญาตให้คัดลอกเข้า Studio (Allow Cloning)</span>
-                    {!allowCloning && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
-                        ป้องกันการลอก
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-tight">
-                    {allowCloning
-                      ? 'ผู้ที่มีลิงก์สามารถกดปุ่ม Clone เพื่อคัดลอกจักรวาลนี้ไปแต่งต่อในสตูดิโอส่วนตัวได้'
-                      : 'ปิดปุ่ม Clone เพื่อให้อ่านและมีส่วนร่วมได้อย่างเดียว ป้องกันการคัดลอก Schema'}
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={allowCloning}
-                  onChange={(e) => setAllowCloning(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
-                />
-              </label>
-
-              {/* Allow Co-Creation Toggle */}
-              <label className="flex items-start justify-between gap-3 cursor-pointer group pt-2 border-t border-border/50">
-                <div className="space-y-0.5 min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
-                    <span>เปิดรับตัวละครร่วมสร้าง (Allow Character Proposals)</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
-                      Co-Creation
+            {/* Allow Cloning Toggle */}
+            <label className="flex items-start justify-between gap-3 cursor-pointer group">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
+                  <span>อนุญาตให้คัดลอกเข้า Studio (Allow Cloning)</span>
+                  {!allowCloning && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+                      ป้องกันการลอก
                     </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-tight">
-                    อนุญาตให้เพื่อนหรือนักเขียนท่านอื่นยื่นตัวละครเข้าร่วมจักรวาลนี้ (ใช้โควต้า AI ของตนเอง)
-                  </p>
+                  )}
                 </div>
-                <input
-                  type="checkbox"
-                  checked={allowCoCreation}
-                  onChange={(e) => setAllowCoCreation(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
-                />
-              </label>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  {allowCloning
+                    ? 'ผู้ที่มีลิงก์สามารถกดปุ่ม Clone เพื่อคัดลอกจักรวาลนี้ไปแต่งต่อในสตูดิโอส่วนตัวได้'
+                    : 'ปิดปุ่ม Clone เพื่อให้อ่านและมีส่วนร่วมได้อย่างเดียว ป้องกันการคัดลอก Schema'}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={allowCloning}
+                onChange={(e) => setAllowCloning(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
+              />
+            </label>
 
-              {/* UID Ownership Warning Box */}
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed pt-2.5 mt-2">
-                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">การควบคุมสิทธิ์ (UID Security): </span>
-                  เมื่อสร้างลิงก์แชร์แล้ว สิทธิ์ทั้งหมดจะถูกผูกกับบัญชีนี้ (UID ผู้สร้าง) บัญชีอื่นที่ <strong>UID ไม่ตรงกันจะไม่สามารถปรับสิทธิ์หรือยกเลิกลิงก์แชร์ได้</strong>
+            {/* Allow Co-Creation Toggle */}
+            <label className="flex items-start justify-between gap-3 cursor-pointer group pt-2 border-t border-border/50">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <div className="text-xs font-semibold text-foreground group-hover:text-purple-500 transition-colors flex items-center gap-1.5">
+                  <span>เปิดรับตัวละครร่วมสร้าง (Allow Character Proposals)</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                    Co-Creation
+                  </span>
                 </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  อนุญาตให้เพื่อนหรือนักเขียนท่านอื่นยื่นตัวละครเข้าร่วมจักรวาลนี้ (ใช้โควต้า AI ของตนเอง)
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={allowCoCreation}
+                onChange={(e) => setAllowCoCreation(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 border-border cursor-pointer accent-purple-600"
+              />
+            </label>
+
+            {/* UID Ownership Warning Box */}
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed pt-2.5 mt-2">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">การควบคุมสิทธิ์ (UID Security): </span>
+                เมื่อสร้างลิงก์แชร์แล้ว สิทธิ์ทั้งหมดจะถูกผูกกับบัญชีนี้ (UID ผู้สร้าง) บัญชีอื่นที่ <strong>UID ไม่ตรงกันจะไม่สามารถปรับสิทธิ์หรือยกเลิกลิงก์แชร์ได้</strong>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Share Link Result */}
-          {shareUrl ? (
-            <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300">
-                <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">บันทึกลง Cloud Library สำเร็จแล้ว! </span>
-                  <span>จักรวาลนี้ถูกจัดเก็บอย่างปลอดภัยบน Cloud และพร้อมส่งต่อให้เพื่อนแล้ว</span>
-                </div>
-              </div>
-
-              <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                <span>ลิงก์สำหรับส่งต่อให้เพื่อน</span>
-                <span className="text-emerald-500 flex items-center gap-1 text-[11px]">
-                  <ShieldCheck className="w-3.5 h-3.5" /> ลิงก์พร้อมใช้งาน
-                </span>
-              </label>
-
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareUrl}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border text-xs font-mono text-foreground focus:outline-none select-all"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
-                    copied
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                  }`}
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <a
-                  href={shareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                >
-                  <span>ทดลองเปิดดูหน้าพรีวิว</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-
-                <button
-                  type="button"
-                  onClick={handleRevoke}
-                  className="text-xs font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>ยกเลิกลิงก์แชร์</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="pt-2">
+          {/* Action Buttons: Create or Update */}
+          <div className="pt-2">
+            {shareUrl ? (
               <button
                 type="button"
-                onClick={handleGenerateShareLink}
+                onClick={() => handleSaveOrUpdateShare(shareId || undefined)}
+                disabled={isUpdating}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-98"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังอัปเดตข้อมูลล่าสุดไปยัง Cloud...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>บันทึก &amp; อัปเดตข้อมูลลิงก์แชร์ (Sync ข้อมูลล่าสุด)</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSaveOrUpdateShare()}
                 disabled={isGenerating}
-                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-98"
               >
                 {isGenerating ? (
                   <>
@@ -382,11 +563,12 @@ export function UniverseShareModal({
                   </>
                 )}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 
