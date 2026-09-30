@@ -134,4 +134,26 @@
 
 ---
 
+## 6. 🔒 กฎเหล็กห้ามเปิดเผย TECH STACK ลงบน UI (Zero Tech-Stack Leak Rule)
+
+### ❌ ข้อห้ามเด็ดขาด (Strict Prohibition):
+- **ห้ามระบุชื่อ Infrastructure / ผู้ให้บริการเทคโนโลยีเบื้องหลัง** ลงบน UI, Pop-up, Modal, Toast Notification, Loading State, หรือข้อความใดๆ ที่ผู้ใช้มองเห็น เช่น:
+  - ❌ `Cloudflare` / `Cloudflare R2` / `R2`
+  - ❌ `Supabase` / `PostgreSQL` / `Postgres` / `auth.users`
+  - ❌ `Vercel`
+  - ❌ `OpenRouter`
+  - ❌ `AWS` / `S3` / `Edge Function`
+- **เหตุผล**: เพื่อรักษาความเป็นมืออาชีพ ป้องกันการรั่วไหลของสถาปัตยกรรมระบบ (Security through Obscurity) และให้ความรู้สึกเป็นระบบของผลิตภัณฑ์ SedChar.AI อย่างแท้จริง
+
+### ✅ คำศัพท์มาตรฐานที่ต้องใช้แทน (User-Facing Terminology):
+| คำที่ห้ามใช้บน UI | คำมาตรฐานที่ต้องใช้แทน |
+| :--- | :--- |
+| `Cloudflare R2` / `R2` / `S3` | **"ระบบคลาวด์"**, **"Cloud Storage"**, **"คลังข้อมูล"** |
+| `กำลังอัปโหลดขึ้น Cloudflare R2...` | **"กำลังอัปโหลดข้อมูล..."**, **"กำลังบันทึกข้อมูล..."** |
+| `Supabase` / `PostgreSQL` / `auth.users` | **"ระบบบัญชีผู้ใช้"**, **"ฐานข้อมูลระบบ"**, **"User Directory"** |
+| `Vercel Environment` | **"ระบบความปลอดภัยของเซิร์ฟเวอร์"**, **"Server Settings"** |
+| `Supabase UID` | **"User ID (UID)"**, **"รหัสผู้ใช้"** |
+
+---
+
 *เอกสารฉบับนี้จัดทำเพื่อเป็นคู่มือมาตรฐาน UI/UX สำหรับ SedChar.AI*

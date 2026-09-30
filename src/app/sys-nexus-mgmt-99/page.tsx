@@ -177,9 +177,9 @@ function AdminNexusDashboardContent() {
       const confirmedRole = (data.verifiedRole || data.user?.role || targetRole) as UserRole;
 
       if (isVerified) {
-        showToast(`✓ ตรวจสอบแล้ว (Verified): [${targetUser.email || targetUser.id}] สิทธิ์ใน auth.users เปลี่ยนเป็น [${confirmedRole.toUpperCase()}] สำเร็จ 100%!`);
+        showToast(`✓ ตรวจสอบแล้ว (Verified): [${targetUser.email || targetUser.id}] สิทธิ์ในระบบฐานข้อมูลเปลี่ยนเป็น [${confirmedRole.toUpperCase()}] สำเร็จ 100%!`);
       } else {
-        showToast(data.message || `⚠️ แจ้งเตือน: ปรับสิทธิ์เป็น [${confirmedRole.toUpperCase()}] แต่ยังไม่ได้รับการยืนยันจาก auth.users`);
+        showToast(data.message || `⚠️ แจ้งเตือน: ปรับสิทธิ์เป็น [${confirmedRole.toUpperCase()}] แต่ยังไม่ได้รับการยืนยันจากฐานข้อมูลระบบ`);
       }
 
       // Update in local user list state immediately
@@ -232,7 +232,7 @@ function AdminNexusDashboardContent() {
 
       setLastAdjustedUser({ query, role: confirmedRole });
       if (isVerified) {
-        showToast(`✓ ตรวจสอบแล้ว (Verified): [${query}] มีสิทธิ์ใน auth.users เป็น [${confirmedRole.toUpperCase()}] จริง 100%!`);
+        showToast(`✓ ตรวจสอบแล้ว (Verified): [${query}] มีสิทธิ์ในระบบฐานข้อมูลเป็น [${confirmedRole.toUpperCase()}] จริง 100%!`);
       } else {
         showToast(data.message || `⚡ ปรับสิทธิ์สำเร็จ! [${query}] ได้รับสิทธิ์ ${confirmedRole.toUpperCase()} เรียบร้อย`);
       }
@@ -338,7 +338,7 @@ function AdminNexusDashboardContent() {
                   </span>
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  พิมพ์ Email หรือ Supabase User ID (UUID) ของผู้ใช้ แล้วกดปรับ Role เพื่ออัปเกรดสถานะให้ผู้ใช้ได้ทันที
+                  พิมพ์ Email หรือ User ID (UID) ของผู้ใช้ แล้วกดปรับ Role เพื่ออัปเกรดสถานะให้ผู้ใช้ได้ทันที
                 </p>
               </div>
             </div>
@@ -351,7 +351,7 @@ function AdminNexusDashboardContent() {
                   type="text"
                   value={emergencyInput}
                   onChange={(e) => setEmergencyInput(e.target.value)}
-                  placeholder="กรอก Email ผู้ใช้ (เช่น user@gmail.com) หรือ Supabase UID"
+                  placeholder="กรอก Email ผู้ใช้ (เช่น user@gmail.com) หรือ User ID (UID)"
                   className="w-full pl-9 pr-4 py-3 rounded-xl bg-card border border-border text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner font-mono"
                 />
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />

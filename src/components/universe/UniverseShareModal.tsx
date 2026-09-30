@@ -227,12 +227,12 @@ export function UniverseShareModal({
                 type="button"
                 onClick={handleGenerateShareLink}
                 disabled={isGenerating}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังอัปโหลดขึ้น Cloudflare R2...</span>
+                    <span>กำลังสร้างลิงก์และบันทึกข้อมูล...</span>
                   </>
                 ) : (
                   <>

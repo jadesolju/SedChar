@@ -348,10 +348,10 @@ export async function POST(req: Request) {
       verified: isVerifiedInAuthUsers,
       verifiedRole: verifiedRole || (isVerifiedInAuthUsers ? role : null),
       message: isVerifiedInAuthUsers
-        ? `✓ ยืนยันตรงกับ auth.users: ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว (Verified)`
+        ? `✓ ยืนยันตรงกับฐานข้อมูล: ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว (Verified)`
         : wasUpdatedInBackend
         ? `ปรับสิทธิ์ผู้ใช้ [${targetEmail || targetUserId}] เป็น ${role.toUpperCase()} เรียบร้อยแล้ว`
-        : `⚠️ ระบบยังไม่สามารถเขียนลง auth.users ได้ (ต้องการ DATABASE_URL หรือ SUPABASE_SERVICE_ROLE_KEY ใน Vercel)`,
+        : `⚠️ ระบบยังไม่สามารถเขียนลงฐานข้อมูลได้โดยตรง`,
       user: {
         id: targetUserId,
         email: targetEmail,

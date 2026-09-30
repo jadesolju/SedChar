@@ -95,7 +95,7 @@ function UniverseShareViewContent() {
       if (libraryRaw) {
         try {
           library = JSON.parse(libraryRaw);
-        } catch {}
+        } catch { }
       }
 
       const clonedRecord = {
@@ -130,7 +130,7 @@ function UniverseShareViewContent() {
         <div className="p-4 rounded-2xl bg-card border border-border shadow-xl flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-xs font-semibold text-muted-foreground">
-            กำลังโหลดข้อมูลจักรวาลและ Lorebook จาก Cloudflare R2...
+            กำลังโหลดข้อมูลจักรวาลและ Lorebook
           </p>
         </div>
       </div>
