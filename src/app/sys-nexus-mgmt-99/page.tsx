@@ -266,7 +266,7 @@ function AdminNexusDashboardContent() {
       {/* Top Admin Navbar */}
       <header className="border-b border-border bg-card/60 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-600 text-white flex items-center justify-center font-bold text-lg shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-lg shadow-xs">
             🛡️
           </div>
           <div>
@@ -309,10 +309,10 @@ function AdminNexusDashboardContent() {
         )}
 
         {/* SECTION 1: EMERGENCY DIRECT ROLE OVERRIDE BY UID / EMAIL */}
-        <div className="p-6 rounded-2xl bg-gradient-to-tr from-amber-500/15 via-rose-500/10 to-purple-500/15 border-2 border-amber-500/40 space-y-4 shadow-lg">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+        <div className="p-6 rounded-2xl bg-card border-2 border-amber-500/30 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500 text-black flex items-center justify-center font-black shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-black shadow-xs">
                 <Flame className="w-5 h-5" />
               </div>
               <div>
@@ -356,7 +356,7 @@ function AdminNexusDashboardContent() {
                 <button
                   type="submit"
                   disabled={isEmergencySubmitting || !emergencyInput.trim()}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 hover:from-amber-600 hover:via-rose-600 hover:to-pink-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer whitespace-nowrap disabled:opacity-50 flex items-center justify-center gap-2 active:scale-98"
+                  className="px-6 py-3 rounded-xl bg-foreground hover:bg-foreground/90 text-background font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer whitespace-nowrap disabled:opacity-40 flex items-center justify-center gap-2 active:scale-98"
                 >
                   {isEmergencySubmitting ? (
                     <>
@@ -365,7 +365,7 @@ function AdminNexusDashboardContent() {
                     </>
                   ) : (
                     <>
-                      <Zap className="w-4 h-4" />
+                      <Zap className="w-4 h-4 text-amber-400" />
                       <span>⚡ ปรับ Role ทันที</span>
                     </>
                   )}

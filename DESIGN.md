@@ -113,4 +113,25 @@
 
 ---
 
+## 5. 💎 มาตรฐานความมินิมอล & สุนทรียภาพ (Minimalist & Aesthetic UI Standards)
+
+### ❌ กฎห้ามใช้ Gradient สีจัดจ้าน (No Excessive / Rainbow Gradients):
+- **ห้ามใช้ปุ่ม Multi-Color Gradient จัดจ้าน** เช่น `bg-gradient-to-r from-purple-600 via-indigo-600 to-rose-600` หรือ `from-amber-500 via-rose-500 to-pink-600`
+- **หลีกเลี่ยงการใช้พื้นหลัง Gradient สีรุ้ง/ฉูดฉาด** ที่ทำให้หน้าเว็บดูล้นและลดทอนความพรีเมียม
+
+### ✅ ปรัชญาความเรียบหรู คลีน (Minimal + Aesthetic Guidelines):
+1. **Primary Action / Checkout Buttons (ปุ่มหลัก & หน้าชำระเงิน)**:
+   - ใช้สไตล์ **Solid Contrast** คมชัด เช่น:
+     - `bg-foreground hover:bg-foreground/90 text-background font-bold shadow-xs active:scale-[0.99]`
+     - หรือ Solid Brand Accent เช่น `bg-rose-500 hover:bg-rose-600 text-white font-bold` หรือ `bg-purple-600 hover:bg-purple-700 text-white`
+   - ให้ความรู้สึกหรูหรา เรียบง่าย มั่นใจ สะอาดตา (สไตล์ Stripe, Vercel, Linear)
+2. **Secondary & Tertiary Buttons**:
+   - ใช้ `bg-muted hover:bg-muted/80 text-foreground border border-border`
+3. **Card & Border Accents**:
+   - ใช้สี Solid Tint จางๆ ที่กลมกลืนกับ Theme เช่น `bg-purple-500/5 border-purple-500/30` แทน Gradient borders
+4. **Badges & Chips**:
+   - ใช้ Minimal Pill/Chip เรียบคม เช่น `px-2.5 py-0.5 rounded-full bg-muted text-foreground text-xs font-bold border border-border`
+
+---
+
 *เอกสารฉบับนี้จัดทำเพื่อเป็นคู่มือมาตรฐาน UI/UX สำหรับ SedChar.AI*

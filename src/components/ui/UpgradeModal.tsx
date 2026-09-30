@@ -66,15 +66,15 @@ export function UpgradeModal({ isOpen, onClose, defaultPlan = 'universe_pro_99' 
 
       <div className="relative w-full max-w-xl bg-card border border-border rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-start justify-between p-4 sm:px-6 sm:py-3.5 border-b border-border bg-muted/30">
+        <div className="flex-shrink-0 flex items-start justify-between p-4 sm:px-6 sm:py-4 border-b border-border bg-muted/30">
           <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
-              <Crown className="w-4 h-4 text-amber-300" />
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-base shadow-xs flex-shrink-0 mt-0.5">
+              <Crown className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
                 <span>เลือกแพ็กเกจขยายสิทธิ์ SedChar.AI</span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                   LIFETIME UNLOCK
                 </span>
               </h2>
@@ -102,13 +102,13 @@ export function UpgradeModal({ isOpen, onClose, defaultPlan = 'universe_pro_99' 
               onClick={() => setSelectedPlan('supporter_29')}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                 selectedPlan === 'supporter_29'
-                  ? 'bg-amber-500/10 border-amber-500 shadow-md'
+                  ? 'bg-amber-500/5 border-amber-500 shadow-sm ring-1 ring-amber-500/20'
                   : 'bg-card border-border hover:border-border/80'
               }`}
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-500/25">
                     <Coffee className="w-3 h-3" />
                     Supporter Pass
                   </span>
@@ -140,17 +140,17 @@ export function UpgradeModal({ isOpen, onClose, defaultPlan = 'universe_pro_99' 
               onClick={() => setSelectedPlan('universe_pro_99')}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
                 selectedPlan === 'universe_pro_99'
-                  ? 'bg-purple-500/10 border-purple-500 shadow-lg ring-2 ring-purple-500/20'
+                  ? 'bg-purple-500/5 border-purple-500 shadow-sm ring-1 ring-purple-500/20'
                   : 'bg-card border-border hover:border-border/80'
               }`}
             >
-              <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-[9px] font-bold text-white uppercase tracking-wider">
+              <div className="absolute top-0 right-0 px-2.5 py-0.5 rounded-bl-xl bg-purple-600 text-[9px] font-bold text-white uppercase tracking-wider">
                 แนะนำคุ้มสุด
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[10px] font-bold border border-purple-500/25">
                     <Crown className="w-3 h-3 text-amber-400" />
                     Universe Pro
                   </span>
@@ -211,12 +211,12 @@ export function UpgradeModal({ isOpen, onClose, defaultPlan = 'universe_pro_99' 
             </div>
           )}
 
-          {/* Checkout Button */}
+          {/* Checkout Button — Minimal + Aesthetic Solid */}
           <button
             type="button"
             onClick={handleCheckout}
             disabled={isLoading || userRole === 'admin'}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-rose-600 hover:from-purple-500 hover:via-indigo-500 hover:to-rose-500 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-xl bg-foreground hover:bg-foreground/90 text-background font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -225,7 +225,7 @@ export function UpgradeModal({ isOpen, onClose, defaultPlan = 'universe_pro_99' 
               </>
             ) : userRole === 'admin' ? (
               <>
-                <Check className="w-4 h-4 text-emerald-300" />
+                <Check className="w-4 h-4 text-emerald-400" />
                 <span>คุณมีสิทธิ์ Admin สูงสุดอยู่แล้ว</span>
               </>
             ) : (
