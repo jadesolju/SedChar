@@ -136,6 +136,7 @@ function ProfileContent() {
         const data = await res.json();
         if (data.url) {
           setAvatarUrl(data.url);
+          await updateUserProfile({ avatarUrl: data.url });
         } else {
           setAvatarUrl(compressedDataUrl);
         }
@@ -167,6 +168,7 @@ function ProfileContent() {
         const data = await res.json();
         if (data.url) {
           setAvatarUrl(data.url);
+          await updateUserProfile({ avatarUrl: data.url });
         }
       }
     } catch {}

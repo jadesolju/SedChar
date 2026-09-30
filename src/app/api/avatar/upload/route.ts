@@ -75,6 +75,26 @@ export async function POST(request: NextRequest) {
     // 2. Upload to Cloudflare R2
     const publicUrl = await uploadAvatarToR2(userId, buffer, mimeType);
 
+    // 3. Immediately persist R2 avatar URL to Supabase Auth user metadata
+    if (userId && userId !== 'anon') {
+      try {
+        const { getSupabaseAdmin } = await import('@/utils/supabase/admin');
+        const { client: adminClient } = getSupabaseAdmin();
+        const { data: userData } = await adminClient.auth.admin.getUserById(userId);
+        if (userData?.user) {
+          const currentMeta = userData.user.user_metadata || {};
+          await adminClient.auth.admin.updateUserById(userId, {
+            user_metadata: {
+              ...currentMeta,
+              avatar_url: publicUrl,
+            },
+          });
+        }
+      } catch (adminErr) {
+        console.warn('Admin user_metadata avatar sync note:', adminErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       url: publicUrl,

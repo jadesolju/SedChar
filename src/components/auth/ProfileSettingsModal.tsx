@@ -95,6 +95,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
         const data = await res.json();
         if (data.url) {
           setAvatarUrl(data.url);
+          await updateUserProfile({ avatarUrl: data.url });
         } else {
           setAvatarUrl(compressedDataUrl);
         }
@@ -127,6 +128,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
         const data = await res.json();
         if (data.url) {
           setAvatarUrl(data.url);
+          await updateUserProfile({ avatarUrl: data.url });
         }
       }
     } catch {}

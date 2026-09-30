@@ -21,6 +21,8 @@ import {
   ExternalLink,
   Clock,
   UserPlus,
+  Crown,
+  Edit3,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import { CHARACTER_FLAGS } from '@/shared/types';
@@ -260,10 +262,17 @@ function UniverseShareViewContent() {
               <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] text-muted-foreground truncate">
                 <span className="truncate max-w-[90px] sm:max-w-none">สร้างโดย {authorName}</span>
                 <span>•</span>
-                <span className="text-purple-500 font-semibold flex items-center gap-0.5 sm:gap-1 shrink-0">
-                  <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  <span>Unlisted</span>
-                </span>
+                {isOwner ? (
+                  <span className="text-amber-500 font-bold flex items-center gap-0.5 sm:gap-1 shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
+                    <span>คุณคือเจ้าของจักรวาลนี้ (Owner)</span>
+                  </span>
+                ) : (
+                  <span className="text-purple-500 font-semibold flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span>Unlisted</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -281,7 +290,25 @@ function UniverseShareViewContent() {
             <span className="hidden md:inline">{copied ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์'}</span>
           </button>
 
-          {canClone ? (
+          {isOwner ? (
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.setItem(RUBII_MULTI_DRAFT_KEY, JSON.stringify(project));
+                  router.push('/multi');
+                } catch {
+                  router.push('/multi');
+                }
+              }}
+              className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="เปิดแก้ไขจักรวาลนี้ใน Studio ของคุณ"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">เปิดแก้ไขใน Studio</span>
+              <span className="sm:hidden text-[11px]">แก้ไข Studio</span>
+            </button>
+          ) : canClone ? (
             <button
               type="button"
               onClick={handleCloneToMyStudio}
