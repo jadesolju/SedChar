@@ -19,6 +19,7 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
+  Clock,
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import { CHARACTER_FLAGS } from '@/shared/types';
@@ -176,6 +177,14 @@ function UniverseShareViewContent() {
   const { worldSetting, lore, mainCharacters, supportingCharacters, routes } = project;
   const projectName = worldSetting?.projectName || project.title || 'จักรวาลและคลังความจำ';
 
+  const authorName =
+    user &&
+    (user.id === metadata?.userId ||
+      user.email?.split('@')[0] === metadata?.author ||
+      user.user_metadata?.display_name === metadata?.author)
+      ? user.user_metadata?.display_name || user.user_metadata?.full_name || metadata?.author || 'ผู้สร้าง'
+      : metadata?.author || 'ผู้สร้าง';
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Top Navbar */}
@@ -200,7 +209,7 @@ function UniverseShareViewContent() {
                 {projectName}
               </h1>
               <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                <span className="truncate max-w-[90px] sm:max-w-none">สร้างโดย {metadata?.author || 'ผู้สร้าง'}</span>
+                <span className="truncate max-w-[90px] sm:max-w-none">สร้างโดย {authorName}</span>
                 <span>•</span>
                 <span className="text-purple-500 font-semibold flex items-center gap-0.5 sm:gap-1 shrink-0">
                   <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -254,7 +263,7 @@ function UniverseShareViewContent() {
               {projectName}
             </h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>สร้างโดย <strong className="text-foreground font-semibold">{metadata?.author || 'ผู้สร้าง'}</strong></span>
+              <span>สร้างโดย <strong className="text-foreground font-semibold">{authorName}</strong></span>
               <span>•</span>
               <span className="text-purple-500 font-semibold inline-flex items-center gap-1">
                 <Lock className="w-3 h-3" />
@@ -263,26 +272,45 @@ function UniverseShareViewContent() {
             </div>
           </div>
 
-          {/* Tags & Badges */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
-            <span className="px-3 py-1.5 rounded-2xl sm:rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold inline-flex items-start gap-1.5 max-w-full leading-relaxed break-words">
-              <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span className="break-words">{worldSetting?.genreTone || 'แนวเรื่องยังไม่ได้ระบุ'}</span>
-            </span>
+          {/* Clean Structured Metadata Grid (No overlapping/distorted capsule pills) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+            {worldSetting?.genreTone && (
+              <div className="p-3.5 rounded-xl bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 text-xs space-y-1">
+                <div className="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>แนวเรื่อง (Genre & Tone)</span>
+                </div>
+                <p className="text-foreground leading-relaxed break-words">
+                  {worldSetting.genreTone}
+                </p>
+              </div>
+            )}
             {worldSetting?.eraTimePeriod && (
-              <span className="px-3 py-1.5 rounded-2xl sm:rounded-full bg-muted/80 text-muted-foreground border border-border text-xs font-medium max-w-full leading-relaxed break-words">
-                ยุค: {worldSetting.eraTimePeriod}
-              </span>
+              <div className="p-3.5 rounded-xl bg-card border border-border text-xs space-y-1">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>ยุคสมัย (Era)</span>
+                </div>
+                <p className="text-foreground leading-relaxed break-words">
+                  {worldSetting.eraTimePeriod}
+                </p>
+              </div>
             )}
             {worldSetting?.mainLocation && (
-              <span className="px-3 py-1.5 rounded-2xl sm:rounded-full bg-muted/80 text-muted-foreground border border-border text-xs font-medium max-w-full leading-relaxed break-words">
-                ฉากหลัก: {worldSetting.mainLocation}
-              </span>
+              <div className="p-3.5 rounded-xl bg-card border border-border text-xs space-y-1">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>ฉากหลัก (Main Location)</span>
+                </div>
+                <p className="text-foreground leading-relaxed break-words">
+                  {worldSetting.mainLocation}
+                </p>
+              </div>
             )}
           </div>
 
           {worldSetting?.atmosphereTheme && (
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+            <p className="text-xs sm:text-sm text-foreground leading-relaxed break-words pt-1">
               {worldSetting.atmosphereTheme}
             </p>
           )}
@@ -299,7 +327,7 @@ function UniverseShareViewContent() {
             </div>
             <div className="p-3 rounded-2xl bg-card border border-border/80 text-center">
               <div className="text-base sm:text-lg font-bold text-foreground">{lore?.timelineEvents?.length || 0}</div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground">เหตุการณ์ใน Lore</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground">เหตุการณ์ใน Timeline</div>
             </div>
             <div className="p-3 rounded-2xl bg-card border border-border/80 text-center">
               <div className="text-base sm:text-lg font-bold text-foreground">{routes?.length || 0}</div>
@@ -336,11 +364,11 @@ function UniverseShareViewContent() {
           </div>
         </section>
 
-        {/* Section 2: Lorebook & Backstory */}
+        {/* Section 2: Lore & Timeline Events */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-2.5">
             <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h3 className="text-base font-bold text-foreground">2. Lorebook & ภูมิหลังประวัติศาสตร์</h3>
+            <h3 className="text-base font-bold text-foreground">2. Lorebook & ไทม์ไลน์ประวัติศาสตร์</h3>
           </div>
 
           <div className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-4">
@@ -363,6 +391,40 @@ function UniverseShareViewContent() {
                 <p className="text-xs text-foreground font-normal dark:text-slate-200 leading-relaxed whitespace-pre-line">
                   {lore.coreConflict}
                 </p>
+              </div>
+            )}
+
+            {/* Clean Timeline Events List (Title & Description only) */}
+            {lore?.timelineEvents && lore.timelineEvents.length > 0 && (
+              <div className="space-y-3 pt-3 border-t border-border/50">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <span>ลำดับเหตุการณ์สำคัญในประวัติศาสตร์ (Timeline Events)</span>
+                </h4>
+                <div className="space-y-2.5">
+                  {lore.timelineEvents.map((evt, idx) => (
+                    <div
+                      key={evt.id || idx}
+                      className="p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h5 className="text-xs sm:text-sm font-bold text-foreground">
+                          {evt.eventTitle || `เหตุการณ์ที่ ${idx + 1}`}
+                        </h5>
+                        {evt.timeLabel && (
+                          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 shrink-0">
+                            {evt.timeLabel}
+                          </span>
+                        )}
+                      </div>
+                      {evt.description && (
+                        <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
+                          {evt.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

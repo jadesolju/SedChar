@@ -42,13 +42,18 @@ export function UniverseShareModal({
   const handleGenerateShareLink = async () => {
     setIsGenerating(true);
     try {
+      const authorName =
+        user?.user_metadata?.display_name ||
+        user?.user_metadata?.full_name ||
+        (user?.email ? user.email.split('@')[0] : 'นักสร้างจักรวาล SedChar');
+
       const res = await fetch('/api/universe/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project,
           userId: user?.id || 'guest',
-          author: user?.email ? user.email.split('@')[0] : 'นักสร้างจักรวาล SedChar',
+          author: authorName,
         }),
       });
 

@@ -139,8 +139,14 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   const initial = displayName ? displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Dark backdrop overlay to prevent background text bleed-through */}
+      <div 
+        className="fixed inset-0 bg-black/65 backdrop-blur-xs transition-opacity" 
+        onClick={onClose} 
+      />
+
+      <div className="relative z-10 w-full max-w-lg p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-4">
           <div className="flex items-center gap-2.5">
