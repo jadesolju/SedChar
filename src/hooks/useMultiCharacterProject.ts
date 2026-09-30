@@ -16,6 +16,7 @@ import type { SubCharacter } from '@/shared/types';
 
 export const RUBII_MULTI_DRAFT_KEY = 'sedchar_rubii_multi_draft_v1';
 export const MULTI_CHAR_LIBRARY_KEY = 'sedchar_multi_projects_library_v1';
+export const ACTIVE_MULTI_PROJECT_ID_KEY = 'sedchar_multi_active_lib_id';
 export const MAX_FREE_MAIN_CHARACTERS = 10;
 
 export interface SavedMultiProjectRecord {
@@ -45,7 +46,26 @@ export function useMultiCharacterProject() {
     return DEFAULT_MULTI_PROJECT_DRAFT;
   });
 
-  const [activeLibraryProjectId, setActiveLibraryProjectId] = useState<string | null>(null);
+  const [activeLibraryProjectId, setActiveLibraryProjectIdState] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(ACTIVE_MULTI_PROJECT_ID_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  const setActiveLibraryProjectId = useCallback((id: string | null) => {
+    setActiveLibraryProjectIdState(id);
+    if (typeof window === 'undefined') return;
+    try {
+      if (id) {
+        localStorage.setItem(ACTIVE_MULTI_PROJECT_ID_KEY, id);
+      } else {
+        localStorage.removeItem(ACTIVE_MULTI_PROJECT_ID_KEY);
+      }
+    } catch {}
+  }, []);
 
   // Saved Projects Library State
   const [savedProjects, setSavedProjects] = useState<SavedMultiProjectRecord[]>(() => {
@@ -85,15 +105,34 @@ export function useMultiCharacterProject() {
 
   // Save / Overwrite in Project Library
   const saveProjectToLibrary = useCallback(
-    (title?: string, idToOverwrite?: string) => {
+    (title?: string, idToOverwrite?: string, forceNew: boolean = false) => {
       const now = new Date().toISOString();
       const projectTitle = title?.trim() || project.worldSetting.projectName?.trim() || project.title || 'โปรเจกต์ Multi-Char';
       const summaryDesc = project.worldSetting.genreTone || project.worldSetting.mainLocation || 'โปรเจกต์หลายตัวละคร';
 
-      if (idToOverwrite) {
+      // Smartly find target ID to overwrite if not forcing a new record
+      let targetId: string | undefined = undefined;
+      if (!forceNew) {
+        if (idToOverwrite && savedProjects.some((p) => p.id === idToOverwrite)) {
+          targetId = idToOverwrite;
+        } else if (activeLibraryProjectId && savedProjects.some((p) => p.id === activeLibraryProjectId)) {
+          targetId = activeLibraryProjectId;
+        } else if (project.id && savedProjects.some((p) => p.id === project.id)) {
+          targetId = project.id;
+        } else {
+          const matchByTitle = savedProjects.find(
+            (p) => p.title.trim().toLowerCase() === projectTitle.trim().toLowerCase()
+          );
+          if (matchByTitle) {
+            targetId = matchByTitle.id;
+          }
+        }
+      }
+
+      if (targetId) {
         // Overwrite existing record
         const next = savedProjects.map((rec) => {
-          if (rec.id === idToOverwrite) {
+          if (rec.id === targetId) {
             return {
               ...rec,
               title: projectTitle,
@@ -103,6 +142,7 @@ export function useMultiCharacterProject() {
               routeCount: project.routes.length,
               projectData: {
                 ...project,
+                id: targetId,
                 title: projectTitle,
                 updatedAt: now,
               },
@@ -112,8 +152,8 @@ export function useMultiCharacterProject() {
           return rec;
         });
         persistLibrary(next);
-        setActiveLibraryProjectId(idToOverwrite);
-        return { success: true, id: idToOverwrite };
+        setActiveLibraryProjectId(targetId);
+        return { success: true, id: targetId, mode: 'overwrite' as const };
       } else {
         // Create new record
         const newId = 'proj_lib_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
@@ -135,10 +175,10 @@ export function useMultiCharacterProject() {
         };
         persistLibrary([newRecord, ...savedProjects]);
         setActiveLibraryProjectId(newId);
-        return { success: true, id: newId };
+        return { success: true, id: newId, mode: 'new' as const };
       }
     },
-    [project, savedProjects]
+    [project, savedProjects, activeLibraryProjectId, setActiveLibraryProjectId]
   );
 
   // Load project from library
@@ -153,7 +193,7 @@ export function useMultiCharacterProject() {
       } catch {}
       return true;
     },
-    [savedProjects]
+    [savedProjects, setActiveLibraryProjectId]
   );
 
   // Delete project from library
@@ -165,7 +205,7 @@ export function useMultiCharacterProject() {
         setActiveLibraryProjectId(null);
       }
     },
-    [savedProjects, activeLibraryProjectId]
+    [savedProjects, activeLibraryProjectId, setActiveLibraryProjectId]
   );
 
   // Import JSON Project

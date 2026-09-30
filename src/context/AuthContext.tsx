@@ -114,7 +114,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
-  const [activeLoadedCharacterId, setActiveLoadedCharacterId] = useState<string | null>(null);
+  const [activeLoadedCharacterId, setActiveLoadedCharacterIdState] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem('sedchar_active_character_id');
+    } catch {
+      return null;
+    }
+  });
+
+  const setActiveLoadedCharacterId = useCallback((id: string | null) => {
+    setActiveLoadedCharacterIdState(id);
+    if (typeof window === 'undefined') return;
+    try {
+      if (id) {
+        localStorage.setItem('sedchar_active_character_id', id);
+      } else {
+        localStorage.removeItem('sedchar_active_character_id');
+      }
+    } catch {}
+  }, []);
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);

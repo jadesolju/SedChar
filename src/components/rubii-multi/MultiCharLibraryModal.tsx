@@ -31,7 +31,7 @@ interface MultiCharLibraryModalProps {
   currentProject: MultiCharacterProjectDraft;
   savedProjects: SavedMultiProjectRecord[];
   activeLibraryProjectId: string | null;
-  onSaveToLibrary: (title?: string, idToOverwrite?: string) => { success: boolean; id?: string };
+  onSaveToLibrary: (title?: string, idToOverwrite?: string, forceNew?: boolean) => { success: boolean; id?: string };
   onLoadFromLibrary: (id: string) => boolean;
   onDeleteFromLibrary: (id: string) => void;
   showToast: (msg: string) => void;
@@ -55,15 +55,36 @@ export function MultiCharLibraryModal({
   const [saveTitle, setSaveTitle] = useState(
     currentProject.worldSetting.projectName || currentProject.title || ''
   );
-  const [saveMode, setSaveMode] = useState<'overwrite' | 'new'>(
-    activeLibraryProjectId && savedProjects.some((p) => p.id === activeLibraryProjectId)
-      ? 'overwrite'
-      : 'new'
-  );
-  const [targetOverwriteId, setTargetOverwriteId] = useState<string>(
-    activeLibraryProjectId || savedProjects[0]?.id || ''
-  );
+  const [saveMode, setSaveMode] = useState<'overwrite' | 'new'>('new');
+  const [targetOverwriteId, setTargetOverwriteId] = useState<string>('');
   const [isSuccessFeedback, setIsSuccessFeedback] = useState(false);
+
+  // Sync state whenever modal is opened or current project / active ID changes
+  React.useEffect(() => {
+    if (isOpen) {
+      const currentTitle = currentProject.worldSetting.projectName?.trim() || currentProject.title?.trim() || '';
+      const matchingActive = activeLibraryProjectId && savedProjects.find((p) => p.id === activeLibraryProjectId);
+      const matchingId = currentProject.id && savedProjects.find((p) => p.id === currentProject.id);
+      const matchingTitle = currentTitle
+        ? savedProjects.find((p) => p.title.trim().toLowerCase() === currentTitle.toLowerCase())
+        : null;
+
+      const target = matchingActive || matchingId || matchingTitle;
+
+      if (target) {
+        setSaveMode('overwrite');
+        setTargetOverwriteId(target.id);
+        setSaveTitle(target.title || currentTitle || 'โปรเจกต์ Multi-Char');
+      } else if (savedProjects.length > 0) {
+        setSaveMode('new');
+        setSaveTitle(currentTitle || 'โปรเจกต์ Multi-Char');
+        if (savedProjects[0]?.id) setTargetOverwriteId(savedProjects[0].id);
+      } else {
+        setSaveMode('new');
+        setSaveTitle(currentTitle || 'โปรเจกต์ Multi-Char');
+      }
+    }
+  }, [isOpen, activeLibraryProjectId, savedProjects, currentProject]);
 
   if (!isOpen) return null;
 
@@ -80,7 +101,8 @@ export function MultiCharLibraryModal({
       return;
     }
     const idToOverwrite = saveMode === 'overwrite' ? targetOverwriteId : undefined;
-    const res = onSaveToLibrary(saveTitle, idToOverwrite);
+    const forceNew = saveMode === 'new';
+    const res = onSaveToLibrary(saveTitle, idToOverwrite, forceNew);
     if (res.success) {
       setIsSuccessFeedback(true);
       showToast(
@@ -92,6 +114,24 @@ export function MultiCharLibraryModal({
         setIsSuccessFeedback(false);
         setActiveTab('list');
       }, 1200);
+    }
+  };
+
+  const handleQuickOverwrite = (id: string, title: string) => {
+    if (!user) {
+      openAuthModal('signin');
+      return;
+    }
+    if (
+      !window.confirm(
+        `ต้องการบันทึกทับโปรเจกต์ "${title}" ด้วยข้อมูลปัจจุบันในพื้นที่ทำงานหรือไม่?\n(ข้อมูลเดิมจะถูกอัปเดตเป็นดราฟต์ปัจจุบัน)`
+      )
+    ) {
+      return;
+    }
+    const res = onSaveToLibrary(title, id, false);
+    if (res.success) {
+      showToast(`บันทึกทับโปรเจกต์ "${title}" เรียบร้อยแล้ว!`);
     }
   };
 
@@ -354,6 +394,16 @@ export function MultiCharLibraryModal({
                               title="ลบโปรเจกต์"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleQuickOverwrite(rec.id, rec.title)}
+                              className="px-2.5 py-1.5 rounded-lg border border-amber-500/30 hover:bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 transition-all cursor-pointer"
+                              title="บันทึกทับโปรเจกต์นี้ด้วยงานปัจจุบันทันที"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                              <span className="hidden sm:inline">บันทึกทับ</span>
                             </button>
 
                             <button

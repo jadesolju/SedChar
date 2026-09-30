@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -229,8 +229,11 @@ function MainWorkspace() {
     showToast('แปลงข้อมูลสำเร็จ! ข้อมูลถูกนำไปจัดโครงสร้างใน 10 หมวดหมู่แล้ว');
   };
 
-  const handleLoadFromLibrary = (char: ThaiMasterCharacter) => {
+  const handleLoadFromLibrary = (char: ThaiMasterCharacter, id?: string) => {
     applyParsedCharacter(char);
+    if (id) {
+      setActiveLoadedCharacterId(id);
+    }
     setSharedBanner(null);
     showToast(`โหลดตัวละคร "${char.fullName || char.nickname || 'ตัวละคร'}" เรียบร้อย`);
   };
@@ -581,6 +584,9 @@ function MainWorkspace() {
       <CharacterLibraryModal
         currentCharacter={character}
         onLoadCharacter={handleLoadFromLibrary}
+        activeLibraryId={activeLoadedCharacterId}
+        setActiveLibraryId={setActiveLoadedCharacterId}
+        isReadOnly={isReadOnly}
       />
     </div>
   );

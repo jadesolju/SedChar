@@ -142,23 +142,30 @@ export function CharacterLibraryModal({
   useEffect(() => {
     if (isLibraryModalOpen) {
       const currentActive = activeLibraryId || activeLoadedCharacterId;
-      if (currentActive && savedCharacters.some((c) => c.id === currentActive)) {
+      const charName = currentCharacter.fullName || currentCharacter.nickname || '';
+      const matchByName = charName
+        ? savedCharacters.find(
+            (c) =>
+              c.title?.trim().toLowerCase() === charName.trim().toLowerCase() ||
+              c.nickname?.trim().toLowerCase() === charName.trim().toLowerCase()
+          )
+        : null;
+      const match = (currentActive ? savedCharacters.find((c) => c.id === currentActive) : null) || matchByName;
+
+      if (match && !isReadOnly) {
         setSaveMode('overwrite');
-        setTargetOverwriteId(currentActive);
-        const match = savedCharacters.find((c) => c.id === currentActive);
-        if (match) {
-          setSaveTitle(match.title || currentCharacter.fullName || currentCharacter.nickname || '');
-          setImageUrl(match.image_url || '');
-        }
+        setTargetOverwriteId(match.id);
+        setSaveTitle(match.title || charName);
+        setImageUrl(match.image_url || '');
       } else {
         setSaveMode('new');
-        setSaveTitle(currentCharacter.fullName || currentCharacter.nickname || '');
+        setSaveTitle(charName);
         if (savedCharacters.length > 0) {
           if (savedCharacters[0]?.id) setTargetOverwriteId(savedCharacters[0].id);
         }
       }
     }
-  }, [isLibraryModalOpen, activeLibraryId, activeLoadedCharacterId, savedCharacters, currentCharacter]);
+  }, [isLibraryModalOpen, activeLibraryId, activeLoadedCharacterId, savedCharacters, currentCharacter, isReadOnly]);
 
   if (!isLibraryModalOpen) return null;
 
