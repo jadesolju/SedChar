@@ -402,7 +402,22 @@ export function RubiiMultiWorkspace() {
                 );
               })}
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsUniversalParserOpen(true);
+                  }}
+                  className="w-full p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-purple-500/15 border border-purple-500/40 text-purple-700 dark:text-purple-300 flex items-center gap-3 font-bold text-xs cursor-pointer shadow-xs active:scale-98 transition-all"
+                >
+                  <Sparkles className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                  <div className="text-left">
+                    <div>✨ AI Parser แบบรวม</div>
+                    <div className="text-[10px] text-muted-foreground font-normal">นำเข้าไฟล์ หรือแปลงเนื้อเรื่องเป็นจักรวาล</div>
+                  </div>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -411,7 +426,7 @@ export function RubiiMultiWorkspace() {
                   }}
                   className="w-full p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-foreground flex items-center gap-3 font-bold text-xs cursor-pointer"
                 >
-                  <FolderOpen className="w-5 h-5 text-rose-500" />
+                  <FolderOpen className="w-5 h-5 text-rose-500 flex-shrink-0" />
                   <span>เปิดคลังโปรเจกต์ ({savedProjects.length})</span>
                 </button>
               </div>
@@ -421,7 +436,7 @@ export function RubiiMultiWorkspace() {
 
         {/* Right Content View Area */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-6 bg-background">
-          <div className="max-w-5xl mx-auto pb-16">
+          <div className="max-w-5xl mx-auto pb-24 md:pb-16">
             {activeTab === 'world' && (
               <WorldSettingSection
                 worldSetting={project.worldSetting}
@@ -504,6 +519,41 @@ export function RubiiMultiWorkspace() {
             )}
           </div>
         </main>
+      </div>
+
+      {/* Mobile Floating Bottom Action Bar (ลอยอยู่ทุกหน้าบนมือถือ เข้าถึงง่ายด้วยนิ้วโป้ง) */}
+      <div className="md:hidden fixed bottom-3 left-3 right-3 z-30 flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-card/95 backdrop-blur-lg border border-purple-500/35 shadow-2xl shadow-purple-950/30 animate-in fade-in slide-in-from-bottom-3">
+        {/* Main Floating Button: AI Parser แบบรวม */}
+        <button
+          type="button"
+          onClick={() => setIsUniversalParserOpen(true)}
+          className="flex-1 py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse flex-shrink-0" />
+          <span className="truncate">✨ AI Parser แบบรวม</span>
+        </button>
+
+        {/* Quick Share Universe Button */}
+        <button
+          type="button"
+          onClick={() => setIsShareModalOpen(true)}
+          className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-300 flex items-center justify-center hover:bg-purple-500/20 active:scale-95 transition-all cursor-pointer flex-shrink-0"
+          title="แชร์ลิงก์จักรวาล"
+          aria-label="แชร์ลิงก์จักรวาล"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
+
+        {/* Quick Save to Library Button */}
+        <button
+          type="button"
+          onClick={() => setIsLibraryModalOpen(true)}
+          className="w-10 h-10 rounded-xl bg-muted/80 border border-border text-foreground flex items-center justify-center hover:bg-muted active:scale-95 transition-all cursor-pointer flex-shrink-0"
+          title="คลังโปรเจกต์"
+          aria-label="คลังโปรเจกต์"
+        >
+          <FolderOpen className="w-4 h-4 text-rose-500" />
+        </button>
       </div>
 
       {/* Multi-Char Project Library Modal */}
