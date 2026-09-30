@@ -13,9 +13,17 @@ import {
   Crown,
   Coffee,
   Gem,
+  Palette,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { compressImageToAvatar } from '@/utils/imageCompressor';
+import {
+  AVATAR_BG_THEMES,
+  BANNER_THEMES,
+  getAvatarTheme,
+  getBannerTheme,
+} from '@/utils/profileThemes';
 
 const AVATAR_PRESETS = [
   { id: 'sakura', label: 'ซากุระ', emoji: '🌸', bg: 'bg-pink-500/20 text-pink-500 border-pink-500/30' },
@@ -44,7 +52,8 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [avatarBgTheme, setAvatarBgTheme] = useState('nebula');
+  const [bannerTheme, setBannerTheme] = useState('cosmic');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -58,8 +67,9 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
       setDisplayName(currentName);
       setBio(meta.bio || '');
       setAvatarUrl(meta.avatar_url || '');
-      setCustomUrlInput(meta.avatar_url && !meta.avatar_url.startsWith('data:') ? meta.avatar_url : '');
       setSelectedPreset(meta.avatar_preset || null);
+      setAvatarBgTheme(meta.avatar_bg_theme || 'nebula');
+      setBannerTheme(meta.banner_theme || 'cosmic');
       setSaveSuccess(false);
     }
   }, [isOpen, user]);
@@ -73,7 +83,6 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
 
     setIsUploading(true);
     try {
-      // Auto compress and square crop for crisp avatar (~20KB)
       const compressedDataUrl = await compressImageToAvatar(file, 320, 0.85);
       setAvatarUrl(compressedDataUrl);
       setSelectedPreset(null);
@@ -88,7 +97,6 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   // Handle Preset Choice
   const handleChoosePreset = (preset: typeof AVATAR_PRESETS[0]) => {
     setSelectedPreset(preset.id);
-    // Create an SVG data URL for preset emoji
     const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#18181b"/><text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" font-size="52">${preset.emoji}</text></svg>`;
     const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
     setAvatarUrl(dataUrl);
@@ -111,6 +119,8 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
         displayName: trimmedName,
         avatarUrl: avatarUrl || undefined,
         bio: bio.trim(),
+        avatarBgTheme,
+        bannerTheme,
       });
 
       if (error) {
@@ -130,28 +140,30 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   };
 
   const initial = displayName ? displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U');
+  const activeAvatarTheme = getAvatarTheme(avatarBgTheme);
+  const activeBannerTheme = getBannerTheme(bannerTheme);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Dark backdrop overlay to prevent background text bleed-through */}
+      {/* Dark backdrop overlay */}
       <div 
         className="fixed inset-0 bg-black/65 backdrop-blur-xs transition-opacity" 
         onClick={onClose} 
       />
 
-      <div className="relative z-10 w-full max-w-lg p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative z-10 w-full max-w-xl p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
-              <Sparkles className="w-5 h-5" />
+              <Palette className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-foreground">
-                ตั้งค่าโปรไฟล์ & ข้อมูลผู้ใช้
+                ตั้งค่าโปรไฟล์ & ปรับแต่งธีม
               </h3>
               <p className="text-xs text-muted-foreground">
-                ปรับแต่งชื่อ รูปโปรไฟล์ และข้อมูลส่วนตัวของคุณ
+                ปรับแต่งชื่อ รูปโปรไฟล์ และธีมสีพื้นหลังของคุณ
               </p>
             </div>
           </div>
@@ -165,17 +177,103 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
           </button>
         </div>
 
+        {/* Live Mini Preview */}
+        <div className={`p-4 rounded-2xl ${activeBannerTheme.class} border flex items-center gap-3.5 transition-all shadow-md`}>
+          <div className={`w-14 h-14 rounded-2xl ${activeAvatarTheme.class} border-2 border-white/20 p-0.5 shadow-lg shrink-0 flex items-center justify-center text-white font-bold text-xl overflow-hidden`}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span>{initial}</span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+              <span>{displayName || 'ผู้ใช้งานไม่มีชื่อ'}</span>
+              <span className={`px-2 py-0.2 rounded-full text-[9px] font-bold border uppercase ${activeBannerTheme.accentBadge}`}>
+                {userRole}
+              </span>
+            </div>
+            <div className="text-[11px] text-white/70 truncate">{user.email}</div>
+          </div>
+        </div>
+
         <form onSubmit={handleSave} className="space-y-6">
-          {/* Avatar Section */}
-          <div className="space-y-3">
+          {/* Banner Theme Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-foreground flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-purple-500" />
+                <span>ธีมสีแบนเนอร์ (Banner Theme)</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">{activeBannerTheme.name}</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {BANNER_THEMES.map((theme) => {
+                const isSelected = bannerTheme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setBannerTheme(theme.id)}
+                    className={`p-2 rounded-xl border text-left text-xs font-semibold text-white h-14 flex flex-col justify-between transition-all cursor-pointer overflow-hidden ${
+                      isSelected
+                        ? 'border-purple-500 ring-2 ring-purple-500/40 scale-[1.02]'
+                        : 'border-border/80 hover:border-foreground/30'
+                    } ${theme.class}`}
+                  >
+                    <span className="text-[10px] font-bold truncate">{theme.name}</span>
+                    {isSelected && <Check className="w-3 h-3 text-purple-400 self-end stroke-[3]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Avatar Background Theme */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-foreground flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>สีพื้นหลัง Avatar (Avatar Background)</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">{activeAvatarTheme.name}</span>
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {AVATAR_BG_THEMES.map((theme) => {
+                const isSelected = avatarBgTheme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setAvatarBgTheme(theme.id)}
+                    className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-purple-500 ring-2 ring-purple-500/40 bg-purple-500/10'
+                        : 'border-border/80 bg-muted/20 hover:border-foreground/30'
+                    }`}
+                    title={theme.label}
+                  >
+                    <div className={`w-6 h-6 rounded-lg ${theme.class} flex items-center justify-center text-white`}>
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <span className="text-[9px] text-muted-foreground truncate max-w-full">
+                      {theme.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Avatar Image Section */}
+          <div className="space-y-3 border-t border-border/60 pt-4">
             <label className="text-xs font-bold text-foreground block">
-              รูปโปรไฟล์ (Avatar)
+              รูปโปรไฟล์ (Avatar Image)
             </label>
 
             <div className="flex items-center gap-4">
-              {/* Current Avatar Circle */}
               <div className="relative group">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-xl overflow-hidden shrink-0">
+                <div className={`w-16 h-16 rounded-2xl ${activeAvatarTheme.class} border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-xl overflow-hidden shrink-0`}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -212,7 +310,6 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                       onClick={() => {
                         setAvatarUrl('');
                         setSelectedPreset(null);
-                        setCustomUrlInput('');
                       }}
                       className="px-2.5 py-1.5 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-xs font-medium transition-all cursor-pointer"
                     >
@@ -221,7 +318,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  รองรับรูปภาพทุกขนาด (ระบบบีบอัดความละเอียดสูงอัตโนมัติ)
+                  ระบบบีบอัดความละเอียดสูงอัตโนมัติ
                 </p>
                 <input
                   ref={fileInputRef}
@@ -234,9 +331,9 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
             </div>
 
             {/* Cute Avatar Presets */}
-            <div className="space-y-1.5 pt-2">
+            <div className="space-y-1.5 pt-1">
               <span className="text-[11px] font-semibold text-muted-foreground block">
-                หรือเลือก Avatar สไตล์น่ารักสำเร็จรูป:
+                หรือเลือก Avatar สำเร็จรูป:
               </span>
               <div className="grid grid-cols-6 gap-2">
                 {AVATAR_PRESETS.map((preset) => {
@@ -246,7 +343,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                       key={preset.id}
                       type="button"
                       onClick={() => handleChoosePreset(preset)}
-                      className={`p-2 rounded-xl border text-base flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer hover:scale-110 ${
+                      className={`p-2 rounded-xl border text-base flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer hover:scale-105 ${
                         isChosen
                           ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-500/10'
                           : `${preset.bg} hover:border-foreground/30`
@@ -265,29 +362,26 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
           </div>
 
           {/* Display Name Input */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 border-t border-border/60 pt-4">
             <label className="text-xs font-bold text-foreground flex items-center justify-between">
-              <span>ชื่อที่แสดง (Display Name)</span>
+              <span>ชื่อที่แสดง (Display Name) *</span>
               <span className="text-[10px] text-muted-foreground font-mono">{displayName.length}/40</span>
             </label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="เช่น Jessada ✦, นักเล่าเรื่อง"
+              placeholder="เช่น Jessada ✦, จอมเวทกาลเวลา"
               maxLength={40}
               required
               className="w-full px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30"
             />
-            <p className="text-[11px] text-muted-foreground">
-              ชื่อนี้จะแสดงบนจักรวาลที่คุณสร้าง ในคอมเมนต์ และหน้าแชร์ทั้งหมด
-            </p>
           </div>
 
           {/* Bio / Tagline Input */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground flex items-center justify-between">
-              <span>คำแนะนำตัวสั้นๆ (Bio - ไม่บังคับ)</span>
+              <span>คำแนะนำตัวสั้นๆ (Bio)</span>
               <span className="text-[10px] text-muted-foreground font-mono">{bio.length}/150</span>
             </label>
             <textarea
@@ -298,20 +392,6 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
               maxLength={150}
               className="w-full px-3.5 py-2 rounded-xl bg-muted/40 border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 resize-none leading-relaxed"
             />
-          </div>
-
-          {/* Account Status Info */}
-          <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/80 flex items-center justify-between text-xs">
-            <div className="space-y-0.5">
-              <span className="text-[11px] text-muted-foreground block">อีเมลบัญชี</span>
-              <span className="font-bold text-foreground">{user.email}</span>
-            </div>
-            <div className="text-right space-y-0.5">
-              <span className="text-[11px] text-muted-foreground block">สถานะสิทธิ์</span>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-bold inline-block uppercase">
-                {userRole}
-              </span>
-            </div>
           </div>
 
           {/* Bottom Actions */}
@@ -331,11 +411,11 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : saveSuccess ? (
-                <Check className="w-3.5 h-3.5 text-white" />
+                <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
               ) : (
                 <Check className="w-3.5 h-3.5" />
               )}
-              <span>{saveSuccess ? 'บันทึกสำเร็จแล้ว!' : 'บันทึกการเปลี่ยนแปลง'}</span>
+              <span>{saveSuccess ? 'บันทึกสำเร็จแล้ว!' : 'บันทึกโปรไฟล์ & ธีม'}</span>
             </button>
           </div>
         </form>

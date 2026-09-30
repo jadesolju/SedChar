@@ -51,7 +51,7 @@ interface AuthContextType {
   closeLibraryModal: () => void;
   openProfileModal: () => void;
   closeProfileModal: () => void;
-  updateUserProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string }) => Promise<{ error: any; data?: any }>;
+  updateUserProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string; avatarBgTheme?: string; bannerTheme?: string }) => Promise<{ error: any; data?: any }>;
   setUserRole: (role: UserRole) => void;
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithDiscord: () => Promise<{ error: any }>;
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateUserProfile = useCallback(
-    async (data: { displayName?: string; avatarUrl?: string; bio?: string }) => {
+    async (data: { displayName?: string; avatarUrl?: string; bio?: string; avatarBgTheme?: string; bannerTheme?: string }) => {
       if (!user) return { error: new Error('User not authenticated') };
 
       const currentMetadata = user.user_metadata || {};
@@ -161,6 +161,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           : {}),
         ...(data.avatarUrl !== undefined ? { avatar_url: data.avatarUrl } : {}),
         ...(data.bio !== undefined ? { bio: data.bio } : {}),
+        ...(data.avatarBgTheme !== undefined ? { avatar_bg_theme: data.avatarBgTheme } : {}),
+        ...(data.bannerTheme !== undefined ? { banner_theme: data.bannerTheme } : {}),
       };
 
       try {
