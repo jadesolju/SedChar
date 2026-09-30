@@ -24,12 +24,24 @@ import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import { CHARACTER_FLAGS } from '@/shared/types';
 import { RUBII_MULTI_DRAFT_KEY, MULTI_CHAR_LIBRARY_KEY } from '@/hooks/useMultiCharacterProject';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 export default function UniverseShareViewPage() {
+  return (
+    <AuthProvider>
+      <UniverseShareViewContent />
+    </AuthProvider>
+  );
+}
+
+function UniverseShareViewContent() {
   const params = useParams();
   const router = useRouter();
   const shareId = params?.shareId as string;
 
+  const { user, openAuthModal } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [project, setProject] = useState<MultiCharacterProjectDraft | null>(null);
@@ -136,16 +148,26 @@ export default function UniverseShareViewPage() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             {error || 'ลิงก์นี้อาจหมดอายุ ถูกเจ้าของยกเลิกการแชร์ หรือ URL ไม่ถูกต้อง'}
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+            {!user && (
+              <button
+                type="button"
+                onClick={() => openAuthModal('signin')}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <span>เข้าสู่ระบบ / สมัครสมาชิก</span>
+              </button>
+            )}
             <Link
               href="/multi"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-sm transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold shadow-xs transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>ไปยัง Studio สร้างจักรวาล</span>
             </Link>
           </div>
         </div>
+        <AuthModal />
       </div>
     );
   }
@@ -199,17 +221,18 @@ export default function UniverseShareViewPage() {
             type="button"
             onClick={handleCloneToMyStudio}
             disabled={isCloning}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             {isCloning ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Download className="w-3.5 h-3.5" />
             )}
-            <span>คัดลอกเข้าคลังของฉัน (1-Click Clone)</span>
+            <span>คัดลอกเข้าคลัง (Clone)</span>
           </button>
 
           <ThemeToggle />
+          <UserMenu />
         </div>
       </header>
 
@@ -461,13 +484,15 @@ export default function UniverseShareViewPage() {
             type="button"
             onClick={handleCloneToMyStudio}
             disabled={isCloning}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             <span>คัดลอกจักรวาลนี้ไปแต่งต่อใน Studio</span>
           </button>
         </div>
       </main>
+
+      <AuthModal />
     </div>
   );
 }
