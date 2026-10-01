@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { ProfileSettingsModal } from './ProfileSettingsModal';
-import { getAvatarBgClass } from '@/utils/profileThemes';
+import { getAvatarTheme } from '@/utils/profileThemes';
 
 interface UserMenuProps {
   onOpenUpgradeModal?: () => void;
@@ -161,7 +161,15 @@ export function UserMenu({
           </span>
 
           {/* Avatar / Initial */}
-          <div className={`w-7 h-7 rounded-lg ${getAvatarBgClass(user.user_metadata?.avatar_bg_theme)} flex items-center justify-center text-white font-bold text-xs overflow-hidden shadow-xs`}>
+          <div
+            className="w-7 h-7 rounded-lg border border-white/20 flex items-center justify-center text-white font-bold text-xs overflow-hidden shadow-xs"
+            style={{
+              background: getAvatarTheme(
+                user.user_metadata?.avatar_bg_theme,
+                user.user_metadata?.custom_avatar_bg
+              ).gradient,
+            }}
+          >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (

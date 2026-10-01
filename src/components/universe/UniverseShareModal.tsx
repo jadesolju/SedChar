@@ -207,7 +207,10 @@ export function UniverseShareModal({
             (p: any) =>
               p.id !== data.shareId &&
               p.id !== project.id &&
-              p.shareId !== data.shareId
+              p.shareId !== data.shareId &&
+              (projectTitle
+                ? p.title?.trim().toLowerCase() !== projectTitle.trim().toLowerCase()
+                : true)
           );
           localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify([newRecord, ...filtered]));
           window.dispatchEvent(new Event('storage'));

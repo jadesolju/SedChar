@@ -51,7 +51,18 @@ interface AuthContextType {
   closeLibraryModal: () => void;
   openProfileModal: () => void;
   closeProfileModal: () => void;
-  updateUserProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string; avatarBgTheme?: string; bannerTheme?: string }) => Promise<{ error: any; data?: any }>;
+  updateUserProfile: (data: {
+    displayName?: string;
+    avatarUrl?: string;
+    bio?: string;
+    avatarBgTheme?: string;
+    customAvatarBg?: string;
+    bannerTheme?: string;
+    bannerUrl?: string;
+    customBannerColor1?: string;
+    customBannerColor2?: string;
+    bannerPattern?: string;
+  }) => Promise<{ error: any; data?: any }>;
   setUserRole: (role: UserRole) => void;
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithDiscord: () => Promise<{ error: any }>;
@@ -150,11 +161,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateUserProfile = useCallback(
-    async (data: { displayName?: string; avatarUrl?: string; bio?: string; avatarBgTheme?: string; bannerTheme?: string }) => {
+    async (data: {
+      displayName?: string;
+      avatarUrl?: string;
+      bio?: string;
+      avatarBgTheme?: string;
+      customAvatarBg?: string;
+      bannerTheme?: string;
+      bannerUrl?: string;
+      customBannerColor1?: string;
+      customBannerColor2?: string;
+      bannerPattern?: string;
+    }) => {
       if (!user) return { error: new Error('User not authenticated') };
 
       let finalAvatarUrl = data.avatarUrl;
-      // Auto-upload base64 data URL to Cloudflare R2 CDN to prevent Cookie bloat (494 header error)
+      // Auto-upload base64 avatar to Cloud Storage to prevent Cookie bloat
       if (finalAvatarUrl && finalAvatarUrl.startsWith('data:')) {
         try {
           const res = await fetch('/api/avatar/upload', {
@@ -169,7 +191,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } catch (uploadErr) {
-          console.warn('Avatar auto-upload to CDN warning:', uploadErr);
+          console.warn('Avatar auto-upload warning:', uploadErr);
+        }
+      }
+
+      let finalBannerUrl = data.bannerUrl;
+      // Auto-upload base64 banner to Cloud Storage
+      if (finalBannerUrl && finalBannerUrl.startsWith('data:')) {
+        try {
+          const res = await fetch('/api/avatar/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: finalBannerUrl, userId: user.id }),
+          });
+          if (res.ok) {
+            const upData = await res.json();
+            if (upData.url) {
+              finalBannerUrl = upData.url;
+            }
+          }
+        } catch (bannerErr) {
+          console.warn('Banner auto-upload warning:', bannerErr);
         }
       }
 
@@ -182,7 +224,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(finalAvatarUrl !== undefined ? { avatar_url: finalAvatarUrl } : {}),
         ...(data.bio !== undefined ? { bio: data.bio } : {}),
         ...(data.avatarBgTheme !== undefined ? { avatar_bg_theme: data.avatarBgTheme } : {}),
+        ...(data.customAvatarBg !== undefined ? { custom_avatar_bg: data.customAvatarBg } : {}),
         ...(data.bannerTheme !== undefined ? { banner_theme: data.bannerTheme } : {}),
+        ...(finalBannerUrl !== undefined ? { banner_url: finalBannerUrl } : {}),
+        ...(data.customBannerColor1 !== undefined ? { custom_banner_color1: data.customBannerColor1 } : {}),
+        ...(data.customBannerColor2 !== undefined ? { custom_banner_color2: data.customBannerColor2 } : {}),
+        ...(data.bannerPattern !== undefined ? { banner_pattern: data.bannerPattern } : {}),
       };
 
       try {

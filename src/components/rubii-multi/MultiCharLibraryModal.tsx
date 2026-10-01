@@ -89,16 +89,35 @@ export function MultiCharLibraryModal({
 
   if (!isOpen) return null;
 
-  // Categorize projects
-  const myProjects = savedProjects.filter(
-    (p) => !p.id.startsWith('cloned_') && !p.description.includes('Secret Share Link') && !p.title.includes('(Cloned)')
+  // Deduplicate before categorizing
+  const deduplicatedProjects = React.useMemo(() => {
+    const map = new Map<string, SavedMultiProjectRecord>();
+    for (const p of savedProjects) {
+      if (!p || !p.id) continue;
+      const key = p.shareId || (p.id.startsWith('uni_') ? p.id : (p.title || '').trim().toLowerCase());
+      if (map.has(key)) {
+        const existing = map.get(key)!;
+        const newest = new Date(p.updatedAt || p.createdAt || 0).getTime() > new Date(existing.updatedAt || existing.createdAt || 0).getTime() ? p : existing;
+        map.set(key, { ...existing, ...newest, isShared: existing.isShared || p.isShared || Boolean(existing.shareId || p.shareId) });
+      } else {
+        map.set(key, p);
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
+    );
+  }, [savedProjects]);
+
+  // Categorize projects accurately
+  const myProjects = deduplicatedProjects.filter(
+    (p) => !p.id.startsWith('cloned_') && !p.title.includes('(Cloned)') && !(p.projectData as any)?.isCloned
   );
-  const sharedProjects = savedProjects.filter(
-    (p) => p.id.startsWith('cloned_') || p.description.includes('Secret Share Link') || p.title.includes('(Cloned)')
+  const sharedProjects = deduplicatedProjects.filter(
+    (p) => p.id.startsWith('cloned_') || p.title.includes('(Cloned)') || (p.projectData as any)?.isCloned
   );
 
   const currentPool =
-    listFilter === 'mine' ? myProjects : listFilter === 'shared' ? sharedProjects : savedProjects;
+    listFilter === 'mine' ? myProjects : listFilter === 'shared' ? sharedProjects : deduplicatedProjects;
 
   const filteredProjects = currentPool.filter(
     (p) =>
@@ -207,7 +226,7 @@ export function MultiCharLibraryModal({
                 <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
                   <span>คลังโปรเจกต์ Multi-Char</span>
                   <span className="text-[10px] px-2 py-0.2 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 font-bold">
-                    {savedProjects.length} โปรเจกต์
+                    {deduplicatedProjects.length} โปรเจกต์
                   </span>
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-snug truncate">
@@ -240,7 +259,7 @@ export function MultiCharLibraryModal({
                 }
               >
                 <FolderOpen className="w-3.5 h-3.5" />
-                <span>รายการ ({savedProjects.length})</span>
+                <span>รายการ ({deduplicatedProjects.length})</span>
               </button>
 
               <button
@@ -313,7 +332,7 @@ export function MultiCharLibraryModal({
                       : 'bg-muted/70 text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  ทั้งหมด ({savedProjects.length})
+                  ทั้งหมด ({deduplicatedProjects.length})
                 </button>
                 <button
                   type="button"
@@ -342,7 +361,7 @@ export function MultiCharLibraryModal({
               </div>
 
               {/* Project Cards List */}
-              {savedProjects.length === 0 ? (
+              {deduplicatedProjects.length === 0 ? (
                 <div className="p-8 text-center rounded-2xl border border-dashed border-border flex flex-col items-center justify-center space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
                     <FolderOpen className="w-6 h-6" />
@@ -362,6 +381,7 @@ export function MultiCharLibraryModal({
                 <div className="grid grid-cols-1 gap-3">
                   {filteredProjects.map((rec) => {
                     const isActive = rec.id === activeLibraryProjectId;
+                    const isShared = Boolean(rec.isShared || rec.shareId || rec.id.startsWith('uni_'));
                     return (
                       <div
                         key={rec.id}
@@ -381,6 +401,12 @@ export function MultiCharLibraryModal({
                               <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1">
                                 <Check className="w-3 h-3" />
                                 กำลังเปิดอยู่
+                              </span>
+                            )}
+                            {isShared && (
+                              <span className="text-[10px] px-2 py-0.2 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold flex items-center gap-1">
+                                <Globe className="w-3 h-3" />
+                                แชร์แล้ว
                               </span>
                             )}
                           </div>

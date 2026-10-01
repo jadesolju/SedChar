@@ -84,9 +84,98 @@ export async function compressImageToAvatar(
         }
       };
 
+      reader.readAsDataURL(file);
+    };
+  });
+}
+
+/**
+ * Compresses an image file specifically tailored for profile banners (widescreen 3:1 crop, max 1200x400, WebP/JPEG).
+ * Produces ~40KB - 80KB base64 string from any source size.
+ */
+export async function compressImageToBanner(
+  file: File,
+  maxWidth = 1200,
+  maxHeight = 400,
+  quality = 0.85
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('เกิดข้อผิดพลาดในการอ่านไฟล์รูปภาพ'));
+
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('ไม่สามารถโหลดข้อมูลรูปภาพเพื่อประมวลผลได้'));
+
+      img.onload = () => {
+        try {
+          const width = img.naturalWidth || img.width;
+          const height = img.naturalHeight || img.height;
+
+          // Target 3:1 aspect ratio
+          const targetAspect = 3 / 1;
+          const currentAspect = width / height;
+
+          let cropWidth = width;
+          let cropHeight = height;
+          let startX = 0;
+          let startY = 0;
+
+          if (currentAspect > targetAspect) {
+            // Image is wider than 3:1, crop horizontal sides
+            cropWidth = height * targetAspect;
+            startX = (width - cropWidth) / 2;
+          } else {
+            // Image is taller than 3:1, crop top and bottom
+            cropHeight = width / targetAspect;
+            startY = (height - cropHeight) / 2;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.min(maxWidth, cropWidth);
+          canvas.height = Math.round(canvas.width / targetAspect);
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('เบราว์เซอร์ไม่รองรับ Canvas สำหรับย่อรูปภาพ'));
+            return;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
+          ctx.drawImage(
+            img,
+            startX,
+            startY,
+            cropWidth,
+            cropHeight,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+
+          let dataUrl = canvas.toDataURL('image/webp', quality);
+          if (!dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          resolve(dataUrl);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
       img.src = e.target?.result as string;
     };
 
     reader.readAsDataURL(file);
   });
 }
+

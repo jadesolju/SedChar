@@ -34,7 +34,73 @@ export interface SavedMultiProjectRecord {
   updatedAt: string;
 }
 
-function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
+export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): SavedMultiProjectRecord[] {
+  const result: SavedMultiProjectRecord[] = [];
+
+  for (const item of records) {
+    if (!item || !item.id) continue;
+    const itemTitle = (item.title || '').trim().toLowerCase();
+    const itemShareId = item.shareId || (item.id.startsWith('uni_') ? item.id : undefined);
+
+    const existingIndex = result.findIndex((existing) => {
+      if (existing.id === item.id) return true;
+      const existingShareId = existing.shareId || (existing.id.startsWith('uni_') ? existing.id : undefined);
+      if (existingShareId && itemShareId && existingShareId === itemShareId) return true;
+      if (existingShareId && (existingShareId === item.id || existing.id === itemShareId)) return true;
+      if (
+        itemTitle &&
+        existing.title.trim().toLowerCase() === itemTitle &&
+        itemTitle !== 'โปรเจกต์ multi-char' &&
+        itemTitle !== 'untitled' &&
+        itemTitle !== 'จักรวาลและคลังความจำ'
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (existingIndex >= 0 && result[existingIndex]) {
+      const existing = result[existingIndex]!;
+      const newestUpdatedAt =
+        new Date(item.updatedAt || item.createdAt || 0).getTime() >
+        new Date(existing.updatedAt || existing.createdAt || 0).getTime()
+          ? (item.updatedAt || item.createdAt)
+          : (existing.updatedAt || existing.createdAt);
+
+      const resolvedShareId =
+        item.shareId ||
+        existing.shareId ||
+        (item.id.startsWith('uni_') ? item.id : existing.id.startsWith('uni_') ? existing.id : undefined);
+
+      const merged: SavedMultiProjectRecord = {
+        ...existing,
+        ...item,
+        id: item.id.startsWith('uni_') ? item.id : existing.id,
+        title: item.title && !item.title.includes('(Cloned)') ? item.title : existing.title,
+        description: item.description || existing.description,
+        mainCharCount: Math.max(existing.mainCharCount || 0, item.mainCharCount || 0),
+        subCharCount: Math.max(existing.subCharCount || 0, item.subCharCount || 0),
+        routeCount: Math.max(existing.routeCount || 0, item.routeCount || 0),
+        shareId: resolvedShareId,
+        shareUrl: item.shareUrl || existing.shareUrl,
+        isShared: Boolean(existing.isShared || item.isShared || resolvedShareId),
+        projectData: item.projectData || existing.projectData,
+        updatedAt: newestUpdatedAt || new Date().toISOString(),
+      };
+      result[existingIndex] = merged;
+    } else {
+      result.push(item);
+    }
+  }
+
+  return result.sort(
+    (a, b) =>
+      new Date(b.updatedAt || b.createdAt || 0).getTime() -
+      new Date(a.updatedAt || a.createdAt || 0).getTime()
+  );
+}
+
+export function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
   if (typeof window === 'undefined') return [];
   const candidateKeys = [
     MULTI_CHAR_LIBRARY_KEY,
@@ -45,7 +111,7 @@ function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
     'sedchar_multi_char_library',
   ];
 
-  const map = new Map<string, SavedMultiProjectRecord>();
+  const rawList: SavedMultiProjectRecord[] = [];
 
   candidateKeys.forEach((k) => {
     try {
@@ -54,8 +120,8 @@ function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           parsed.forEach((item) => {
-            if (item && item.id && !map.has(item.id)) {
-              map.set(item.id, item);
+            if (item && (item.id || item.title)) {
+              rawList.push(item);
             }
           });
         }
@@ -63,9 +129,14 @@ function loadLocalMultiProjects(): SavedMultiProjectRecord[] {
     } catch {}
   });
 
-  return Array.from(map.values()).sort(
-    (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
-  );
+  const deduplicated = deduplicateProjectRecords(rawList);
+
+  // Self-heal and cleanse local storage so ghost duplicates are purged
+  try {
+    localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(deduplicated));
+  } catch {}
+
+  return deduplicated;
 }
 
 export function useMultiCharacterProject() {
@@ -117,16 +188,7 @@ export function useMultiCharacterProject() {
       .then((data) => {
         if (data.success && Array.isArray(data.projects) && data.projects.length > 0) {
           const currentLocal = loadLocalMultiProjects();
-          const map = new Map<string, SavedMultiProjectRecord>();
-          currentLocal.forEach((p) => map.set(p.id, p));
-          data.projects.forEach((cloudP: SavedMultiProjectRecord) => {
-            if (cloudP && cloudP.id) {
-              map.set(cloudP.id, cloudP);
-            }
-          });
-          const merged = Array.from(map.values()).sort(
-            (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
-          );
+          const merged = deduplicateProjectRecords([...currentLocal, ...(data.projects as SavedMultiProjectRecord[])]);
           setSavedProjects(merged);
           try {
             localStorage.setItem(MULTI_CHAR_LIBRARY_KEY, JSON.stringify(merged));

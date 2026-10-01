@@ -210,8 +210,14 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
         </div>
 
         {/* Live Mini Preview */}
-        <div className={`p-4 rounded-2xl ${activeBannerTheme.class} border flex items-center gap-3.5 transition-all shadow-md`}>
-          <div className={`w-14 h-14 rounded-2xl ${activeAvatarTheme.class} border-2 border-white/20 p-0.5 shadow-lg shrink-0 flex items-center justify-center text-white font-bold text-xl overflow-hidden`}>
+        <div
+          className="p-4 rounded-2xl border flex items-center gap-3.5 transition-all shadow-md overflow-hidden"
+          style={{ background: activeBannerTheme.gradient }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl border-2 border-white/20 p-0.5 shadow-lg shrink-0 flex items-center justify-center text-white font-bold text-xl overflow-hidden"
+            style={{ background: activeAvatarTheme.gradient, boxShadow: activeAvatarTheme.glow }}
+          >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
@@ -219,13 +225,13 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+            <div className="text-sm font-bold text-white truncate flex items-center gap-1.5 drop-shadow-sm">
               <span>{displayName || 'ผู้ใช้งานไม่มีชื่อ'}</span>
               <span className={`px-2 py-0.2 rounded-full text-[9px] font-bold border uppercase ${activeBannerTheme.accentBadge}`}>
                 {userRole}
               </span>
             </div>
-            <div className="text-[11px] text-white/70 truncate">{user.email}</div>
+            <div className="text-[11px] text-white/80 truncate drop-shadow-xs">{user.email}</div>
           </div>
         </div>
 
@@ -251,10 +257,11 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                       isSelected
                         ? 'border-purple-500 ring-2 ring-purple-500/40 scale-[1.02]'
                         : 'border-border/80 hover:border-foreground/30'
-                    } ${theme.class}`}
+                    }`}
+                    style={{ background: theme.gradient }}
                   >
-                    <span className="text-[10px] font-bold truncate">{theme.name}</span>
-                    {isSelected && <Check className="w-3 h-3 text-purple-400 self-end stroke-[3]" />}
+                    <span className="text-[10px] font-bold truncate drop-shadow-sm">{theme.name}</span>
+                    {isSelected && <Check className="w-3 h-3 text-white self-end stroke-[3]" />}
                   </button>
                 );
               })}
@@ -266,11 +273,11 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
             <label className="text-xs font-bold text-foreground flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>สีพื้นหลัง Avatar (Avatar Background)</span>
+                <span>สีพื้นหลัง &amp; ออร่า Avatar</span>
               </span>
               <span className="text-[10px] text-muted-foreground">{activeAvatarTheme.name}</span>
             </label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {AVATAR_BG_THEMES.map((theme) => {
                 const isSelected = avatarBgTheme === theme.id;
                 return (
@@ -285,10 +292,13 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                     }`}
                     title={theme.label}
                   >
-                    <div className={`w-6 h-6 rounded-lg ${theme.class} flex items-center justify-center text-white`}>
+                    <div
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-white"
+                      style={{ background: theme.gradient, boxShadow: theme.glow }}
+                    >
                       {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate max-w-full">
+                    <span className="text-[9px] text-muted-foreground truncate max-w-full font-medium">
                       {theme.name}
                     </span>
                   </button>
@@ -305,7 +315,10 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
 
             <div className="flex items-center gap-4">
               <div className="relative group">
-                <div className={`w-16 h-16 rounded-2xl ${activeAvatarTheme.class} border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-xl overflow-hidden shrink-0`}>
+                <div
+                  className="w-16 h-16 rounded-2xl border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-xl overflow-hidden shrink-0"
+                  style={{ background: activeAvatarTheme.gradient, boxShadow: activeAvatarTheme.glow }}
+                >
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
