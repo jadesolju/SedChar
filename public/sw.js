@@ -1,9 +1,9 @@
-﻿// SedChar.AI Progressive Web App (PWA) Service Worker v1.3.0
-// Features: High-efficiency Cache-First for static assets, minimal pre-cache payload, and offline app shell fallback
+// SedChar.AI Progressive Web App (PWA) Service Worker v1.4.0
+// Features: High-efficiency Cache-First for static assets, minimal pre-cache payload, and bulletproof offline fallback
 
-const CACHE_NAME = 'sedchar-pwa-v1.3.0';
+const CACHE_NAME = 'sedchar-pwa-v1.4.0';
 
-// Core essential assets to pre-cache immediately upon installation (Total ~300 KB)
+// Core essential assets to pre-cache immediately upon installation
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
@@ -75,7 +75,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Navigation Requests (HTML Pages) -> Network First, fallback to cached '/'
+  // 3. Navigation Requests (HTML Pages) -> Network First, fallback to cached HTML
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -93,8 +93,17 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Fallback to app shell
-          return caches.match('/');
+          const shellResponse = await caches.match('/');
+          if (shellResponse) {
+            return shellResponse;
+          }
+          return new Response(
+            '<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"/><title>SedChar.AI - Offline</title></head><body style="font-family:sans-serif;text-align:center;padding:40px;background:#09090b;color:#fff;"><h2>คุณกำลังอยู่ในโหมดออฟไลน์</h2><p>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:12px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-weight:bold;">โหลดใหม่</button></body></html>',
+            {
+              status: 200,
+              headers: { 'Content-Type': 'text/html; charset=utf-8' },
+            }
+          );
         })
     );
     return;
@@ -135,7 +144,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Default Strategy for general requests -> Stale-While-Revalidate
+  // 5. Default Strategy for general requests -> Stale-While-Revalidate with guaranteed Response
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
@@ -148,7 +157,10 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => {
+          if (cachedResponse) return cachedResponse;
+          return new Response('', { status: 504, statusText: 'Offline' });
+        });
 
       return cachedResponse || fetchPromise;
     })

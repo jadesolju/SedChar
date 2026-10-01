@@ -87,14 +87,13 @@ export function MultiCharLibraryModal({
     }
   }, [isOpen, activeLibraryProjectId, savedProjects, currentProject]);
 
-  if (!isOpen) return null;
-
   // Deduplicate before categorizing
   const deduplicatedProjects = React.useMemo(() => {
+    if (!savedProjects || !Array.isArray(savedProjects)) return [];
     const map = new Map<string, SavedMultiProjectRecord>();
     for (const p of savedProjects) {
       if (!p || !p.id) continue;
-      const key = p.shareId || (p.id.startsWith('uni_') ? p.id : (p.title || '').trim().toLowerCase());
+      const key = p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_') ? p.id : (p.title || '').trim().toLowerCase());
       if (map.has(key)) {
         const existing = map.get(key)!;
         const newest = new Date(p.updatedAt || p.createdAt || 0).getTime() > new Date(existing.updatedAt || existing.createdAt || 0).getTime() ? p : existing;
@@ -110,10 +109,10 @@ export function MultiCharLibraryModal({
 
   // Categorize projects accurately
   const myProjects = deduplicatedProjects.filter(
-    (p) => !p.id.startsWith('cloned_') && !p.title.includes('(Cloned)') && !(p.projectData as any)?.isCloned
+    (p) => p && !(typeof p.id === 'string' && p.id.startsWith('cloned_')) && !(p.title || '').includes('(Cloned)') && !(p.projectData as any)?.isCloned
   );
   const sharedProjects = deduplicatedProjects.filter(
-    (p) => p.id.startsWith('cloned_') || p.title.includes('(Cloned)') || (p.projectData as any)?.isCloned
+    (p) => p && ((typeof p.id === 'string' && p.id.startsWith('cloned_')) || (p.title || '').includes('(Cloned)') || (p.projectData as any)?.isCloned)
   );
 
   const currentPool =
@@ -121,9 +120,12 @@ export function MultiCharLibraryModal({
 
   const filteredProjects = currentPool.filter(
     (p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase())
+      p &&
+      ((p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

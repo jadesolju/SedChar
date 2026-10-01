@@ -293,49 +293,72 @@ function ProfileContent() {
     refreshProjects();
   }, [refreshProjects]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-          <p className="text-xs text-muted-foreground font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
-        </div>
-      </div>
-    );
-  }
+  // Filtered Single Characters for Tab 2
+  const filteredSingleChars = useMemo(() => {
+    if (!savedCharacters || !Array.isArray(savedCharacters)) return [];
+    if (!singleCharSearch.trim()) return savedCharacters;
+    const q = singleCharSearch.toLowerCase().trim();
+    return savedCharacters.filter((c) => {
+      if (!c) return false;
+      const name = (c.title || c.nickname || '').toLowerCase();
+      const tagline = (c.tagline || '').toLowerCase();
+      return name.includes(q) || tagline.includes(q);
+    });
+  }, [savedCharacters, singleCharSearch]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md p-8 rounded-3xl bg-card border border-border shadow-xl space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center mx-auto text-xl">
-            <UserIcon className="w-6 h-6" />
-          </div>
-          <h2 className="text-lg font-bold text-foreground">กรุณาเข้าสู่ระบบ</h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            คุณจำเป็นต้องเข้าสู่ระบบเพื่อจัดการตั้งค่าโปรไฟล์ คลังจักรวาล และชุมชนของคุณ
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => openAuthModal('signin')}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              เข้าสู่ระบบ / สมัครสมาชิก
-            </button>
-            <Link
-              href="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold shadow-xs transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>กลับหน้าหลัก</span>
-            </Link>
-          </div>
-        </div>
-        <AuthModal />
-      </div>
+  // Categorize Projects for Tabs
+  const myCreatedProjects = useMemo(() => {
+    if (!Array.isArray(savedProjects)) return [];
+    return savedProjects.filter(
+      (p) =>
+        p &&
+        !(typeof p.id === 'string' && p.id.startsWith('cloned_')) &&
+        !(p.title || '').includes('(Cloned)') &&
+        !(p.projectData as any)?.isCloned
     );
-  }
+  }, [savedProjects]);
+
+  const sharedAndCommuProjects = useMemo(() => {
+    if (!Array.isArray(savedProjects)) return [];
+    return savedProjects.filter(
+      (p) =>
+        p &&
+        (Boolean(p.isShared || p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_'))) ||
+          (typeof p.id === 'string' && p.id.startsWith('cloned_')) ||
+          (p.title || '').includes('(Cloned)') ||
+          (p.projectData as any)?.isCloned)
+    );
+  }, [savedProjects]);
+
+  const filteredMyProjects = useMemo(() => {
+    if (!Array.isArray(myCreatedProjects)) return [];
+    const q = (projectSearch || '').toLowerCase().trim();
+    if (!q) return myCreatedProjects;
+    return myCreatedProjects.filter(
+      (p) =>
+        p &&
+        ((p.title || '').toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q))
+    );
+  }, [myCreatedProjects, projectSearch]);
+
+  const initial = displayName
+    ? displayName.charAt(0).toUpperCase()
+    : user?.email
+    ? user.email.charAt(0).toUpperCase()
+    : 'U';
+
+  const activeAvatarTheme = getAvatarTheme(
+    avatarMode === 'preset' ? avatarBgTheme : undefined,
+    avatarMode === 'custom' ? customAvatarBg : undefined
+  );
+
+  const activeBannerTheme = getBannerTheme(
+    bannerMode === 'preset' ? bannerTheme : undefined,
+    bannerMode === 'custom_gradient' ? customColor1 : undefined,
+    bannerMode === 'custom_gradient' ? customColor2 : undefined,
+    bannerMode === 'custom_image' ? bannerUrl : undefined
+  );
 
   // Handle Avatar Upload
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -473,19 +496,6 @@ function ProfileContent() {
     }
   };
 
-  // Filtered Single Characters for Tab 2
-  const filteredSingleChars = useMemo(() => {
-    if (!savedCharacters || !Array.isArray(savedCharacters)) return [];
-    if (!singleCharSearch.trim()) return savedCharacters;
-    const q = singleCharSearch.toLowerCase().trim();
-    return savedCharacters.filter((c) => {
-      if (!c) return false;
-      const name = (c.title || c.nickname || '').toLowerCase();
-      const tagline = (c.tagline || '').toLowerCase();
-      return name.includes(q) || tagline.includes(q);
-    });
-  }, [savedCharacters, singleCharSearch]);
-
   // Open Single Character in Studio
   const handleOpenSingleCharInStudio = (charRecord: SavedCharacterRecord) => {
     try {
@@ -618,59 +628,49 @@ function ProfileContent() {
     showToast('คัดลอกลิงก์แชร์ไปยังคลิปบอร์ดแล้ว!');
   };
 
-  // Categorize Projects for Tabs
-  const myCreatedProjects = useMemo(() => {
-    if (!Array.isArray(savedProjects)) return [];
-    return savedProjects.filter(
-      (p) =>
-        p &&
-        !(typeof p.id === 'string' && p.id.startsWith('cloned_')) &&
-        !(p.title || '').includes('(Cloned)') &&
-        !(p.projectData as any)?.isCloned
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+          <p className="text-xs text-muted-foreground font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
+        </div>
+      </div>
     );
-  }, [savedProjects]);
+  }
 
-  const sharedAndCommuProjects = useMemo(() => {
-    if (!Array.isArray(savedProjects)) return [];
-    return savedProjects.filter(
-      (p) =>
-        p &&
-        (Boolean(p.isShared || p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_'))) ||
-          (typeof p.id === 'string' && p.id.startsWith('cloned_')) ||
-          (p.title || '').includes('(Cloned)') ||
-          (p.projectData as any)?.isCloned)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md p-8 rounded-3xl bg-card border border-border shadow-xl space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center mx-auto text-xl">
+            <UserIcon className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground">กรุณาเข้าสู่ระบบ</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            คุณจำเป็นต้องเข้าสู่ระบบเพื่อจัดการตั้งค่าโปรไฟล์ คลังจักรวาล และชุมชนของคุณ
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => openAuthModal('signin')}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 text-xs font-bold shadow-xs transition-all cursor-pointer"
+            >
+              เข้าสู่ระบบ / สมัครสมาชิก
+            </button>
+            <Link
+              href="/"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold shadow-xs transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>กลับหน้าหลัก</span>
+            </Link>
+          </div>
+        </div>
+        <AuthModal />
+      </div>
     );
-  }, [savedProjects]);
-
-  const filteredMyProjects = useMemo(() => {
-    if (!Array.isArray(myCreatedProjects)) return [];
-    const q = (projectSearch || '').toLowerCase().trim();
-    if (!q) return myCreatedProjects;
-    return myCreatedProjects.filter(
-      (p) =>
-        p &&
-        ((p.title || '').toLowerCase().includes(q) ||
-          (p.description || '').toLowerCase().includes(q))
-    );
-  }, [myCreatedProjects, projectSearch]);
-
-  const initial = displayName
-    ? displayName.charAt(0).toUpperCase()
-    : user.email
-    ? user.email.charAt(0).toUpperCase()
-    : 'U';
-
-  const activeAvatarTheme = getAvatarTheme(
-    avatarMode === 'preset' ? avatarBgTheme : undefined,
-    avatarMode === 'custom' ? customAvatarBg : undefined
-  );
-
-  const activeBannerTheme = getBannerTheme(
-    bannerMode === 'preset' ? bannerTheme : undefined,
-    bannerMode === 'custom_gradient' ? customColor1 : undefined,
-    bannerMode === 'custom_gradient' ? customColor2 : undefined,
-    bannerMode === 'custom_image' ? bannerUrl : undefined
-  );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">

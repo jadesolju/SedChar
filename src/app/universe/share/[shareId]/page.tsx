@@ -203,6 +203,79 @@ function UniverseShareViewContent() {
     }
   };
 
+  const worldSetting = project?.worldSetting;
+  const lore = project?.lore;
+  const mainCharacters = project?.mainCharacters;
+  const supportingCharacters = project?.supportingCharacters;
+  const routes = project?.routes;
+  const projectName = worldSetting?.projectName || project?.title || 'จักรวาลและคลังความจำ';
+
+  const currentDisplayName =
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    (user?.email ? user.email.split('@')[0] : '') ||
+    '';
+
+  const isOwner = Boolean(
+    user &&
+      (
+        (metadata?.userId &&
+          metadata.userId !== 'guest' &&
+          metadata.userId !== 'anonymous' &&
+          user.id === metadata.userId) ||
+        hasLocalOwnership ||
+        (currentDisplayName &&
+          metadata?.author &&
+          metadata.author.trim().toLowerCase() === currentDisplayName.trim().toLowerCase()) ||
+        (user.email &&
+          metadata?.author &&
+          metadata.author.trim().toLowerCase() === (user.email.split('@')[0] || '').trim().toLowerCase()) ||
+        userRole === 'admin'
+      )
+  );
+
+  const authorName = isOwner
+    ? currentDisplayName || metadata?.author || 'ผู้สร้าง'
+    : metadata?.author || 'ผู้สร้าง';
+
+  const canClone = metadata?.allowCloning !== false || isOwner;
+  const allowCoCreation = metadata?.allowCoCreation !== false;
+
+  // Auto-sync & heal Cloud R2 metadata when owner views their universe
+  // Ensures author display name is universally up-to-date across all clients
+  useEffect(() => {
+    if (!isOwner || !user || !shareId || !metadata || !project) return;
+
+    const needsAuthorSync = authorName && metadata.author !== authorName;
+    const needsUserSync =
+      user.id &&
+      (metadata.userId !== user.id || metadata.userId === 'guest' || metadata.userId === 'anonymous');
+
+    if (needsAuthorSync || needsUserSync) {
+      fetch('/api/universe/sync-author', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shareId,
+          userId: user.id,
+          author: authorName,
+          projectTitle: projectName,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setMetadata((prev: any) => ({
+              ...prev,
+              author: authorName,
+              userId: user.id,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOwner, user, shareId, metadata?.author, metadata?.userId, authorName, projectName, project]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
@@ -250,75 +323,6 @@ function UniverseShareViewContent() {
       </div>
     );
   }
-
-  const { worldSetting, lore, mainCharacters, supportingCharacters, routes } = project;
-  const projectName = worldSetting?.projectName || project.title || 'จักรวาลและคลังความจำ';
-
-  const currentDisplayName =
-    user?.user_metadata?.display_name ||
-    user?.user_metadata?.full_name ||
-    (user?.email ? user.email.split('@')[0] : '') ||
-    '';
-
-  const isOwner = Boolean(
-    user &&
-      (
-        (metadata?.userId &&
-          metadata.userId !== 'guest' &&
-          metadata.userId !== 'anonymous' &&
-          user.id === metadata.userId) ||
-        hasLocalOwnership ||
-        (currentDisplayName &&
-          metadata?.author &&
-          metadata.author.trim().toLowerCase() === currentDisplayName.trim().toLowerCase()) ||
-        (user.email &&
-          metadata?.author &&
-          metadata.author.trim().toLowerCase() === (user.email.split('@')[0] || '').trim().toLowerCase()) ||
-        userRole === 'admin'
-      )
-  );
-
-  const authorName = isOwner
-    ? currentDisplayName || metadata?.author || 'ผู้สร้าง'
-    : metadata?.author || 'ผู้สร้าง';
-
-  const canClone = metadata?.allowCloning !== false || isOwner;
-  const allowCoCreation = metadata?.allowCoCreation !== false;
-
-  // Auto-sync & heal Cloud R2 metadata when owner views their universe
-  // Ensures author display name is universally up-to-date across all clients
-  useEffect(() => {
-    if (!isOwner || !user || !shareId || !metadata) return;
-
-    const needsAuthorSync = authorName && metadata.author !== authorName;
-    const needsUserSync =
-      user.id &&
-      (metadata.userId !== user.id || metadata.userId === 'guest' || metadata.userId === 'anonymous');
-
-    if (needsAuthorSync || needsUserSync) {
-      fetch('/api/universe/sync-author', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shareId,
-          userId: user.id,
-          author: authorName,
-          projectTitle: projectName,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setMetadata((prev: any) => ({
-              ...prev,
-              author: authorName,
-              userId: user.id,
-            }));
-          }
-        })
-        .catch(() => {});
-    }
-  }, [isOwner, user, shareId, metadata?.author, metadata?.userId, authorName, projectName]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
