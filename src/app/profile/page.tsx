@@ -282,7 +282,7 @@ function ProfileContent() {
   const [bannerFullCard, setBannerFullCard] = useState(true);
   const [customColor1, setCustomColor1] = useState('#fbcfe8');
   const [customColor2, setCustomColor2] = useState('#93c5fd');
-  const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('dots');
+  const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('none');
 
   // Interactive Dragging & Lock on Banner
   const [isBannerLocked, setIsBannerLocked] = useState(true);
@@ -661,6 +661,7 @@ function ProfileContent() {
       setIsUploadingBanner(true);
       setBannerUrl(croppedDataUrl);
       setBannerMode('custom_image');
+      setBannerPattern('none');
 
       try {
         const res = await fetch('/api/avatar/upload', {
@@ -1037,8 +1038,8 @@ function ProfileContent() {
               : undefined
           }
         >
-          {/* Pattern Overlays (Full Card Mode) */}
-          {bannerFullCard && (
+          {/* Pattern Overlays (Full Card Mode - Only for gradients/presets when enabled, never darken custom image) */}
+          {bannerFullCard && bannerMode !== 'custom_image' && bannerPattern !== 'none' && (
             <>
               {bannerPattern === 'stars' && (
                 <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
@@ -1049,8 +1050,6 @@ function ProfileContent() {
               {bannerPattern === 'dots' && (
                 <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
               )}
-              {/* Scrim Overlay for Contrast & Glass Depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/25 pointer-events-none" />
             </>
           )}
 
@@ -1206,15 +1205,19 @@ function ProfileContent() {
                   backgroundSize: 'cover',
                 }}
               >
-                {/* Pattern Overlays */}
-                {bannerPattern === 'stars' && (
-                  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
-                )}
-                {bannerPattern === 'grid' && (
-                  <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-                )}
-                {bannerPattern === 'dots' && (
-                  <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+                {/* Pattern Overlays (Only for gradients/presets when enabled) */}
+                {bannerMode !== 'custom_image' && bannerPattern !== 'none' && (
+                  <>
+                    {bannerPattern === 'stars' && (
+                      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
+                    )}
+                    {bannerPattern === 'grid' && (
+                      <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+                    )}
+                    {bannerPattern === 'dots' && (
+                      <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+                    )}
+                  </>
                 )}
               </div>
 
