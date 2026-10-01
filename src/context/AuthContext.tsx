@@ -61,6 +61,8 @@ interface AuthContextType {
     avatarGradientAngle?: number;
     bannerTheme?: string;
     bannerUrl?: string;
+    bannerPosY?: number;
+    bannerFullCard?: boolean;
     customBannerColor1?: string;
     customBannerColor2?: string;
     bannerPattern?: string;
@@ -173,6 +175,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       avatarGradientAngle?: number;
       bannerTheme?: string;
       bannerUrl?: string;
+      bannerPosY?: number;
+      bannerFullCard?: boolean;
       customBannerColor1?: string;
       customBannerColor2?: string;
       bannerPattern?: string;
@@ -233,6 +237,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(data.avatarGradientAngle !== undefined ? { avatar_gradient_angle: data.avatarGradientAngle } : {}),
         ...(data.bannerTheme !== undefined ? { banner_theme: data.bannerTheme } : {}),
         ...(finalBannerUrl !== undefined ? { banner_url: finalBannerUrl } : {}),
+        ...(data.bannerPosY !== undefined ? { banner_pos_y: data.bannerPosY } : {}),
+        ...(data.bannerFullCard !== undefined ? { banner_full_card: data.bannerFullCard } : {}),
         ...(data.customBannerColor1 !== undefined ? { custom_banner_color1: data.customBannerColor1 } : {}),
         ...(data.customBannerColor2 !== undefined ? { custom_banner_color2: data.customBannerColor2 } : {}),
         ...(data.bannerPattern !== undefined ? { banner_pattern: data.bannerPattern } : {}),

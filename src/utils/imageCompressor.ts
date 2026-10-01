@@ -95,8 +95,8 @@ export async function compressImageToAvatar(
  */
 export async function compressImageToBanner(
   file: File,
-  maxWidth = 1200,
-  maxHeight = 400,
+  maxWidth = 1400,
+  maxHeight = 900,
   quality = 0.85
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -114,31 +114,19 @@ export async function compressImageToBanner(
 
       img.onload = () => {
         try {
-          const width = img.naturalWidth || img.width;
-          const height = img.naturalHeight || img.height;
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
 
-          // Target 3:1 aspect ratio
-          const targetAspect = 3 / 1;
-          const currentAspect = width / height;
-
-          let cropWidth = width;
-          let cropHeight = height;
-          let startX = 0;
-          let startY = 0;
-
-          if (currentAspect > targetAspect) {
-            // Image is wider than 3:1, crop horizontal sides
-            cropWidth = height * targetAspect;
-            startX = (width - cropWidth) / 2;
-          } else {
-            // Image is taller than 3:1, crop top and bottom
-            cropHeight = width / targetAspect;
-            startY = (height - cropHeight) / 2;
+          // Scale down if larger than max dimensions while preserving aspect ratio
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
           }
 
           const canvas = document.createElement('canvas');
-          canvas.width = Math.min(maxWidth, cropWidth);
-          canvas.height = Math.round(canvas.width / targetAspect);
+          canvas.width = width;
+          canvas.height = height;
 
           const ctx = canvas.getContext('2d');
           if (!ctx) {
@@ -149,17 +137,7 @@ export async function compressImageToBanner(
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
 
-          ctx.drawImage(
-            img,
-            startX,
-            startY,
-            cropWidth,
-            cropHeight,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-          );
+          ctx.drawImage(img, 0, 0, width, height);
 
           let dataUrl = canvas.toDataURL('image/webp', quality);
           if (!dataUrl.startsWith('data:image/webp')) {

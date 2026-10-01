@@ -38,6 +38,8 @@ import {
   Users,
   KeyRound,
   LogOut,
+  MoveVertical,
+  Hand,
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -269,9 +271,64 @@ function ProfileContent() {
   const [bannerMode, setBannerMode] = useState<'preset' | 'custom_gradient' | 'custom_image'>('preset');
   const [bannerTheme, setBannerTheme] = useState('pastel_sakura');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [bannerPosY, setBannerPosY] = useState(50);
+  const [bannerFullCard, setBannerFullCard] = useState(true);
   const [customColor1, setCustomColor1] = useState('#fbcfe8');
   const [customColor2, setCustomColor2] = useState('#93c5fd');
   const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('dots');
+
+  // Interactive Dragging on Banner
+  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
+  const dragStartRef = useRef<{ startY: number; initialPosY: number } | null>(null);
+  const bannerContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleBannerMouseDown = (e: React.MouseEvent) => {
+    if (bannerMode !== 'custom_image' && !bannerUrl) return;
+    dragStartRef.current = { startY: e.clientY, initialPosY: bannerPosY };
+    setIsDraggingBanner(true);
+  };
+
+  const handleBannerMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingBanner || !dragStartRef.current || !bannerContainerRef.current) return;
+    const rect = bannerContainerRef.current.getBoundingClientRect();
+    const deltaY = e.clientY - dragStartRef.current.startY;
+    const deltaPercent = (deltaY / rect.height) * 100;
+    const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
+    setBannerPosY(newPos);
+  };
+
+  const handleBannerMouseUp = () => {
+    if (isDraggingBanner) {
+      setIsDraggingBanner(false);
+      dragStartRef.current = null;
+    }
+  };
+
+  const handleBannerTouchStart = (e: React.TouchEvent) => {
+    if (bannerMode !== 'custom_image' && !bannerUrl) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    dragStartRef.current = { startY: touch.clientY, initialPosY: bannerPosY };
+    setIsDraggingBanner(true);
+  };
+
+  const handleBannerTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingBanner || !dragStartRef.current || !bannerContainerRef.current) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = bannerContainerRef.current.getBoundingClientRect();
+    const deltaY = touch.clientY - dragStartRef.current.startY;
+    const deltaPercent = (deltaY / rect.height) * 100;
+    const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
+    setBannerPosY(newPos);
+  };
+
+  const handleBannerTouchEnd = () => {
+    if (isDraggingBanner) {
+      setIsDraggingBanner(false);
+      dragStartRef.current = null;
+    }
+  };
 
   // Interactive Gradient Slider States (HSL)
   const [c1Hue, setC1Hue] = useState(() => hexToHsl('#fbcfe8')[0]);
@@ -384,6 +441,13 @@ function ProfileContent() {
       } else {
         setBannerMode('preset');
         setBannerTheme(meta.banner_theme || 'pastel_sakura');
+      }
+
+      if (meta.banner_pos_y !== undefined) {
+        setBannerPosY(Number(meta.banner_pos_y));
+      }
+      if (meta.banner_full_card !== undefined) {
+        setBannerFullCard(Boolean(meta.banner_full_card));
       }
 
       if (meta.banner_pattern) {
@@ -506,7 +570,8 @@ function ProfileContent() {
     bannerMode === 'custom_gradient' ? customColor1 : undefined,
     bannerMode === 'custom_gradient' ? customColor2 : undefined,
     bannerMode === 'custom_image' ? bannerUrl : undefined,
-    gradientAngle
+    gradientAngle,
+    bannerPosY
   );
 
   // Handle Avatar Upload
@@ -551,7 +616,7 @@ function ProfileContent() {
 
     setIsUploadingBanner(true);
     try {
-      const compressedBanner = await compressImageToBanner(file, 1200, 400, 0.85);
+      const compressedBanner = await compressImageToBanner(file, 1400, 900, 0.85);
       const res = await fetch('/api/avatar/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -631,6 +696,8 @@ function ProfileContent() {
         avatarGradientAngle: avatarMode === 'custom_gradient' ? avatarGradientAngle : undefined,
         bannerTheme: bannerMode === 'preset' ? bannerTheme : undefined,
         bannerUrl: bannerMode === 'custom_image' ? bannerUrl : '',
+        bannerPosY,
+        bannerFullCard,
         customBannerColor1: bannerMode === 'custom_gradient' ? customColor1 : undefined,
         customBannerColor2: bannerMode === 'custom_gradient' ? customColor2 : undefined,
         bannerPattern,
@@ -865,93 +932,238 @@ function ProfileContent() {
         {/* ======================================================== */}
         {/* Live Profile Card & Banner Showcase Header               */}
         {/* ======================================================== */}
-        <div className="rounded-3xl bg-card border border-border shadow-2xl overflow-hidden transition-all duration-300">
-          {/* Banner Header with dynamic background */}
-          <div
-            className="relative h-36 sm:h-48 w-full p-4 sm:p-6 flex flex-col justify-between overflow-hidden transition-all duration-500"
-            style={{
-              background: activeBannerTheme.gradient,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          >
-            {/* Pattern Overlays */}
-            {bannerPattern === 'stars' && (
-              <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
-            )}
-            {bannerPattern === 'grid' && (
-              <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-            )}
-            {bannerPattern === 'dots' && (
-              <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
-            )}
+        <div
+          ref={bannerContainerRef}
+          onMouseDown={handleBannerMouseDown}
+          onMouseMove={handleBannerMouseMove}
+          onMouseUp={handleBannerMouseUp}
+          onMouseLeave={handleBannerMouseUp}
+          onTouchStart={handleBannerTouchStart}
+          onTouchMove={handleBannerTouchMove}
+          onTouchEnd={handleBannerTouchEnd}
+          className={`relative rounded-3xl border border-border/80 shadow-2xl overflow-hidden transition-all duration-300 select-none ${
+            bannerMode === 'custom_image' && bannerUrl
+              ? isDraggingBanner
+                ? 'cursor-grabbing ring-2 ring-purple-500'
+                : 'cursor-grab hover:ring-2 hover:ring-purple-500/50'
+              : ''
+          } ${
+            bannerFullCard
+              ? 'min-h-[380px] sm:min-h-[440px] flex flex-col justify-between p-4 sm:p-7'
+              : 'bg-card'
+          }`}
+          style={
+            bannerFullCard
+              ? {
+                  background: activeBannerTheme.gradient,
+                  backgroundPosition: `center ${bannerPosY}%`,
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                }
+              : undefined
+          }
+        >
+          {/* Pattern Overlays (Full Card Mode) */}
+          {bannerFullCard && (
+            <>
+              {bannerPattern === 'stars' && (
+                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
+              )}
+              {bannerPattern === 'grid' && (
+                <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+              )}
+              {bannerPattern === 'dots' && (
+                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+              )}
+              {/* Scrim Overlay for Contrast & Glass Depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/25 pointer-events-none" />
+            </>
+          )}
 
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15 shadow-sm">
+          {/* Top Floating Glass Bar */}
+          <div className={`relative z-10 flex items-center justify-between gap-2 ${!bannerFullCard ? 'p-4 sm:p-6 pb-0' : ''}`}>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-xl text-white text-[11px] font-semibold border border-white/20 shadow-lg">
                 <Eye className="w-3.5 h-3.5 text-purple-300" />
-                <span>ตัวอย่างการแสดงผลโปรไฟล์ (Live Preview)</span>
+                <span>ตัวอย่างโปรไฟล์ (Live Preview)</span>
               </span>
+
+              {bannerMode === 'custom_image' && bannerUrl && (
+                <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-900/70 backdrop-blur-xl text-purple-200 text-[10px] font-bold border border-purple-400/30 animate-pulse">
+                  <MoveVertical className="w-3 h-3" />
+                  <span>ลากขึ้น-ลงเพื่อปรับตำแหน่ง ({bannerPosY}%)</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Display Mode Quick Toggle */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setBannerFullCard(!bannerFullCard);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-xl text-white text-[10.5px] font-semibold border border-white/20 transition-all cursor-pointer shadow-md"
+                title="สลับโหมดการแสดงผลเต็มการ์ด / แบนเนอร์หัว"
+              >
+                <Layers className="w-3 h-3 text-amber-300" />
+                <span>{bannerFullCard ? 'โหมดเต็มการ์ด' : 'โหมดแบนเนอร์บน'}</span>
+              </button>
+
               <span
-                className={`px-3 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${activeBannerTheme.accentBadge}`}
+                className={`px-3 py-1 rounded-full text-[10px] font-extrabold border uppercase tracking-wider backdrop-blur-xl shadow-md ${activeBannerTheme.accentBadge}`}
               >
                 {userRole}
               </span>
             </div>
           </div>
 
-          {/* Profile Avatar & Details Overlap */}
-          <div className="px-6 pb-6 pt-0 relative bg-card">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-16 mb-4">
-              <div className="flex items-end gap-4">
-                {/* Avatar Preview with Dynamic Glow & Aura */}
-                <div
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 border-4 border-card shadow-2xl shrink-0 transition-all duration-300"
-                  style={{
-                    background: activeAvatarTheme.gradient,
-                    boxShadow: activeAvatarTheme.glow,
-                  }}
-                >
-                  <div className="w-full h-full rounded-2xl flex items-center justify-center text-white font-black text-3xl sm:text-4xl overflow-hidden bg-black/20 backdrop-blur-xs">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{initial}</span>
-                    )}
+          {bannerFullCard ? (
+            /* ======================================================== */
+            /* FULL-BLEED IMMERSIVE GLASSMORPHISM CARD CONTENT          */
+            /* ======================================================== */
+            <div className="relative z-10 mt-6 sm:mt-10 p-4 sm:p-6 rounded-3xl bg-black/45 dark:bg-black/60 backdrop-blur-2xl border border-white/25 dark:border-white/15 shadow-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Avatar Preview with Dynamic Glow & Aura */}
+                  <div
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-1 border-2 border-white/40 shadow-2xl shrink-0 transition-all duration-300"
+                    style={{
+                      background: activeAvatarTheme.gradient,
+                      boxShadow: activeAvatarTheme.glow,
+                    }}
+                  >
+                    <div className="w-full h-full rounded-2xl flex items-center justify-center text-white font-black text-2xl sm:text-3xl overflow-hidden bg-black/30 backdrop-blur-xs">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{initial}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 min-w-0">
+                    <h3
+                      className="text-lg sm:text-2xl font-black text-white flex items-center gap-2 truncate tracking-wide"
+                      style={{
+                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.6)',
+                      }}
+                    >
+                      <span>{displayName || 'ผู้ใช้งานไม่มีชื่อ'}</span>
+                      <Sparkle className={`w-4 h-4 shrink-0 ${activeBannerTheme.accentText}`} />
+                    </h3>
+                    <p
+                      className="text-xs text-white/80 font-mono truncate"
+                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.9)' }}
+                    >
+                      {user.email}
+                    </p>
                   </div>
                 </div>
 
-                <div className="space-y-0.5 pb-1 min-w-0">
-                  <h3 className="text-lg sm:text-2xl font-black text-foreground flex items-center gap-2 truncate">
-                    <span>{displayName || 'ผู้ใช้งานไม่มีชื่อ'}</span>
-                    <Sparkle className={`w-4 h-4 shrink-0 ${activeBannerTheme.accentText}`} />
-                  </h3>
-                  <p className="text-xs text-muted-foreground font-mono truncate">{user.email}</p>
+                {/* Quota & Role Stats in Glass Badge */}
+                <div className="flex items-center gap-2 text-xs shrink-0">
+                  <div className="px-3.5 py-1.5 rounded-2xl bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 flex items-center gap-1.5 text-white shadow-md">
+                    <Coins className="w-3.5 h-3.5 text-amber-300" />
+                    <span className="text-white/80">โควต้า AI:</span>
+                    <strong className="text-white font-black font-mono">
+                      {userRole === 'admin' ? '∞' : `${quotaRemaining}/${quotaMax}`}
+                    </strong>
+                  </div>
                 </div>
               </div>
 
-              {/* Quota & Role Stats */}
-              <div className="flex items-center gap-2 text-xs">
-                <div className="px-3.5 py-1.5 rounded-xl bg-muted/60 border border-border flex items-center gap-1.5 text-muted-foreground">
-                  <Coins className="w-3.5 h-3.5 text-rose-500" />
-                  <span>โควต้า AI:</span>
-                  <strong className="text-foreground">
-                    {userRole === 'admin' ? '∞' : `${quotaRemaining}/${quotaMax}`}
-                  </strong>
+              {/* Bio Preview with Glass Box */}
+              {bio ? (
+                <div
+                  className="p-3.5 rounded-2xl bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/15 text-xs text-white/95 leading-relaxed italic"
+                  style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)' }}
+                >
+                  &ldquo;{bio}&rdquo;
                 </div>
-              </div>
+              ) : (
+                <div className="text-xs text-white/60 italic">
+                  ยังไม่ได้ใส่คำแนะนำตัว (สามารถพิมพ์เพิ่มได้ที่แท็บตั้งค่าโปรไฟล์)
+                </div>
+              )}
             </div>
+          ) : (
+            /* ======================================================== */
+            /* CLASSIC HEADER BANNER STYLE                              */
+            /* ======================================================== */
+            <>
+              <div
+                className="relative h-36 sm:h-48 w-full p-4 sm:p-6 flex flex-col justify-between overflow-hidden transition-all duration-500"
+                style={{
+                  background: activeBannerTheme.gradient,
+                  backgroundPosition: `center ${bannerPosY}%`,
+                  backgroundSize: 'cover',
+                }}
+              >
+                {/* Pattern Overlays */}
+                {bannerPattern === 'stars' && (
+                  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#fff_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
+                )}
+                {bannerPattern === 'grid' && (
+                  <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+                )}
+                {bannerPattern === 'dots' && (
+                  <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+                )}
+              </div>
 
-            {/* Bio Preview */}
-            {bio ? (
-              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 text-xs text-foreground leading-relaxed italic">
-                &ldquo;{bio}&rdquo;
+              <div className="px-6 pb-6 pt-0 relative bg-card">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-16 mb-4">
+                  <div className="flex items-end gap-4">
+                    <div
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 border-4 border-card shadow-2xl shrink-0 transition-all duration-300"
+                      style={{
+                        background: activeAvatarTheme.gradient,
+                        boxShadow: activeAvatarTheme.glow,
+                      }}
+                    >
+                      <div className="w-full h-full rounded-2xl flex items-center justify-center text-white font-black text-3xl sm:text-4xl overflow-hidden bg-black/20 backdrop-blur-xs">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{initial}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-0.5 pb-1 min-w-0">
+                      <h3 className="text-lg sm:text-2xl font-black text-foreground flex items-center gap-2 truncate">
+                        <span>{displayName || 'ผู้ใช้งานไม่มีชื่อ'}</span>
+                        <Sparkle className={`w-4 h-4 shrink-0 ${activeBannerTheme.accentText}`} />
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-mono truncate">{user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="px-3.5 py-1.5 rounded-xl bg-muted/60 border border-border flex items-center gap-1.5 text-muted-foreground">
+                      <Coins className="w-3.5 h-3.5 text-rose-500" />
+                      <span>โควต้า AI:</span>
+                      <strong className="text-foreground">
+                        {userRole === 'admin' ? '∞' : `${quotaRemaining}/${quotaMax}`}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {bio ? (
+                  <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 text-xs text-foreground leading-relaxed italic">
+                    &ldquo;{bio}&rdquo;
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground italic">
+                    ยังไม่ได้ใส่คำแนะนำตัว (สามารถพิมพ์เพิ่มได้ที่แท็บตั้งค่าโปรไฟล์)
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="text-xs text-muted-foreground italic">
-                ยังไม่ได้ใส่คำแนะนำตัว (สามารถพิมพ์เพิ่มได้ที่แท็บตั้งค่าโปรไฟล์)
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* ======================================================== */}
@@ -1455,10 +1667,15 @@ function ProfileContent() {
 
                 {/* Custom Image Upload Mode */}
                 {bannerMode === 'custom_image' && (
-                  <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4 animate-in fade-in duration-200">
-                    <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <UploadCloud className="w-3.5 h-3.5 text-purple-500" />
-                      <span>อัปโหลดรูปภาพแบนเนอร์ส่วนตัว (Widescreen 3:1)</span>
+                  <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border space-y-4 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                      <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <UploadCloud className="w-4 h-4 text-purple-500" />
+                        <span>อัปโหลดรูปภาพแบนเนอร์ &amp; ปรับแต่งตำแหน่ง (Image Studio)</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        รองรับไฟล์ JPG, PNG, WebP (บีบอัดอัตโนมัติพร้อมรักษาคุณภาพสูง)
+                      </span>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -1466,7 +1683,7 @@ function ProfileContent() {
                         type="button"
                         onClick={() => bannerFileInputRef.current?.click()}
                         disabled={isUploadingBanner}
-                        className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                        className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
                       >
                         {isUploadingBanner ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -1483,7 +1700,7 @@ function ProfileContent() {
                             setBannerUrl('');
                             setBannerMode('preset');
                           }}
-                          className="px-3 py-2.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 text-rose-500 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="px-3 py-2.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 text-rose-500 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>ลบรูปแบนเนอร์</span>
@@ -1498,9 +1715,111 @@ function ProfileContent() {
                         className="hidden"
                       />
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      รองรับไฟล์ JPG, PNG, WebP (ระบบจะครอบตัดสัดส่วน 3:1 และบีบอัดอัตโนมัติ)
-                    </p>
+
+                    {bannerUrl && (
+                      <div className="space-y-4 pt-2 border-t border-border/60">
+                        {/* Vertical Position Slider & Presets */}
+                        <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <MoveVertical className="w-4 h-4 text-purple-500" />
+                              <span className="text-xs font-bold text-foreground">
+                                ตำแหน่งภาพแนวตั้ง (Vertical Position Y)
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-foreground font-bold">
+                              {bannerPosY}%
+                            </span>
+                          </div>
+
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={bannerPosY}
+                            onChange={(e) => setBannerPosY(Number(e.target.value))}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-purple-600 bg-muted"
+                          />
+
+                          <div className="flex items-center gap-2">
+                            {[
+                              { label: '🔝 บนสุด (0%)', val: 0 },
+                              { label: '🎯 กึ่งกลาง (50%)', val: 50 },
+                              { label: '🔻 ล่างสุด (100%)', val: 100 },
+                            ].map((preset) => (
+                              <button
+                                key={preset.val}
+                                type="button"
+                                onClick={() => setBannerPosY(preset.val)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                                  bannerPosY === preset.val
+                                    ? 'bg-purple-600 text-white border-purple-500 shadow-2xs font-bold'
+                                    : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Display Mode Selection (Full Cover vs Classic Header) */}
+                        <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2 shadow-xs">
+                          <span className="text-xs font-bold text-foreground block">
+                            รูปแบบการจัดวาง (Layout Display Mode):
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setBannerFullCard(true)}
+                              className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer text-left ${
+                                bannerFullCard
+                                  ? 'border-purple-500 ring-2 ring-purple-500/40 bg-purple-500/10 font-bold'
+                                  : 'border-border bg-muted/20 hover:bg-muted/40'
+                              }`}
+                            >
+                              <Layers className="w-4 h-4 text-purple-500 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold text-foreground">
+                                  เต็มการ์ดกลาสมอร์ฟิซึม (Full Immersive)
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  ภาพเต็มแผ่นหลัง พร้อมแผงกระจกฝ้า Glassmorphism
+                                </div>
+                              </div>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setBannerFullCard(false)}
+                              className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer text-left ${
+                                !bannerFullCard
+                                  ? 'border-purple-500 ring-2 ring-purple-500/40 bg-purple-500/10 font-bold'
+                                  : 'border-border bg-muted/20 hover:bg-muted/40'
+                              }`}
+                            >
+                              <ImageIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold text-foreground">
+                                  แบนเนอร์หัวการ์ด (Classic Header)
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  แถบภาพแนวนอนด้านบน และรายละเอียดด้านล่าง
+                                </div>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Interactive Dragging Tip */}
+                        <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                          <Hand className="w-4 h-4 shrink-0 animate-bounce" />
+                          <span>
+                            <strong>เคล็ดลับ:</strong> คุณสามารถคลิกหรือแตะค้างที่รูปแบนเนอร์ตัวอย่างด้านบน แล้วลากขึ้น-ลง เพื่อเลื่อนปรับตำแหน่งภาพได้ทันที!
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

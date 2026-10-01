@@ -553,7 +553,8 @@ export function getBannerTheme(
   customColor1?: string,
   customColor2?: string,
   bannerUrl?: string,
-  gradientAngle: number = 135
+  gradientAngle: number = 135,
+  bannerPosY: number = 50
 ): BannerTheme {
   if (bannerUrl) {
     return {
@@ -561,7 +562,7 @@ export function getBannerTheme(
       label: 'รูปภาพกำหนดเอง (Custom Image)',
       name: 'Custom Banner',
       subtitle: 'รูปภาพกำหนดเอง',
-      gradient: `url("${bannerUrl}") center/cover no-repeat`,
+      gradient: `url("${bannerUrl}") center ${bannerPosY}% / cover no-repeat`,
       accentBadge: 'bg-black/50 text-white border-white/20 backdrop-blur-md',
       accentText: 'text-white',
       pattern: 'none',
