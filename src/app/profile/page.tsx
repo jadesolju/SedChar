@@ -40,12 +40,19 @@ import {
   LogOut,
   MoveVertical,
   Hand,
+  Crop,
+  ChevronDown,
+  ChevronUp,
+  Unlock,
+  Save,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { UpgradeModal } from '@/components/ui/UpgradeModal';
+import { ImageCropModal } from '@/components/ui/ImageCropModal';
 import { compressImageToAvatar, compressImageToBanner } from '@/utils/imageCompressor';
 import {
   AVATAR_BG_THEMES,
@@ -277,13 +284,36 @@ function ProfileContent() {
   const [customColor2, setCustomColor2] = useState('#93c5fd');
   const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('dots');
 
-  // Interactive Dragging on Banner
+  // Interactive Dragging & Lock on Banner
+  const [isBannerLocked, setIsBannerLocked] = useState(true);
   const [isDraggingBanner, setIsDraggingBanner] = useState(false);
   const dragStartRef = useRef<{ startY: number; initialPosY: number } | null>(null);
   const bannerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Tab 1 Collapsible Accordion States
+  const [isBannerSectionOpen, setIsBannerSectionOpen] = useState(true);
+  const [isAvatarSectionOpen, setIsAvatarSectionOpen] = useState(false);
+  const [isProfileInfoSectionOpen, setIsProfileInfoSectionOpen] = useState(false);
+
+  const handleToggleAllSections = () => {
+    const anyClosed = !isBannerSectionOpen || !isAvatarSectionOpen || !isProfileInfoSectionOpen;
+    setIsBannerSectionOpen(anyClosed);
+    setIsAvatarSectionOpen(anyClosed);
+    setIsProfileInfoSectionOpen(anyClosed);
+  };
+
+  const handleQuickSaveBannerPosition = async () => {
+    setIsBannerLocked(true);
+    try {
+      await updateUserProfile({ bannerPosY });
+      showToast(`ล็อคและบันทึกตำแหน่งแบนเนอร์ (${bannerPosY}%) เรียบร้อยแล้ว!`);
+    } catch {
+      showToast(`บันทึกตำแหน่งภาพ (${bannerPosY}%) เรียบร้อย!`);
+    }
+  };
+
   const handleBannerMouseDown = (e: React.MouseEvent) => {
-    if (bannerMode !== 'custom_image' && !bannerUrl) return;
+    if (bannerMode !== 'custom_image' || !bannerUrl || isBannerLocked) return;
     dragStartRef.current = { startY: e.clientY, initialPosY: bannerPosY };
     setIsDraggingBanner(true);
   };
@@ -305,7 +335,7 @@ function ProfileContent() {
   };
 
   const handleBannerTouchStart = (e: React.TouchEvent) => {
-    if (bannerMode !== 'custom_image' && !bannerUrl) return;
+    if (bannerMode !== 'custom_image' || !bannerUrl || isBannerLocked) return;
     const touch = e.touches[0];
     if (!touch) return;
     dragStartRef.current = { startY: touch.clientY, initialPosY: bannerPosY };
@@ -369,6 +399,11 @@ function ProfileContent() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  // Interactive Crop & Zoom Modal States
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [cropModalSrc, setCropModalSrc] = useState('');
+  const [cropTargetType, setCropTargetType] = useState<'banner' | 'avatar'>('banner');
 
   // Project Library States for Tab 3 & Tab 4
   const [savedProjects, setSavedProjects] = useState<SavedMultiProjectRecord[]>([]);
@@ -574,75 +609,114 @@ function ProfileContent() {
     bannerPosY
   );
 
-  // Handle Avatar Upload
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Avatar Upload -> Opens Facebook/IG style Crop & Zoom Modal
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingAvatar(true);
-    try {
-      const compressedDataUrl = await compressImageToAvatar(file, 320, 0.85);
-      const res = await fetch('/api/avatar/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: compressedDataUrl, userId: user?.id }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setAvatarUrl(data.url);
-          await updateUserProfile({ avatarUrl: data.url });
-        } else {
-          setAvatarUrl(compressedDataUrl);
-        }
-      } else {
-        setAvatarUrl(compressedDataUrl);
-      }
-      setSelectedPreset(null);
-      showToast('อัปเดตรูปโปรไฟล์ Avatar สำเร็จแล้ว!');
-    } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ Avatar');
-    } finally {
-      setIsUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCropModalSrc(reader.result);
+        setCropTargetType('avatar');
+        setIsCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Handle Banner Upload
-  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Banner Upload -> Opens Facebook/IG style Crop & Zoom Modal
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingBanner(true);
-    try {
-      const compressedBanner = await compressImageToBanner(file, 1400, 900, 0.85);
-      const res = await fetch('/api/avatar/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: compressedBanner, userId: user?.id }),
-      });
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      return;
+    }
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setBannerUrl(data.url);
-          setBannerMode('custom_image');
-          await updateUserProfile({ bannerUrl: data.url });
-        } else {
-          setBannerUrl(compressedBanner);
-          setBannerMode('custom_image');
-        }
-      } else {
-        setBannerUrl(compressedBanner);
-        setBannerMode('custom_image');
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCropModalSrc(reader.result);
+        setCropTargetType('banner');
+        setIsCropModalOpen(true);
       }
-      showToast('อัปโหลดแบนเนอร์สำเร็จแล้ว!');
-    } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการอัปโหลดรูปภาพแบนเนอร์');
-    } finally {
-      setIsUploadingBanner(false);
-      if (bannerFileInputRef.current) bannerFileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+    if (bannerFileInputRef.current) bannerFileInputRef.current.value = '';
+  };
+
+  // Handle Confirmed Cropped Image from ImageCropModal
+  const handleCropComplete = async (croppedDataUrl: string) => {
+    setIsCropModalOpen(false);
+
+    if (cropTargetType === 'banner') {
+      setIsUploadingBanner(true);
+      setBannerUrl(croppedDataUrl);
+      setBannerMode('custom_image');
+
+      try {
+        const res = await fetch('/api/avatar/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: croppedDataUrl, userId: user?.id }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            setBannerUrl(data.url);
+            await updateUserProfile({ bannerUrl: data.url });
+          } else {
+            await updateUserProfile({ bannerUrl: croppedDataUrl });
+          }
+        } else {
+          await updateUserProfile({ bannerUrl: croppedDataUrl });
+        }
+        showToast('ครอบตัดและอัปเดตแบนเนอร์สำเร็จแล้ว!');
+      } catch {
+        await updateUserProfile({ bannerUrl: croppedDataUrl });
+        showToast('บันทึกรูปภาพแบนเนอร์เรียบร้อย!');
+      } finally {
+        setIsUploadingBanner(false);
+      }
+    } else {
+      setIsUploadingAvatar(true);
+      setAvatarUrl(croppedDataUrl);
+      setSelectedPreset(null);
+
+      try {
+        const res = await fetch('/api/avatar/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: croppedDataUrl, userId: user?.id }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            setAvatarUrl(data.url);
+            await updateUserProfile({ avatarUrl: data.url });
+          } else {
+            await updateUserProfile({ avatarUrl: croppedDataUrl });
+          }
+        } else {
+          await updateUserProfile({ avatarUrl: croppedDataUrl });
+        }
+        showToast('ครอบตัดและอัปเดตรูป Avatar สำเร็จแล้ว!');
+      } catch {
+        await updateUserProfile({ avatarUrl: croppedDataUrl });
+        showToast('บันทึกรูป Avatar เรียบร้อย!');
+      } finally {
+        setIsUploadingAvatar(false);
+      }
     }
   };
 
@@ -989,10 +1063,41 @@ function ProfileContent() {
               </span>
 
               {bannerMode === 'custom_image' && bannerUrl && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-900/70 backdrop-blur-xl text-purple-200 text-[10px] font-bold border border-purple-400/30 animate-pulse">
-                  <MoveVertical className="w-3 h-3" />
-                  <span>ลากขึ้น-ลงเพื่อปรับตำแหน่ง ({bannerPosY}%)</span>
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {isBannerLocked ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsBannerLocked(false);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-xl text-emerald-300 hover:text-emerald-200 text-[10.5px] font-bold border border-emerald-500/30 transition-all cursor-pointer shadow-md"
+                      title="ภาพถูกล็อคตำแหน่งอยู่ คลิกเพื่อปลดล็อคและลากปรับตำแหน่ง"
+                    >
+                      <Lock className="w-3 h-3 text-emerald-400" />
+                      <span>ล็อคภาพแล้ว ({bannerPosY}%)</span>
+                    </button>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/30 backdrop-blur-xl text-amber-200 text-[10px] font-bold border border-amber-400/40 animate-pulse">
+                        <Unlock className="w-3 h-3 text-amber-300" />
+                        <span>ลากปรับตำแหน่ง ({bannerPosY}%)</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickSaveBannerPosition();
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold shadow-md transition-all cursor-pointer"
+                        title="บันทึกและล็อคตำแหน่งภาพนี้ทันที"
+                      >
+                        <Save className="w-3 h-3" />
+                        <span>บันทึก &amp; ล็อค</span>
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
@@ -1239,67 +1344,117 @@ function ProfileContent() {
         {/* TAB 1: Profile & Themes Customization Form               */}
         {/* ======================================================== */}
         {activeTab === 'themes' && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-card border border-border shadow-xl space-y-8 animate-in fade-in duration-200">
-            <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                <Palette className="w-6 h-6" />
+          <div className="p-4 sm:p-7 rounded-3xl bg-card border border-border shadow-xl space-y-6 animate-in fade-in duration-200">
+            {/* Top Collapsible Header Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  <Palette className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-foreground">
+                    ปรับแต่งโปรไฟล์ แบนเนอร์ และสีออร่า
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    คลิกที่แถบหัวข้อเพื่อพับเก็บ/ขยายส่วนที่ต้องการตกแต่งได้อิสระ
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-foreground">
-                  ปรับแต่งโปรไฟล์ แบนเนอร์ และสีออร่า
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  เลือกธีมสีสำเร็จรูป หรือออกแบบโทนสีและอัปโหลดรูปภาพแบนเนอร์ของตนเอง
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleAllSections}
+                className="px-3.5 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold border border-border flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs self-start sm:self-auto"
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-purple-500" />
+                <span>
+                  {isBannerSectionOpen && isAvatarSectionOpen && isProfileInfoSectionOpen
+                    ? 'พับเก็บทุกส่วน'
+                    : 'กางออกทั้งหมด'}
+                </span>
+              </button>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-8">
-              {/* Section 1: Profile Banner Customization */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-purple-500" />
-                    <span>1. ธีมสี &amp; รูปภาพแบนเนอร์ (Profile Banner)</span>
-                  </label>
-
-                  {/* Mode Selector Tabs */}
-                  <div className="grid grid-cols-3 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setBannerMode('preset')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        bannerMode === 'preset'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      ธีมสำเร็จรูป
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBannerMode('custom_gradient')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        bannerMode === 'custom_gradient'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      ไล่เฉดสีเอง
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBannerMode('custom_image')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        bannerMode === 'custom_image'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      อัปโหลดรูปภาพ
-                    </button>
+            <form onSubmit={handleSaveProfile} className="space-y-5">
+              {/* ======================================================== */}
+              {/* ACCORDION 1: Profile Banner Customization                */}
+              {/* ======================================================== */}
+              <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs transition-all">
+                <button
+                  type="button"
+                  onClick={() => setIsBannerSectionOpen(!isBannerSectionOpen)}
+                  className="w-full p-3.5 sm:p-4.5 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-500 flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
+                        <span>1. ธีมสี &amp; รูปภาพแบนเนอร์ (Profile Banner)</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {bannerMode === 'preset'
+                          ? `ธีมปัจจุบัน: ${activeBannerTheme.name}`
+                          : bannerMode === 'custom_gradient'
+                          ? 'ไล่เฉดสีเองด้วย Slider Studio'
+                          : 'รูปภาพแบนเนอร์ส่วนตัว'}
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                      {bannerMode === 'preset' ? 'ธีมสำเร็จรูป' : bannerMode === 'custom_gradient' ? 'ไล่เฉดสี' : 'รูปภาพ'}
+                    </span>
+                    <div className="w-7 h-7 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                      {isBannerSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+                </button>
+
+                {isBannerSectionOpen && (
+                  <div className="p-4 sm:p-5 border-t border-border/60 space-y-4 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-foreground">เลือกรูปแบบแบนเนอร์:</span>
+
+                      {/* Mode Selector Tabs */}
+                      <div className="grid grid-cols-3 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setBannerMode('preset')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            bannerMode === 'preset'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          ธีมสำเร็จรูป
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerMode('custom_gradient')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            bannerMode === 'custom_gradient'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          ไล่เฉดสีเอง
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBannerMode('custom_image')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            bannerMode === 'custom_image'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          อัปโหลดรูปภาพ
+                        </button>
+                      </div>
+                    </div>
 
                 {/* Banner Presets Grid */}
                 {bannerMode === 'preset' && (
@@ -1694,17 +1849,33 @@ function ProfileContent() {
                       </button>
 
                       {bannerUrl && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBannerUrl('');
-                            setBannerMode('preset');
-                          }}
-                          className="px-3 py-2.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 text-rose-500 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบรูปแบนเนอร์</span>
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCropModalSrc(bannerUrl);
+                              setCropTargetType('banner');
+                              setIsCropModalOpen(true);
+                            }}
+                            className="px-3.5 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                            title="เปิดหน้าต่างครอบตัด เลื่อนตำแหน่ง และซูมเข้า-ออก"
+                          >
+                            <Crop className="w-3.5 h-3.5 text-purple-400" />
+                            <span>ครอบตัด &amp; ซูมภาพ (Crop &amp; Zoom)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBannerUrl('');
+                              setBannerMode('preset');
+                            }}
+                            className="px-3 py-2.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 text-rose-500 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>ลบรูปแบนเนอร์</span>
+                          </button>
+                        </>
                       )}
 
                       <input
@@ -1741,7 +1912,7 @@ function ProfileContent() {
                             className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-purple-600 bg-muted"
                           />
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {[
                               { label: '🔝 บนสุด (0%)', val: 0 },
                               { label: '🎯 กึ่งกลาง (50%)', val: 50 },
@@ -1760,6 +1931,16 @@ function ProfileContent() {
                                 {preset.label}
                               </button>
                             ))}
+
+                            <button
+                              type="button"
+                              onClick={handleQuickSaveBannerPosition}
+                              className="ml-auto px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10.5px] font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                              title="บันทึกตำแหน่งแนวตั้งปัจจุบัน"
+                            >
+                              <Save className="w-3 h-3" />
+                              <span>บันทึก &amp; ล็อคตำแหน่ง</span>
+                            </button>
                           </div>
                         </div>
 
@@ -1823,79 +2004,115 @@ function ProfileContent() {
                   </div>
                 )}
 
-                {/* Pattern Overlay Selector */}
-                <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1">
-                  <span className="text-[11px] font-semibold text-muted-foreground shrink-0">
-                    ลวดลายพื้นหลัง (Pattern):
-                  </span>
-                  {[
-                    { id: 'stars', label: 'ดวงดาว (Stars)', icon: Sparkle },
-                    { id: 'grid', label: 'ตาราง (Grid)', icon: Grid },
-                    { id: 'dots', label: 'จุดประ (Dots)', icon: CircleDot },
-                    { id: 'none', label: 'เรียบเนียน (None)', icon: Layers },
-                  ].map((pat) => (
-                    <button
-                      key={pat.id}
-                      type="button"
-                      onClick={() => setBannerPattern(pat.id as any)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
-                        bannerPattern === pat.id
-                          ? 'bg-foreground text-background border-foreground font-bold shadow-xs'
-                          : 'bg-card text-muted-foreground border-border hover:text-foreground'
-                      }`}
-                    >
-                      <pat.icon className="w-3 h-3" />
-                      <span>{pat.label}</span>
-                    </button>
-                  ))}
-                </div>
+                    {/* Pattern Overlay Selector */}
+                    <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1">
+                      <span className="text-[11px] font-semibold text-muted-foreground shrink-0">
+                        ลวดลายพื้นหลัง (Pattern):
+                      </span>
+                      {[
+                        { id: 'stars', label: 'ดวงดาว (Stars)', icon: Sparkle },
+                        { id: 'grid', label: 'ตาราง (Grid)', icon: Grid },
+                        { id: 'dots', label: 'จุดประ (Dots)', icon: CircleDot },
+                        { id: 'none', label: 'เรียบเนียน (None)', icon: Layers },
+                      ].map((pat) => (
+                        <button
+                          key={pat.id}
+                          type="button"
+                          onClick={() => setBannerPattern(pat.id as any)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
+                            bannerPattern === pat.id
+                              ? 'bg-foreground text-background border-foreground font-bold shadow-xs'
+                              : 'bg-card text-muted-foreground border-border hover:text-foreground'
+                          }`}
+                        >
+                          <pat.icon className="w-3 h-3" />
+                          <span>{pat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Section 2: Avatar Background Colors & Aura */}
-              <div className="space-y-4 border-t border-border/80 pt-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span>2. สีพื้นหลัง &amp; ออร่าเรืองแสง Avatar (Avatar Aura)</span>
-                  </label>
-
-                  {/* Mode Selector Tabs */}
-                  <div className="grid grid-cols-3 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setAvatarMode('preset')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        avatarMode === 'preset'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      เฉดสีสำเร็จรูป
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvatarMode('custom_gradient')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        avatarMode === 'custom_gradient'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      ไล่เฉดสีเอง
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvatarMode('custom')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        avatarMode === 'custom'
-                          ? 'bg-card text-foreground shadow-xs font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      สีเดี่ยว (Hex)
-                    </button>
+              {/* ======================================================== */}
+              {/* ACCORDION 2: Avatar Background Colors & Aura             */}
+              {/* ======================================================== */}
+              <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs transition-all">
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarSectionOpen(!isAvatarSectionOpen)}
+                  className="w-full p-3.5 sm:p-4.5 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
+                        <span>2. สีพื้นหลัง &amp; ออร่าเรืองแสง Avatar (Avatar Aura)</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {avatarMode === 'preset'
+                          ? `ออร่า: ${activeAvatarTheme.name}`
+                          : avatarMode === 'custom_gradient'
+                          ? 'ออร่าไล่เฉดสีเอง'
+                          : `สีเดี่ยว (${customAvatarBg})`}
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      {avatarMode === 'preset' ? 'ออร่าสำเร็จรูป' : avatarMode === 'custom_gradient' ? 'ไล่เฉดออร่า' : 'สีเดี่ยว'}
+                    </span>
+                    <div className="w-7 h-7 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                      {isAvatarSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+                </button>
+
+                {isAvatarSectionOpen && (
+                  <div className="p-4 sm:p-5 border-t border-border/60 space-y-4 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-foreground">เลือกรูปแบบแสงออร่า:</span>
+
+                      {/* Mode Selector Tabs */}
+                      <div className="grid grid-cols-3 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setAvatarMode('preset')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            avatarMode === 'preset'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          เฉดสีสำเร็จรูป
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAvatarMode('custom_gradient')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            avatarMode === 'custom_gradient'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          ไล่เฉดสีเอง
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAvatarMode('custom')}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                            avatarMode === 'custom'
+                              ? 'bg-card text-foreground shadow-xs font-bold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          สีเดี่ยว
+                        </button>
+                      </div>
+                    </div>
 
                 {/* Mode 1: Presets */}
                 {avatarMode === 'preset' && (
@@ -2241,182 +2458,219 @@ function ProfileContent() {
                   </div>
                 )}
 
-                {/* Mode 3: Single Color Hex */}
-                {avatarMode === 'custom' && (
-                  <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3 animate-in fade-in duration-200">
-                    <span className="text-[11px] font-semibold text-muted-foreground block">
-                      เลือกสีออร่า Avatar แบบสีเดี่ยว (Solid Color):
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={customAvatarBg}
-                        onChange={(e) => setCustomAvatarBg(e.target.value)}
-                        className="w-12 h-12 rounded-2xl cursor-pointer border border-border p-1 bg-card shadow-md"
-                      />
-                      <div className="flex-1 space-y-1">
-                        <input
-                          type="text"
-                          value={customAvatarBg}
-                          onChange={(e) => setCustomAvatarBg(e.target.value)}
-                          placeholder="#8b5cf6"
-                          className="w-full max-w-xs px-3.5 py-2 rounded-xl bg-card border border-border text-xs font-mono font-bold text-foreground"
-                        />
-                        <p className="text-[10px] text-muted-foreground">
-                          สีนี้จะสร้างแสงเรืองรอง (Aura Glow) รอบ Avatar ของคุณ
-                        </p>
+                    {/* Mode 3: Single Color Hex */}
+                    {avatarMode === 'custom' && (
+                      <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3 animate-in fade-in duration-200">
+                        <span className="text-[11px] font-semibold text-muted-foreground block">
+                          เลือกสีออร่า Avatar แบบสีเดี่ยว (Solid Color):
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={customAvatarBg}
+                            onChange={(e) => setCustomAvatarBg(e.target.value)}
+                            className="w-12 h-12 rounded-2xl cursor-pointer border border-border p-1 bg-card shadow-md"
+                          />
+                          <div className="flex-1 space-y-1">
+                            <input
+                              type="text"
+                              value={customAvatarBg}
+                              onChange={(e) => setCustomAvatarBg(e.target.value)}
+                              placeholder="#8b5cf6"
+                              className="w-full max-w-xs px-3.5 py-2 rounded-xl bg-card border border-border text-xs font-mono font-bold text-foreground"
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                              สีนี้จะสร้างแสงเรืองรอง (Aura Glow) รอบ Avatar ของคุณ
+                            </p>
+                          </div>
+                        </div>
                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ======================================================== */}
+              {/* ACCORDION 3: Avatar Image & Profile Information          */}
+              {/* ======================================================== */}
+              <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs transition-all">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileInfoSectionOpen(!isProfileInfoSectionOpen)}
+                  className="w-full p-3.5 sm:p-4.5 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-all cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
+                        <span>3. รูปโปรไฟล์ &amp; ข้อมูลบัญชี (Avatar &amp; Bio)</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {displayName ? `ชื่อแสดง: ${displayName}` : 'ยังไม่ได้ระบุชื่อแสดง'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      {displayName || 'ข้อมูลโปรไฟล์'}
+                    </span>
+                    <div className="w-7 h-7 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                      {isProfileInfoSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+                </button>
+
+                {isProfileInfoSectionOpen && (
+                  <div className="p-4 sm:p-5 border-t border-border/60 space-y-5 animate-in fade-in duration-200">
+                    {/* Avatar Image & Presets */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-foreground block">
+                        รูปภาพโปรไฟล์ (Avatar Image)
+                      </label>
+
+                      <div className="flex items-center gap-4">
+                        <div className="relative group">
+                          <div
+                            className="w-20 h-20 rounded-2xl border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-2xl overflow-hidden shrink-0"
+                            style={{ background: activeAvatarTheme.gradient, boxShadow: activeAvatarTheme.glow }}
+                          >
+                            {avatarUrl ? (
+                              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{initial}</span>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-semibold gap-1 cursor-pointer"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>อัปโหลด</span>
+                          </button>
+                        </div>
+
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isUploadingAvatar}
+                              className="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold border border-border flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              {isUploadingAvatar ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Camera className="w-3.5 h-3.5" />
+                              )}
+                              <span>อัปโหลดรูปภาพ</span>
+                            </button>
+
+                            {avatarUrl && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAvatarUrl('');
+                                  setSelectedPreset(null);
+                                }}
+                                className="px-3 py-2 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-xs font-medium transition-all cursor-pointer"
+                              >
+                                ลบรูป
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            รองรับรูปภาพทุกขนาด (ระบบมีหน้าต่าง Crop &amp; Zoom ให้ปรับขนาดก่อนบันทึก)
+                          </p>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarFileChange}
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Presets */}
+                      <div className="space-y-1.5 pt-2">
+                        <span className="text-[11px] font-semibold text-muted-foreground block">
+                          หรือเลือก Emoji Avatar สำเร็จรูป:
+                        </span>
+                        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                          {AVATAR_PRESETS.map((preset) => {
+                            const isChosen = selectedPreset === preset.id;
+                            return (
+                              <button
+                                key={preset.id}
+                                type="button"
+                                onClick={() => handleChoosePreset(preset)}
+                                className={`p-2 rounded-xl border text-base flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer hover:scale-105 ${
+                                  isChosen
+                                    ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-500/10'
+                                    : `${preset.bg} hover:border-foreground/30`
+                                }`}
+                                title={preset.label}
+                              >
+                                <span>{preset.emoji}</span>
+                                <span className="text-[9px] font-medium leading-none truncate max-w-full text-muted-foreground">
+                                  {preset.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Display Name Input */}
+                    <div className="space-y-1.5 border-t border-border/60 pt-4">
+                      <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                        <span>ชื่อที่แสดง (Display Name) *</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {displayName.length}/40
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="เช่น Jessada ✦, จอมเวทกาลเวลา"
+                        maxLength={40}
+                        required
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        ชื่อนี้จะแสดงบนจักรวาลที่คุณสร้าง ในคอมเมนต์ และหน้าแชร์ทั้งหมด
+                      </p>
+                    </div>
+
+                    {/* Bio */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                        <span>คำแนะนำตัวสั้นๆ (Bio / Tagline)</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {bio.length}/150
+                        </span>
+                      </label>
+                      <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        placeholder="เช่น ผู้หลงใหลในโลกดาร์กแฟนตาซี ไซไฟ และเรื่องเล่าลี้ลับ 🌙"
+                        rows={3}
+                        maxLength={150}
+                        className="w-full px-3.5 py-2 rounded-xl bg-muted/40 border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 resize-none leading-relaxed"
+                      />
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Section 3: Avatar Image & Presets */}
-              <div className="space-y-4 border-t border-border/80 pt-6">
-                <label className="text-xs font-bold text-foreground block">
-                  3. รูปภาพโปรไฟล์ (Avatar Image)
-                </label>
-
-                <div className="flex items-center gap-4">
-                  <div className="relative group">
-                    <div
-                      className="w-20 h-20 rounded-2xl border-2 border-border shadow-md flex items-center justify-center text-white font-bold text-2xl overflow-hidden shrink-0"
-                      style={{ background: activeAvatarTheme.gradient, boxShadow: activeAvatarTheme.glow }}
-                    >
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span>{initial}</span>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-semibold gap-1 cursor-pointer"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span>อัปโหลด</span>
-                    </button>
-                  </div>
-
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploadingAvatar}
-                        className="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold border border-border flex items-center gap-1.5 transition-all cursor-pointer"
-                      >
-                        {isUploadingAvatar ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Camera className="w-3.5 h-3.5" />
-                        )}
-                        <span>อัปโหลดรูปภาพ</span>
-                      </button>
-
-                      {avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAvatarUrl('');
-                            setSelectedPreset(null);
-                          }}
-                          className="px-3 py-2 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 text-xs font-medium transition-all cursor-pointer"
-                        >
-                          ลบรูป
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      รองรับรูปภาพทุกขนาด (ระบบบีบอัดและปรับสัดส่วนจัตุรัสอัตโนมัติ)
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarFileChange}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-
-                {/* Presets */}
-                <div className="space-y-1.5 pt-2">
-                  <span className="text-[11px] font-semibold text-muted-foreground block">
-                    หรือเลือก Emoji Avatar สำเร็จรูป:
-                  </span>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                    {AVATAR_PRESETS.map((preset) => {
-                      const isChosen = selectedPreset === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => handleChoosePreset(preset)}
-                          className={`p-2 rounded-xl border text-base flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer hover:scale-105 ${
-                            isChosen
-                              ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-500/10'
-                              : `${preset.bg} hover:border-foreground/30`
-                          }`}
-                          title={preset.label}
-                        >
-                          <span>{preset.emoji}</span>
-                          <span className="text-[9px] font-medium leading-none truncate max-w-full text-muted-foreground">
-                            {preset.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 4: Personal Information */}
-              <div className="space-y-4 border-t border-border/80 pt-6">
-                {/* Display Name Input */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                    <span>ชื่อที่แสดง (Display Name) *</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {displayName.length}/40
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="เช่น Jessada ✦, จอมเวทกาลเวลา"
-                    maxLength={40}
-                    required
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    ชื่อนี้จะแสดงบนจักรวาลที่คุณสร้าง ในคอมเมนต์ และหน้าแชร์ทั้งหมด
-                  </p>
-                </div>
-
-                {/* Bio */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                    <span>คำแนะนำตัวสั้นๆ (Bio / Tagline)</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {bio.length}/150
-                    </span>
-                  </label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="เช่น ผู้หลงใหลในโลกดาร์กแฟนตาซี ไซไฟ และเรื่องเล่าลี้ลับ 🌙"
-                    rows={3}
-                    maxLength={150}
-                    className="w-full px-3.5 py-2 rounded-xl bg-muted/40 border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 resize-none leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Save Button */}
+              {/* Save All Button */}
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-border/80">
                 <button
                   type="submit"
@@ -2430,7 +2684,7 @@ function ProfileContent() {
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
-                  <span>{saveSuccess ? 'บันทึกการเปลี่ยนแปลงแล้ว!' : 'บันทึกโปรไฟล์ & ธีม'}</span>
+                  <span>{saveSuccess ? 'บันทึกการเปลี่ยนแปลงแล้ว!' : 'บันทึกโปรไฟล์ & ธีมทั้งหมด'}</span>
                 </button>
               </div>
             </form>
@@ -3087,6 +3341,25 @@ function ProfileContent() {
       <UpgradeModal
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
+      />
+
+      {/* Facebook / Instagram Style Interactive Image Crop & Zoom Modal */}
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        imageSrc={cropModalSrc}
+        initialRatioId={cropTargetType === 'banner' ? '16_9' : '1_1'}
+        title={
+          cropTargetType === 'banner'
+            ? 'ปรับแต่ง & ครอบตัดแบนเนอร์ (Banner Crop & Zoom)'
+            : 'ปรับแต่ง & ครอบตัดรูปโปรไฟล์ (Avatar Crop & Zoom)'
+        }
+        subtitle={
+          cropTargetType === 'banner'
+            ? 'ลากรูปภาพเพื่อเลื่อนตำแหน่ง และใช้แถบซูมเพื่อขยายเข้า-ออก (สัดส่วน 16:9 มาตรฐาน)'
+            : 'ลากรูปภาพเพื่อเลื่อนตำแหน่ง และใช้แถบซูมเพื่อขยายเข้า-ออกสำหรับรูป Avatar (สัดส่วน 1:1)'
+        }
+        onCrop={handleCropComplete}
+        onClose={() => setIsCropModalOpen(false)}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { ImageCropModal } from '@/components/ui/ImageCropModal';
 import { compressImageToAvatar } from '@/utils/imageCompressor';
 import {
   AVATAR_BG_THEMES,
@@ -57,6 +58,8 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [cropModalSrc, setCropModalSrc] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync initial state from user metadata
@@ -76,19 +79,38 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
 
   if (!isOpen || !user) return null;
 
-  // Handle image upload from local file
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image upload from local file -> Opens Crop & Zoom modal
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, JPG, WebP)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCropModalSrc(reader.result);
+        setIsCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedDataUrl: string) => {
+    setIsCropModalOpen(false);
     setIsUploading(true);
+    setAvatarUrl(croppedDataUrl);
+    setSelectedPreset(null);
+
     try {
-      const compressedDataUrl = await compressImageToAvatar(file, 320, 0.85);
-      
       const res = await fetch('/api/avatar/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: compressedDataUrl, userId: user?.id }),
+        body: JSON.stringify({ image: croppedDataUrl, userId: user?.id }),
       });
 
       if (res.ok) {
@@ -97,17 +119,15 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
           setAvatarUrl(data.url);
           await updateUserProfile({ avatarUrl: data.url });
         } else {
-          setAvatarUrl(compressedDataUrl);
+          await updateUserProfile({ avatarUrl: croppedDataUrl });
         }
       } else {
-        setAvatarUrl(compressedDataUrl);
+        await updateUserProfile({ avatarUrl: croppedDataUrl });
       }
-      setSelectedPreset(null);
-    } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+    } catch {
+      await updateUserProfile({ avatarUrl: croppedDataUrl });
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -465,6 +485,16 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
           </div>
         </form>
       </div>
+
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        imageSrc={cropModalSrc}
+        initialRatioId="1_1"
+        title="ปรับแต่ง & ครอบตัดรูปโปรไฟล์ (Avatar Crop & Zoom)"
+        subtitle="ลากรูปภาพเพื่อเลื่อนตำแหน่ง และใช้แถบซูมเพื่อขยายเข้า-ออก (สัดส่วน 1:1)"
+        onCrop={handleCropComplete}
+        onClose={() => setIsCropModalOpen(false)}
+      />
     </div>
   );
 }
