@@ -35,14 +35,25 @@ export interface SavedMultiProjectRecord {
   updatedAt: string;
 }
 
+export function cleanProjectTitle(title?: string): string {
+  if (!title) return '';
+  return title
+    .replace(/\s*\(\s*cloned\s*\)/gi, '')
+    .replace(/\s*\(\s*โคลน\s*\)/gi, '')
+    .replace(/\s*\(\s*co-created\s*\)/gi, '')
+    .replace(/\s*\(\s*ร่วมสร้าง\s*\)/gi, '')
+    .trim();
+}
+
 export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): SavedMultiProjectRecord[] {
   if (!Array.isArray(records)) return [];
   const result: SavedMultiProjectRecord[] = [];
 
   for (const item of records) {
     if (!item || !item.id) continue;
-    const itemTitle = (item.title || '').trim().toLowerCase();
+    const itemCleanTitle = cleanProjectTitle(item.title).toLowerCase();
     const isItemUni = typeof item.id === 'string' && item.id.startsWith('uni_');
+    const isItemCloned = (typeof item.id === 'string' && item.id.startsWith('cloned_')) || (item.title || '').includes('(Cloned)');
     const itemShareId = item.shareId || (isItemUni ? item.id : undefined);
 
     const existingIndex = result.findIndex((existing) => {
@@ -52,13 +63,14 @@ export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): S
       const existingShareId = existing.shareId || (isExistUni ? existing.id : undefined);
       if (existingShareId && itemShareId && existingShareId === itemShareId) return true;
       if (existingShareId && (existingShareId === item.id || existing.id === itemShareId)) return true;
-      const existTitle = (existing.title || '').trim().toLowerCase();
+      
+      const existCleanTitle = cleanProjectTitle(existing.title).toLowerCase();
       if (
-        itemTitle &&
-        existTitle === itemTitle &&
-        itemTitle !== 'โปรเจกต์ multi-char' &&
-        itemTitle !== 'untitled' &&
-        itemTitle !== 'จักรวาลและคลังความจำ'
+        itemCleanTitle &&
+        existCleanTitle === itemCleanTitle &&
+        itemCleanTitle !== 'โปรเจกต์ multi-char' &&
+        itemCleanTitle !== 'untitled' &&
+        itemCleanTitle !== 'จักรวาลและคลังความจำ'
       ) {
         return true;
       }
@@ -79,13 +91,15 @@ export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): S
         existing.shareId ||
         (isItemUni ? item.id : isExistUni ? existing.id : undefined);
 
-      const itemHasValidTitle = item.title && !item.title.includes('(Cloned)');
+      const isExistCloned = (typeof existing.id === 'string' && existing.id.startsWith('cloned_')) || (existing.title || '').includes('(Cloned)');
+      const targetId = isItemUni ? item.id : isExistUni ? existing.id : (!isExistCloned ? existing.id : item.id);
+      const targetTitle = cleanProjectTitle(item.title) || cleanProjectTitle(existing.title) || existing.title || 'โปรเจกต์ Multi-Char';
 
       const merged: SavedMultiProjectRecord = {
         ...existing,
         ...item,
-        id: isItemUni ? item.id : existing.id,
-        title: itemHasValidTitle ? item.title : (existing.title || 'โปรเจกต์ Multi-Char'),
+        id: targetId,
+        title: targetTitle,
         author: item.author || existing.author,
         description: item.description || existing.description || '',
         mainCharCount: Math.max(existing.mainCharCount || 0, item.mainCharCount || 0),

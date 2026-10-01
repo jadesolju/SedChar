@@ -67,6 +67,41 @@ import { characterToFullMarkdown } from '@/shared/thaiTagParser';
 import { exportCharacterJson } from '@/shared/shareUtils';
 import { CHARACTER_FLAGS } from '@/shared/types';
 
+function hslToHex(h: number, s: number, l: number): string {
+  const normL = Math.max(0, Math.min(100, l)) / 100;
+  const a = (Math.max(0, Math.min(100, s)) * Math.min(normL, 1 - normL)) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = normL - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function hexToHsl(hex: string): [number, number, number] {
+  let c = (hex || '').replace('#', '').trim();
+  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+  if (c.length !== 6) return [260, 70, 45];
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return [260, 70, 45];
+  const r = ((num >> 16) & 255) / 255;
+  const g = ((num >> 8) & 255) / 255;
+  const b = (num & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
 const AVATAR_PRESETS = [
   { id: 'sakura', label: 'ซากุระ', emoji: '🌸', bg: 'bg-pink-500/20 text-pink-500 border-pink-500/30' },
   { id: 'cat', label: 'เหมียว', emoji: '🐱', bg: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
@@ -201,11 +236,43 @@ function ProfileContent() {
 
   // Banner State
   const [bannerMode, setBannerMode] = useState<'preset' | 'custom_gradient' | 'custom_image'>('preset');
-  const [bannerTheme, setBannerTheme] = useState('cosmic');
+  const [bannerTheme, setBannerTheme] = useState('pastel_sakura');
   const [bannerUrl, setBannerUrl] = useState('');
-  const [customColor1, setCustomColor1] = useState('#1e1035');
-  const [customColor2, setCustomColor2] = useState('#4338ca');
-  const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('stars');
+  const [customColor1, setCustomColor1] = useState('#fbcfe8');
+  const [customColor2, setCustomColor2] = useState('#93c5fd');
+  const [bannerPattern, setBannerPattern] = useState<'stars' | 'grid' | 'dots' | 'none'>('dots');
+
+  // Interactive Gradient Slider States (HSL)
+  const [c1Hue, setC1Hue] = useState(() => hexToHsl('#fbcfe8')[0]);
+  const [c1Sat, setC1Sat] = useState(() => hexToHsl('#fbcfe8')[1]);
+  const [c1Light, setC1Light] = useState(() => hexToHsl('#fbcfe8')[2]);
+
+  const [c2Hue, setC2Hue] = useState(() => hexToHsl('#93c5fd')[0]);
+  const [c2Sat, setC2Sat] = useState(() => hexToHsl('#93c5fd')[1]);
+  const [c2Light, setC2Light] = useState(() => hexToHsl('#93c5fd')[2]);
+
+  const [gradientAngle, setGradientAngle] = useState(135);
+  const [bannerCategoryFilter, setBannerCategoryFilter] = useState<'all' | 'pastel' | 'solid' | 'dark' | 'vibrant'>('all');
+
+  const updateColor1 = (h: number, s: number, l: number) => {
+    const clampedH = (h + 360) % 360;
+    const clampedS = Math.max(0, Math.min(100, s));
+    const clampedL = Math.max(5, Math.min(95, l));
+    setC1Hue(clampedH);
+    setC1Sat(clampedS);
+    setC1Light(clampedL);
+    setCustomColor1(hslToHex(clampedH, clampedS, clampedL));
+  };
+
+  const updateColor2 = (h: number, s: number, l: number) => {
+    const clampedH = (h + 360) % 360;
+    const clampedS = Math.max(0, Math.min(100, s));
+    const clampedL = Math.max(5, Math.min(95, l));
+    setC2Hue(clampedH);
+    setC2Sat(clampedS);
+    setC2Light(clampedL);
+    setCustomColor2(hslToHex(clampedH, clampedS, clampedL));
+  };
 
   // Async & Feedback States
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -258,9 +325,17 @@ function ProfileContent() {
         setBannerMode('custom_gradient');
         setCustomColor1(meta.custom_banner_color1);
         setCustomColor2(meta.custom_banner_color2);
+        const [h1, s1, l1] = hexToHsl(meta.custom_banner_color1);
+        const [h2, s2, l2] = hexToHsl(meta.custom_banner_color2);
+        setC1Hue(h1);
+        setC1Sat(s1);
+        setC1Light(l1);
+        setC2Hue(h2);
+        setC2Sat(s2);
+        setC2Light(l2);
       } else {
         setBannerMode('preset');
-        setBannerTheme(meta.banner_theme || 'cosmic');
+        setBannerTheme(meta.banner_theme || 'pastel_sakura');
       }
 
       if (meta.banner_pattern) {
@@ -318,16 +393,35 @@ function ProfileContent() {
     );
   }, [savedProjects]);
 
+  // Shared & Commu Projects - Deduplicate so owned universes never have duplicate cloned cards
   const sharedAndCommuProjects = useMemo(() => {
     if (!Array.isArray(savedProjects)) return [];
-    return savedProjects.filter(
-      (p) =>
-        p &&
-        (Boolean(p.isShared || p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_'))) ||
-          (typeof p.id === 'string' && p.id.startsWith('cloned_')) ||
-          (p.title || '').includes('(Cloned)') ||
-          (p.projectData as any)?.isCloned)
-    );
+    const seen = new Set<string>();
+    const list: SavedMultiProjectRecord[] = [];
+
+    savedProjects.forEach((p) => {
+      if (!p || !p.id) return;
+      const isOwnerShared = Boolean(p.isShared || p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_')));
+      const isCloned = (typeof p.id === 'string' && p.id.startsWith('cloned_')) || (p.title || '').includes('(Cloned)') || Boolean((p.projectData as any)?.isCloned);
+      
+      if (isOwnerShared || isCloned) {
+        const cleanTitle = (p.title || '')
+          .replace(/\s*\(\s*cloned\s*\)/gi, '')
+          .replace(/\s*\(\s*โคลน\s*\)/gi, '')
+          .replace(/\s*\(\s*co-created\s*\)/gi, '')
+          .replace(/\s*\(\s*ร่วมสร้าง\s*\)/gi, '')
+          .trim()
+          .toLowerCase();
+        
+        const dedupeKey = cleanTitle || p.shareId || p.id;
+        if (!seen.has(dedupeKey)) {
+          seen.add(dedupeKey);
+          list.push(p);
+        }
+      }
+    });
+
+    return list;
   }, [savedProjects]);
 
   const filteredMyProjects = useMemo(() => {
@@ -357,7 +451,8 @@ function ProfileContent() {
     bannerMode === 'preset' ? bannerTheme : undefined,
     bannerMode === 'custom_gradient' ? customColor1 : undefined,
     bannerMode === 'custom_gradient' ? customColor2 : undefined,
-    bannerMode === 'custom_image' ? bannerUrl : undefined
+    bannerMode === 'custom_image' ? bannerUrl : undefined,
+    gradientAngle
   );
 
   // Handle Avatar Upload
@@ -935,95 +1030,350 @@ function ProfileContent() {
 
                 {/* Banner Presets Grid */}
                 {bannerMode === 'preset' && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 animate-in fade-in duration-200">
-                    {BANNER_THEMES.map((theme) => {
-                      const isSelected = bannerTheme === theme.id;
-                      return (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    {/* Category Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                      {[
+                        { id: 'all', label: 'ทั้งหมด' },
+                        { id: 'pastel', label: '🌸 พาสเทล (Pastel)' },
+                        { id: 'solid', label: '⚪ สีเรียบ (Solid)' },
+                        { id: 'dark', label: '🌑 ดาร์ก (Dark)' },
+                        { id: 'vibrant', label: '🌌 นีออน (Vibrant)' },
+                      ].map((cat) => (
                         <button
-                          key={theme.id}
+                          key={cat.id}
                           type="button"
-                          onClick={() => setBannerTheme(theme.id)}
-                          className={`relative p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer overflow-hidden shadow-xs ${
-                            isSelected
-                              ? 'border-purple-500 ring-2 ring-purple-500/50 scale-[1.02]'
-                              : 'border-border/80 hover:border-foreground/40 hover:scale-[1.01]'
+                          onClick={() => setBannerCategoryFilter(cat.id as any)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                            bannerCategoryFilter === cat.id
+                              ? 'bg-purple-600 text-white border-purple-500 shadow-xs'
+                              : 'bg-muted/60 text-muted-foreground border-border hover:text-foreground'
                           }`}
-                          style={{ background: theme.gradient }}
                         >
-                          <div className="flex items-center justify-between w-full relative z-10">
-                            <span className="text-[11px] font-bold text-white drop-shadow-md truncate">
-                              {theme.name}
-                            </span>
-                            {isSelected && (
-                              <div className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                                <Check className="w-2.5 h-2.5 stroke-[3]" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[9px] text-white/80 drop-shadow-xs truncate relative z-10">
-                            {theme.subtitle}
-                          </span>
+                          {cat.label}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                      {BANNER_THEMES.filter(
+                        (t) => bannerCategoryFilter === 'all' || t.category === bannerCategoryFilter
+                      ).map((theme) => {
+                        const isSelected = bannerTheme === theme.id;
+                        return (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => setBannerTheme(theme.id)}
+                            className={`relative p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer overflow-hidden shadow-xs ${
+                              isSelected
+                                ? 'border-purple-500 ring-2 ring-purple-500/50 scale-[1.02]'
+                                : 'border-border/80 hover:border-foreground/40 hover:scale-[1.01]'
+                            }`}
+                            style={{ background: theme.gradient }}
+                          >
+                            <div className="flex items-center justify-between w-full relative z-10">
+                              <span className="text-[11px] font-bold text-white drop-shadow-md truncate">
+                                {theme.name}
+                              </span>
+                              {isSelected && (
+                                <div className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[9px] text-white/80 drop-shadow-xs truncate relative z-10">
+                              {theme.subtitle}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                {/* Custom Gradient Builder */}
+                {/* Custom Gradient Builder with Interactive Sliders */}
                 {bannerMode === 'custom_gradient' && (
-                  <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4 animate-in fade-in duration-200">
-                    <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <Sliders className="w-3.5 h-3.5 text-purple-500" />
-                      <span>ออกแบบการไล่เฉดสีแบนเนอร์ด้วยตนเอง (Custom Gradient)</span>
+                  <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border space-y-5 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Sliders className="w-4 h-4 text-purple-500" />
+                        <span>ปรับแต่งการไล่เฉดสีด้วยสไลเดอร์ (Interactive Gradient Studio)</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        เลื่อนปรับระดับเฉดสี ความสว่าง และทิศทางได้ตามใจชอบ
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-muted-foreground block">
-                          สีเริ่มต้น (Start Color):
-                        </label>
-                        <div className="flex items-center gap-2">
+                    {/* Quick Mood Chips */}
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground block">
+                        ✨ โทนสีแนะนำแบบแตะครั้งเดียว (Quick Tone Presets):
+                      </span>
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                        {[
+                          {
+                            label: '🌸 พาสเทลหวาน',
+                            apply: () => {
+                              updateColor1(330, 80, 82);
+                              updateColor2(210, 85, 85);
+                            },
+                          },
+                          {
+                            label: '🌸 นมชมพูซากุระ',
+                            apply: () => {
+                              updateColor1(340, 85, 88);
+                              updateColor2(280, 80, 85);
+                            },
+                          },
+                          {
+                            label: '🌿 มินต์ & ท้องฟ้า',
+                            apply: () => {
+                              updateColor1(160, 75, 80);
+                              updateColor2(195, 85, 82);
+                            },
+                          },
+                          {
+                            label: '🌅 อาทิตย์อัสดง',
+                            apply: () => {
+                              updateColor1(20, 90, 60);
+                              updateColor2(340, 85, 55);
+                            },
+                          },
+                          {
+                            label: '🌌 ไซเบอร์นีออน',
+                            apply: () => {
+                              updateColor1(185, 95, 50);
+                              updateColor2(290, 90, 55);
+                            },
+                          },
+                          {
+                            label: '🌑 มิดไนท์ดาร์ก',
+                            apply: () => {
+                              updateColor1(260, 45, 18);
+                              updateColor2(220, 50, 14);
+                            },
+                          },
+                          {
+                            label: '⚪ มินิมอลสเลท',
+                            apply: () => {
+                              updateColor1(215, 20, 25);
+                              updateColor2(220, 25, 15);
+                            },
+                          },
+                        ].map((m, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={m.apply}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-card hover:bg-muted border border-border text-foreground transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-105"
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dual Color Sliders Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Color 1: Start Color */}
+                      <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-lg border border-border shadow-xs shrink-0"
+                              style={{ backgroundColor: customColor1 }}
+                            />
+                            <span className="text-xs font-bold text-foreground">
+                              สีเริ่มต้น (Start Color)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                            {c1Light >= 65 ? '🌸 พาสเทล' : c1Light <= 35 ? '🌑 ดาร์ก' : '✨ สดใส'}
+                          </span>
+                        </div>
+
+                        {/* Hue Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>เฉดสี (Hue)</span>
+                            <span className="font-mono">{c1Hue}°</span>
+                          </div>
                           <input
-                            type="color"
-                            value={customColor1}
-                            onChange={(e) => setCustomColor1(e.target.value)}
-                            className="w-10 h-10 rounded-xl cursor-pointer border border-border p-1 bg-card"
+                            type="range"
+                            min="0"
+                            max="360"
+                            value={c1Hue}
+                            onChange={(e) => updateColor1(Number(e.target.value), c1Sat, c1Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background:
+                                'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)',
+                            }}
                           />
+                        </div>
+
+                        {/* Lightness / Tone Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสว่าง (Pastel ↔ Dark)</span>
+                            <span className="font-mono">{c1Light}%</span>
+                          </div>
                           <input
-                            type="text"
-                            value={customColor1}
-                            onChange={(e) => setCustomColor1(e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-xl bg-card border border-border text-xs font-mono text-foreground font-semibold"
+                            type="range"
+                            min="10"
+                            max="90"
+                            value={c1Light}
+                            onChange={(e) => updateColor1(c1Hue, c1Sat, Number(e.target.value))}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${c1Hue}, ${c1Sat}%, 15%), hsl(${c1Hue}, ${c1Sat}%, 50%), hsl(${c1Hue}, ${c1Sat}%, 85%))`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Saturation Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสดของสี (Vibrancy)</span>
+                            <span className="font-mono">{c1Sat}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={c1Sat}
+                            onChange={(e) => updateColor1(c1Hue, Number(e.target.value), c1Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${c1Hue}, 10%, ${c1Light}%), hsl(${c1Hue}, 100%, ${c1Light}%))`,
+                            }}
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-muted-foreground block">
-                          สีปลายทาง (End Color):
-                        </label>
-                        <div className="flex items-center gap-2">
+                      {/* Color 2: End Color */}
+                      <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-lg border border-border shadow-xs shrink-0"
+                              style={{ backgroundColor: customColor2 }}
+                            />
+                            <span className="text-xs font-bold text-foreground">
+                              สีปลายทาง (End Color)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                            {c2Light >= 65 ? '🌸 พาสเทล' : c2Light <= 35 ? '🌑 ดาร์ก' : '✨ สดใส'}
+                          </span>
+                        </div>
+
+                        {/* Hue Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>เฉดสี (Hue)</span>
+                            <span className="font-mono">{c2Hue}°</span>
+                          </div>
                           <input
-                            type="color"
-                            value={customColor2}
-                            onChange={(e) => setCustomColor2(e.target.value)}
-                            className="w-10 h-10 rounded-xl cursor-pointer border border-border p-1 bg-card"
+                            type="range"
+                            min="0"
+                            max="360"
+                            value={c2Hue}
+                            onChange={(e) => updateColor2(Number(e.target.value), c2Sat, c2Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background:
+                                'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)',
+                            }}
                           />
+                        </div>
+
+                        {/* Lightness / Tone Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสว่าง (Pastel ↔ Dark)</span>
+                            <span className="font-mono">{c2Light}%</span>
+                          </div>
                           <input
-                            type="text"
-                            value={customColor2}
-                            onChange={(e) => setCustomColor2(e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-xl bg-card border border-border text-xs font-mono text-foreground font-semibold"
+                            type="range"
+                            min="10"
+                            max="90"
+                            value={c2Light}
+                            onChange={(e) => updateColor2(c2Hue, c2Sat, Number(e.target.value))}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${c2Hue}, ${c2Sat}%, 15%), hsl(${c2Hue}, ${c2Sat}%, 50%), hsl(${c2Hue}, ${c2Sat}%, 85%))`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Saturation Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสดของสี (Vibrancy)</span>
+                            <span className="font-mono">{c2Sat}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={c2Sat}
+                            onChange={(e) => updateColor2(c2Hue, Number(e.target.value), c2Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${c2Hue}, 10%, ${c2Light}%), hsl(${c2Hue}, 100%, ${c2Light}%))`,
+                            }}
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Gradient Preview Bar */}
-                    <div
-                      className="h-10 rounded-xl border border-border shadow-inner"
-                      style={{ background: `linear-gradient(135deg, ${customColor1} 0%, ${customColor2} 100%)` }}
-                    />
+                    {/* Gradient Direction / Angle */}
+                    <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          ทิศทางการไล่เฉดสี (Gradient Angle)
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                          {gradientAngle}°
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          { label: '↗ ทแยงขวาบน (45°)', val: 45 },
+                          { label: '→ แนวนอน (90°)', val: 90 },
+                          { label: '↘ ทแยงขวาล่าง (135°)', val: 135 },
+                          { label: '↓ แนวตั้ง (180°)', val: 180 },
+                          { label: '← แนวนอนกลับด้าน (270°)', val: 270 },
+                        ].map((ang) => (
+                          <button
+                            key={ang.val}
+                            type="button"
+                            onClick={() => setGradientAngle(ang.val)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                              gradientAngle === ang.val
+                                ? 'bg-purple-600 text-white border-purple-500 shadow-2xs font-bold'
+                                : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                            }`}
+                          >
+                            {ang.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Live Preview Bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                        <span>ตัวอย่างแถบเฉดสี (Live Color Bar):</span>
+                        <span className="font-mono text-[10px]">{customColor1} → {customColor2}</span>
+                      </div>
+                      <div
+                        className="h-12 rounded-2xl border border-border shadow-inner transition-all duration-200"
+                        style={{ background: `linear-gradient(${gradientAngle}deg, ${customColor1} 0%, ${customColor2} 100%)` }}
+                      />
+                    </div>
                   </div>
                 )}
 

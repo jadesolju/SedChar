@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
 import type { SavedMultiProjectRecord } from '@/hooks/useMultiCharacterProject';
+import { cleanProjectTitle } from '@/hooks/useMultiCharacterProject';
 import { compileRubiiProjectMarkdown } from './RubiiDraftPreviewSection';
 import { useAuth } from '@/context/AuthContext';
 import { UniverseShareModal } from '@/components/universe/UniverseShareModal';
@@ -93,11 +94,23 @@ export function MultiCharLibraryModal({
     const map = new Map<string, SavedMultiProjectRecord>();
     for (const p of savedProjects) {
       if (!p || !p.id) continue;
-      const key = p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_') ? p.id : (p.title || '').trim().toLowerCase());
+      const cleanTitle = cleanProjectTitle(p.title).toLowerCase();
+      const isUni = typeof p.id === 'string' && p.id.startsWith('uni_');
+      const isCloned = (typeof p.id === 'string' && p.id.startsWith('cloned_')) || (p.title || '').includes('(Cloned)');
+      const key = p.shareId || (isUni ? p.id : cleanTitle || p.id);
       if (map.has(key)) {
         const existing = map.get(key)!;
         const newest = new Date(p.updatedAt || p.createdAt || 0).getTime() > new Date(existing.updatedAt || existing.createdAt || 0).getTime() ? p : existing;
-        map.set(key, { ...existing, ...newest, isShared: existing.isShared || p.isShared || Boolean(existing.shareId || p.shareId) });
+        const isExistingUni = typeof existing.id === 'string' && existing.id.startsWith('uni_');
+        const resolvedId = isUni ? p.id : isExistingUni ? existing.id : (!isCloned ? p.id : existing.id);
+        const resolvedTitle = cleanProjectTitle(p.title) || cleanProjectTitle(existing.title) || existing.title;
+        map.set(key, {
+          ...existing,
+          ...newest,
+          id: resolvedId,
+          title: resolvedTitle,
+          isShared: existing.isShared || p.isShared || Boolean(existing.shareId || p.shareId),
+        });
       } else {
         map.set(key, p);
       }
