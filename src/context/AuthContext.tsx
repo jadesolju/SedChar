@@ -57,6 +57,8 @@ interface AuthContextType {
     bio?: string;
     avatarBgTheme?: string;
     customAvatarBg?: string;
+    customAvatarBg2?: string;
+    avatarGradientAngle?: number;
     bannerTheme?: string;
     bannerUrl?: string;
     customBannerColor1?: string;
@@ -167,6 +169,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       bio?: string;
       avatarBgTheme?: string;
       customAvatarBg?: string;
+      customAvatarBg2?: string;
+      avatarGradientAngle?: number;
       bannerTheme?: string;
       bannerUrl?: string;
       customBannerColor1?: string;
@@ -225,6 +229,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(data.bio !== undefined ? { bio: data.bio } : {}),
         ...(data.avatarBgTheme !== undefined ? { avatar_bg_theme: data.avatarBgTheme } : {}),
         ...(data.customAvatarBg !== undefined ? { custom_avatar_bg: data.customAvatarBg } : {}),
+        ...(data.customAvatarBg2 !== undefined ? { custom_avatar_bg2: data.customAvatarBg2 } : {}),
+        ...(data.avatarGradientAngle !== undefined ? { avatar_gradient_angle: data.avatarGradientAngle } : {}),
         ...(data.bannerTheme !== undefined ? { banner_theme: data.bannerTheme } : {}),
         ...(finalBannerUrl !== undefined ? { banner_url: finalBannerUrl } : {}),
         ...(data.customBannerColor1 !== undefined ? { custom_banner_color1: data.customBannerColor1 } : {}),

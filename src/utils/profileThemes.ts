@@ -514,7 +514,24 @@ export const BANNER_THEMES: BannerTheme[] = [
   },
 ];
 
-export function getAvatarTheme(themeId?: string, customColor?: string): AvatarBgTheme {
+export function getAvatarTheme(
+  themeId?: string,
+  customColor?: string,
+  customColor2?: string,
+  gradientAngle: number = 135
+): AvatarBgTheme {
+  if (customColor && customColor2) {
+    return {
+      id: 'custom_gradient',
+      label: 'ไล่เฉดสีกำหนดเอง (Custom Gradient)',
+      name: 'Custom Gradient Aura',
+      subtitle: `${customColor} → ${customColor2}`,
+      gradient: `linear-gradient(${gradientAngle}deg, ${customColor} 0%, ${customColor2} 100%)`,
+      glow: `0 0 24px ${customColor}90, 0 0 45px ${customColor2}60`,
+      border: 'border-white/40',
+      ring: 'ring-white/40',
+    };
+  }
   if (customColor) {
     return {
       id: 'custom',
@@ -522,7 +539,7 @@ export function getAvatarTheme(themeId?: string, customColor?: string): AvatarBg
       name: 'Custom Aura',
       subtitle: customColor,
       gradient: `linear-gradient(135deg, ${customColor} 0%, #18181b 100%)`,
-      glow: `0 0 20px ${customColor}80`,
+      glow: `0 0 22px ${customColor}85`,
       border: 'border-white/40',
       ring: 'ring-white/40',
     };

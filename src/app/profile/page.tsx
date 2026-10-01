@@ -231,8 +231,39 @@ function ProfileContent() {
 
   // Avatar Aura State
   const [avatarBgTheme, setAvatarBgTheme] = useState('nebula');
-  const [avatarMode, setAvatarMode] = useState<'preset' | 'custom'>('preset');
+  const [avatarMode, setAvatarMode] = useState<'preset' | 'custom_gradient' | 'custom'>('preset');
   const [customAvatarBg, setCustomAvatarBg] = useState('#8b5cf6');
+  const [customAvatarBg2, setCustomAvatarBg2] = useState('#ec4899');
+  const [avatarGradientAngle, setAvatarGradientAngle] = useState(135);
+
+  // Avatar Aura Interactive HSL Slider States
+  const [a1Hue, setA1Hue] = useState(() => hexToHsl('#8b5cf6')[0]);
+  const [a1Sat, setA1Sat] = useState(() => hexToHsl('#8b5cf6')[1]);
+  const [a1Light, setA1Light] = useState(() => hexToHsl('#8b5cf6')[2]);
+
+  const [a2Hue, setA2Hue] = useState(() => hexToHsl('#ec4899')[0]);
+  const [a2Sat, setA2Sat] = useState(() => hexToHsl('#ec4899')[1]);
+  const [a2Light, setA2Light] = useState(() => hexToHsl('#ec4899')[2]);
+
+  const updateAvatarColor1 = (h: number, s: number, l: number) => {
+    const clampedH = (h + 360) % 360;
+    const clampedS = Math.max(0, Math.min(100, s));
+    const clampedL = Math.max(5, Math.min(95, l));
+    setA1Hue(clampedH);
+    setA1Sat(clampedS);
+    setA1Light(clampedL);
+    setCustomAvatarBg(hslToHex(clampedH, clampedS, clampedL));
+  };
+
+  const updateAvatarColor2 = (h: number, s: number, l: number) => {
+    const clampedH = (h + 360) % 360;
+    const clampedS = Math.max(0, Math.min(100, s));
+    const clampedL = Math.max(5, Math.min(95, l));
+    setA2Hue(clampedH);
+    setA2Sat(clampedS);
+    setA2Light(clampedL);
+    setCustomAvatarBg2(hslToHex(clampedH, clampedS, clampedL));
+  };
 
   // Banner State
   const [bannerMode, setBannerMode] = useState<'preset' | 'custom_gradient' | 'custom_image'>('preset');
@@ -309,9 +340,26 @@ function ProfileContent() {
       setSelectedPreset(meta.avatar_preset || null);
 
       // Restore avatar aura
-      if (meta.custom_avatar_bg) {
+      if (meta.custom_avatar_bg && meta.custom_avatar_bg2) {
+        setAvatarMode('custom_gradient');
+        setCustomAvatarBg(meta.custom_avatar_bg);
+        setCustomAvatarBg2(meta.custom_avatar_bg2);
+        setAvatarGradientAngle(meta.avatar_gradient_angle || 135);
+        const [h1, s1, l1] = hexToHsl(meta.custom_avatar_bg);
+        const [h2, s2, l2] = hexToHsl(meta.custom_avatar_bg2);
+        setA1Hue(h1);
+        setA1Sat(s1);
+        setA1Light(l1);
+        setA2Hue(h2);
+        setA2Sat(s2);
+        setA2Light(l2);
+      } else if (meta.custom_avatar_bg) {
         setAvatarMode('custom');
         setCustomAvatarBg(meta.custom_avatar_bg);
+        const [h1, s1, l1] = hexToHsl(meta.custom_avatar_bg);
+        setA1Hue(h1);
+        setA1Sat(s1);
+        setA1Light(l1);
       } else {
         setAvatarMode('preset');
         setAvatarBgTheme(meta.avatar_bg_theme || 'nebula');
@@ -444,7 +492,13 @@ function ProfileContent() {
 
   const activeAvatarTheme = getAvatarTheme(
     avatarMode === 'preset' ? avatarBgTheme : undefined,
-    avatarMode === 'custom' ? customAvatarBg : undefined
+    avatarMode === 'custom'
+      ? customAvatarBg
+      : avatarMode === 'custom_gradient'
+      ? customAvatarBg
+      : undefined,
+    avatarMode === 'custom_gradient' ? customAvatarBg2 : undefined,
+    avatarGradientAngle
   );
 
   const activeBannerTheme = getBannerTheme(
@@ -567,7 +621,14 @@ function ProfileContent() {
         avatarUrl: avatarUrl || undefined,
         bio: bio.trim(),
         avatarBgTheme: avatarMode === 'preset' ? avatarBgTheme : undefined,
-        customAvatarBg: avatarMode === 'custom' ? customAvatarBg : undefined,
+        customAvatarBg:
+          avatarMode === 'custom'
+            ? customAvatarBg
+            : avatarMode === 'custom_gradient'
+            ? customAvatarBg
+            : undefined,
+        customAvatarBg2: avatarMode === 'custom_gradient' ? customAvatarBg2 : undefined,
+        avatarGradientAngle: avatarMode === 'custom_gradient' ? avatarGradientAngle : undefined,
         bannerTheme: bannerMode === 'preset' ? bannerTheme : undefined,
         bannerUrl: bannerMode === 'custom_image' ? bannerUrl : '',
         customBannerColor1: bannerMode === 'custom_gradient' ? customColor1 : undefined,
@@ -1072,17 +1133,32 @@ function ProfileContent() {
                             }`}
                             style={{ background: theme.gradient }}
                           >
+                            {/* Scrim overlay for crisp text shadow & contrast */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/20 pointer-events-none rounded-2xl" />
+
                             <div className="flex items-center justify-between w-full relative z-10">
-                              <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] truncate">
+                              <span
+                                className="text-[11.5px] font-extrabold text-white tracking-wide truncate"
+                                style={{
+                                  textShadow:
+                                    '0 1px 3px rgba(0, 0, 0, 0.95), 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.5)',
+                                }}
+                              >
                                 {theme.name}
                               </span>
                               {isSelected && (
-                                <div className="w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs ring-1 ring-white/50">
                                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </div>
                               )}
                             </div>
-                            <span className="text-[9.5px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate relative z-10">
+                            <span
+                              className="text-[10px] font-semibold text-white/95 truncate relative z-10"
+                              style={{
+                                textShadow:
+                                  '0 1px 2px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.8)',
+                              }}
+                            >
                               {theme.subtitle}
                             </span>
                           </button>
@@ -1464,7 +1540,8 @@ function ProfileContent() {
                     <span>2. สีพื้นหลัง &amp; ออร่าเรืองแสง Avatar (Avatar Aura)</span>
                   </label>
 
-                  <div className="grid grid-cols-2 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
+                  {/* Mode Selector Tabs */}
+                  <div className="grid grid-cols-3 rounded-xl bg-muted p-1 border border-border text-xs font-semibold w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setAvatarMode('preset')}
@@ -1478,6 +1555,17 @@ function ProfileContent() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setAvatarMode('custom_gradient')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
+                        avatarMode === 'custom_gradient'
+                          ? 'bg-card text-foreground shadow-xs font-bold'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      ไล่เฉดสีเอง
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setAvatarMode('custom')}
                       className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
                         avatarMode === 'custom'
@@ -1485,12 +1573,13 @@ function ProfileContent() {
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      กำหนดสีเอง (Hex)
+                      สีเดี่ยว (Hex)
                     </button>
                   </div>
                 </div>
 
-                {avatarMode === 'preset' ? (
+                {/* Mode 1: Presets */}
+                {avatarMode === 'preset' && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 animate-in fade-in duration-200">
                     {AVATAR_BG_THEMES.map((theme) => {
                       const isSelected = avatarBgTheme === theme.id;
@@ -1523,10 +1612,321 @@ function ProfileContent() {
                       );
                     })}
                   </div>
-                ) : (
+                )}
+
+                {/* Mode 2: Custom Gradient with Interactive Sliders */}
+                {avatarMode === 'custom_gradient' && (
+                  <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border space-y-5 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Sliders className="w-4 h-4 text-purple-500" />
+                        <span>ปรับแต่งแสงออร่า Avatar ไล่เฉดสี (Interactive Aura Studio)</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        เลื่อนปรับระดับเฉดสี ความสว่าง และทิศทางการเรืองแสงได้ตามใจชอบ
+                      </span>
+                    </div>
+
+                    {/* Quick Mood Chips for Aura */}
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground block">
+                        ✨ โทนสีออร่ายอดนิยม (Quick Aura Presets):
+                      </span>
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                        {[
+                          {
+                            label: '🌸 ซากุระพาสเทล',
+                            apply: () => {
+                              updateAvatarColor1(330, 85, 75);
+                              updateAvatarColor2(280, 80, 78);
+                            },
+                          },
+                          {
+                            label: '💜 คอสมิกเนบิวลา',
+                            apply: () => {
+                              updateAvatarColor1(270, 85, 60);
+                              updateAvatarColor2(225, 80, 58);
+                            },
+                          },
+                          {
+                            label: '🌿 ป่ามรกตเรืองแสง',
+                            apply: () => {
+                              updateAvatarColor1(155, 80, 48);
+                              updateAvatarColor2(185, 90, 45);
+                            },
+                          },
+                          {
+                            label: '🌅 อาทิตย์อัสดง',
+                            apply: () => {
+                              updateAvatarColor1(345, 90, 60);
+                              updateAvatarColor2(30, 95, 52);
+                            },
+                          },
+                          {
+                            label: '🌌 ไซเบอร์พังก์',
+                            apply: () => {
+                              updateAvatarColor1(190, 95, 48);
+                              updateAvatarColor2(305, 85, 55);
+                            },
+                          },
+                          {
+                            label: '💎 คริสตัลโอเชียน',
+                            apply: () => {
+                              updateAvatarColor1(215, 90, 55);
+                              updateAvatarColor2(175, 85, 50);
+                            },
+                          },
+                          {
+                            label: '👑 ทองคำเรืองรอง',
+                            apply: () => {
+                              updateAvatarColor1(38, 95, 52);
+                              updateAvatarColor2(48, 95, 48);
+                            },
+                          },
+                          {
+                            label: '🌑 มิดไนท์โกลว์',
+                            apply: () => {
+                              updateAvatarColor1(255, 50, 20);
+                              updateAvatarColor2(220, 55, 15);
+                            },
+                          },
+                        ].map((m, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={m.apply}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-card hover:bg-muted border border-border text-foreground transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-105"
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dual Color Sliders Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Color 1: Start Color */}
+                      <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-lg border border-border shadow-xs shrink-0"
+                              style={{ backgroundColor: customAvatarBg }}
+                            />
+                            <span className="text-xs font-bold text-foreground">
+                              สีออร่าเริ่มต้น (Start Color)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                            {a1Light >= 65 ? '🌸 พาสเทล' : a1Light <= 35 ? '🌑 ดาร์ก' : '✨ สดใส'}
+                          </span>
+                        </div>
+
+                        {/* Hue Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>เฉดสี (Hue)</span>
+                            <span className="font-mono">{a1Hue}°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            value={a1Hue}
+                            onChange={(e) => updateAvatarColor1(Number(e.target.value), a1Sat, a1Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background:
+                                'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)',
+                            }}
+                          />
+                        </div>
+
+                        {/* Lightness Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสว่าง (Pastel ↔ Dark)</span>
+                            <span className="font-mono">{a1Light}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="90"
+                            value={a1Light}
+                            onChange={(e) => updateAvatarColor1(a1Hue, a1Sat, Number(e.target.value))}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${a1Hue}, ${a1Sat}%, 15%), hsl(${a1Hue}, ${a1Sat}%, 50%), hsl(${a1Hue}, ${a1Sat}%, 85%))`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Saturation Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสดของสี (Vibrancy)</span>
+                            <span className="font-mono">{a1Sat}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={a1Sat}
+                            onChange={(e) => updateAvatarColor1(a1Hue, Number(e.target.value), a1Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${a1Hue}, 10%, ${a1Light}%), hsl(${a1Hue}, 100%, ${a1Light}%))`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Color 2: End Color */}
+                      <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-lg border border-border shadow-xs shrink-0"
+                              style={{ backgroundColor: customAvatarBg2 }}
+                            />
+                            <span className="text-xs font-bold text-foreground">
+                              สีออร่าปลายทาง (End Color)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                            {a2Light >= 65 ? '🌸 พาสเทล' : a2Light <= 35 ? '🌑 ดาร์ก' : '✨ สดใส'}
+                          </span>
+                        </div>
+
+                        {/* Hue Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>เฉดสี (Hue)</span>
+                            <span className="font-mono">{a2Hue}°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            value={a2Hue}
+                            onChange={(e) => updateAvatarColor2(Number(e.target.value), a2Sat, a2Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background:
+                                'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)',
+                            }}
+                          />
+                        </div>
+
+                        {/* Lightness Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสว่าง (Pastel ↔ Dark)</span>
+                            <span className="font-mono">{a2Light}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="90"
+                            value={a2Light}
+                            onChange={(e) => updateAvatarColor2(a2Hue, a2Sat, Number(e.target.value))}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${a2Hue}, ${a2Sat}%, 15%), hsl(${a2Hue}, ${a2Sat}%, 50%), hsl(${a2Hue}, ${a2Sat}%, 85%))`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Saturation Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>ความสดของสี (Vibrancy)</span>
+                            <span className="font-mono">{a2Sat}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={a2Sat}
+                            onChange={(e) => updateAvatarColor2(a2Hue, Number(e.target.value), a2Light)}
+                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-white"
+                            style={{
+                              background: `linear-gradient(to right, hsl(${a2Hue}, 10%, ${a2Light}%), hsl(${a2Hue}, 100%, ${a2Light}%))`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Gradient Angle */}
+                    <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          ทิศทางการไล่เฉดออร่า (Aura Gradient Angle)
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
+                          {avatarGradientAngle}°
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          { label: '↗ ทแยงขวาบน (45°)', val: 45 },
+                          { label: '→ แนวนอน (90°)', val: 90 },
+                          { label: '↘ ทแยงขวาล่าง (135°)', val: 135 },
+                          { label: '↓ แนวตั้ง (180°)', val: 180 },
+                          { label: '← แนวนอนกลับด้าน (270°)', val: 270 },
+                        ].map((ang) => (
+                          <button
+                            key={ang.val}
+                            type="button"
+                            onClick={() => setAvatarGradientAngle(ang.val)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                              avatarGradientAngle === ang.val
+                                ? 'bg-purple-600 text-white border-purple-500 shadow-2xs font-bold'
+                                : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
+                            }`}
+                          >
+                            {ang.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Live Glowing Aura Preview */}
+                    <div className="p-4 rounded-2xl bg-card border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div
+                          className="w-14 h-14 rounded-2xl border-2 border-white/40 shadow-2xl flex items-center justify-center text-white font-bold text-xl overflow-hidden transition-all duration-300"
+                          style={{
+                            background: `linear-gradient(${avatarGradientAngle}deg, ${customAvatarBg} 0%, ${customAvatarBg2} 100%)`,
+                            boxShadow: `0 0 24px ${customAvatarBg}90, 0 0 45px ${customAvatarBg2}60`,
+                          }}
+                        >
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{initial}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-foreground">ตัวอย่างแสงออร่ารอบ Avatar</div>
+                          <div className="text-[10px] font-mono text-muted-foreground">
+                            {customAvatarBg} → {customAvatarBg2}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground text-center sm:text-right">
+                        แสงเรืองรองจะแสดงผลรอบกรอบ Avatar บนแถบโปรไฟล์ของคุณ
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mode 3: Single Color Hex */}
+                {avatarMode === 'custom' && (
                   <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3 animate-in fade-in duration-200">
                     <span className="text-[11px] font-semibold text-muted-foreground block">
-                      เลือกสีออร่า Avatar ที่คุณต้องการ:
+                      เลือกสีออร่า Avatar แบบสีเดี่ยว (Solid Color):
                     </span>
                     <div className="flex items-center gap-3">
                       <input

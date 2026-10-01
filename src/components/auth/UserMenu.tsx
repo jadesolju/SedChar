@@ -188,7 +188,9 @@ export function UserMenu({
             style={{
               background: getAvatarTheme(
                 user.user_metadata?.avatar_bg_theme,
-                user.user_metadata?.custom_avatar_bg
+                user.user_metadata?.custom_avatar_bg,
+                user.user_metadata?.custom_avatar_bg2,
+                user.user_metadata?.avatar_gradient_angle
               ).gradient,
             }}
           >
