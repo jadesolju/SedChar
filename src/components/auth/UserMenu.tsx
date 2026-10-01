@@ -277,7 +277,7 @@ export function UserMenu({
                 <div className="font-semibold text-xs text-foreground flex items-center justify-between">
                   <span>คลังตัวละครเดี่ยว (Single-Char)</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                    {savedCharacters.length} ตัว
+                    {savedCharacters?.length || 0} ตัว
                   </span>
                 </div>
                 <div className="text-[10px] text-muted-foreground truncate">

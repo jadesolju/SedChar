@@ -103,6 +103,7 @@ function ProfileContent() {
     savedCharacters,
     deleteFromLibrary,
     setActiveLoadedCharacterId,
+    isLoading,
   } = useAuth();
 
   // Active Main Tab on Profile Page
@@ -217,6 +218,17 @@ function ProfileContent() {
   useEffect(() => {
     refreshProjects();
   }, [refreshProjects]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+          <p className="text-xs text-muted-foreground font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -389,9 +401,11 @@ function ProfileContent() {
 
   // Filtered Single Characters for Tab 2
   const filteredSingleChars = useMemo(() => {
+    if (!savedCharacters || !Array.isArray(savedCharacters)) return [];
     if (!singleCharSearch.trim()) return savedCharacters;
     const q = singleCharSearch.toLowerCase().trim();
     return savedCharacters.filter((c) => {
+      if (!c) return false;
       const name = (c.title || c.nickname || '').toLowerCase();
       const tagline = (c.tagline || '').toLowerCase();
       return name.includes(q) || tagline.includes(q);
@@ -532,26 +546,37 @@ function ProfileContent() {
 
   // Categorize Projects for Tabs
   const myCreatedProjects = useMemo(() => {
+    if (!Array.isArray(savedProjects)) return [];
     return savedProjects.filter(
-      (p) => !p.id.startsWith('cloned_') && !p.title.includes('(Cloned)') && !(p.projectData as any)?.isCloned
+      (p) =>
+        p &&
+        !(typeof p.id === 'string' && p.id.startsWith('cloned_')) &&
+        !(p.title || '').includes('(Cloned)') &&
+        !(p.projectData as any)?.isCloned
     );
   }, [savedProjects]);
 
   const sharedAndCommuProjects = useMemo(() => {
+    if (!Array.isArray(savedProjects)) return [];
     return savedProjects.filter(
       (p) =>
-        Boolean(p.isShared || p.shareId || p.id.startsWith('uni_')) ||
-        p.id.startsWith('cloned_') ||
-        p.title.includes('(Cloned)') ||
-        (p.projectData as any)?.isCloned
+        p &&
+        (Boolean(p.isShared || p.shareId || (typeof p.id === 'string' && p.id.startsWith('uni_'))) ||
+          (typeof p.id === 'string' && p.id.startsWith('cloned_')) ||
+          (p.title || '').includes('(Cloned)') ||
+          (p.projectData as any)?.isCloned)
     );
   }, [savedProjects]);
 
   const filteredMyProjects = useMemo(() => {
+    if (!Array.isArray(myCreatedProjects)) return [];
+    const q = (projectSearch || '').toLowerCase().trim();
+    if (!q) return myCreatedProjects;
     return myCreatedProjects.filter(
       (p) =>
-        p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
-        p.description.toLowerCase().includes(projectSearch.toLowerCase())
+        p &&
+        ((p.title || '').toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q))
     );
   }, [myCreatedProjects, projectSearch]);
 
@@ -1337,11 +1362,12 @@ function ProfileContent() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {filteredSingleChars.map((charRec) => {
+                  if (!charRec || !charRec.id) return null;
                   const name = charRec.title || charRec.nickname || 'ตัวละครไม่มีชื่อ';
                   const flagKey = (charRec.flag_type || 'none') as keyof typeof CHARACTER_FLAGS;
                   const flag = CHARACTER_FLAGS[flagKey] || CHARACTER_FLAGS.none;
                   const avatar = charRec.image_url || (charRec.character_data as any)?.avatarUrl || (charRec.character_data as any)?.imageUrl;
-                  const initialChar = name.charAt(0).toUpperCase();
+                  const initialChar = (name || 'U').charAt(0).toUpperCase();
 
                   return (
                     <div
@@ -1520,8 +1546,9 @@ function ProfileContent() {
             ) : (
               <div className="grid grid-cols-1 gap-3.5">
                 {filteredMyProjects.map((rec) => {
-                  const isShared = Boolean(rec.isShared || rec.shareId || rec.id.startsWith('uni_'));
-                  const shareId = rec.shareId || (rec.id.startsWith('uni_') ? rec.id : undefined);
+                  if (!rec || !rec.id) return null;
+                  const isShared = Boolean(rec.isShared || rec.shareId || (typeof rec.id === 'string' && rec.id.startsWith('uni_')));
+                  const shareId = rec.shareId || (typeof rec.id === 'string' && rec.id.startsWith('uni_') ? rec.id : undefined);
 
                   return (
                     <div
@@ -1692,8 +1719,9 @@ function ProfileContent() {
             ) : (
               <div className="grid grid-cols-1 gap-3.5">
                 {sharedAndCommuProjects.map((rec) => {
-                  const shareId = rec.shareId || (rec.id.startsWith('uni_') ? rec.id : undefined);
-                  const isCloned = rec.id.startsWith('cloned_') || rec.title.includes('(Cloned)');
+                  if (!rec || !rec.id) return null;
+                  const shareId = rec.shareId || (typeof rec.id === 'string' && rec.id.startsWith('uni_') ? rec.id : undefined);
+                  const isCloned = (typeof rec.id === 'string' && rec.id.startsWith('cloned_')) || (rec.title || '').includes('(Cloned)');
 
                   return (
                     <div

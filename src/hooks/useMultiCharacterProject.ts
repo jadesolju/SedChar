@@ -36,21 +36,26 @@ export interface SavedMultiProjectRecord {
 }
 
 export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): SavedMultiProjectRecord[] {
+  if (!Array.isArray(records)) return [];
   const result: SavedMultiProjectRecord[] = [];
 
   for (const item of records) {
     if (!item || !item.id) continue;
     const itemTitle = (item.title || '').trim().toLowerCase();
-    const itemShareId = item.shareId || (item.id.startsWith('uni_') ? item.id : undefined);
+    const isItemUni = typeof item.id === 'string' && item.id.startsWith('uni_');
+    const itemShareId = item.shareId || (isItemUni ? item.id : undefined);
 
     const existingIndex = result.findIndex((existing) => {
+      if (!existing) return false;
       if (existing.id === item.id) return true;
-      const existingShareId = existing.shareId || (existing.id.startsWith('uni_') ? existing.id : undefined);
+      const isExistUni = typeof existing.id === 'string' && existing.id.startsWith('uni_');
+      const existingShareId = existing.shareId || (isExistUni ? existing.id : undefined);
       if (existingShareId && itemShareId && existingShareId === itemShareId) return true;
       if (existingShareId && (existingShareId === item.id || existing.id === itemShareId)) return true;
+      const existTitle = (existing.title || '').trim().toLowerCase();
       if (
         itemTitle &&
-        existing.title.trim().toLowerCase() === itemTitle &&
+        existTitle === itemTitle &&
         itemTitle !== 'โปรเจกต์ multi-char' &&
         itemTitle !== 'untitled' &&
         itemTitle !== 'จักรวาลและคลังความจำ'
@@ -68,18 +73,21 @@ export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): S
           ? (item.updatedAt || item.createdAt)
           : (existing.updatedAt || existing.createdAt);
 
+      const isExistUni = typeof existing.id === 'string' && existing.id.startsWith('uni_');
       const resolvedShareId =
         item.shareId ||
         existing.shareId ||
-        (item.id.startsWith('uni_') ? item.id : existing.id.startsWith('uni_') ? existing.id : undefined);
+        (isItemUni ? item.id : isExistUni ? existing.id : undefined);
+
+      const itemHasValidTitle = item.title && !item.title.includes('(Cloned)');
 
       const merged: SavedMultiProjectRecord = {
         ...existing,
         ...item,
-        id: item.id.startsWith('uni_') ? item.id : existing.id,
-        title: item.title && !item.title.includes('(Cloned)') ? item.title : existing.title,
+        id: isItemUni ? item.id : existing.id,
+        title: itemHasValidTitle ? item.title : (existing.title || 'โปรเจกต์ Multi-Char'),
         author: item.author || existing.author,
-        description: item.description || existing.description,
+        description: item.description || existing.description || '',
         mainCharCount: Math.max(existing.mainCharCount || 0, item.mainCharCount || 0),
         subCharCount: Math.max(existing.subCharCount || 0, item.subCharCount || 0),
         routeCount: Math.max(existing.routeCount || 0, item.routeCount || 0),
