@@ -1036,9 +1036,9 @@ function ProfileContent() {
                       {[
                         { id: 'all', label: 'ทั้งหมด' },
                         { id: 'pastel', label: '🌸 พาสเทล (Pastel)' },
-                        { id: 'solid', label: '⚪ สีเรียบ (Solid)' },
-                        { id: 'dark', label: '🌑 ดาร์ก (Dark)' },
-                        { id: 'vibrant', label: '🌌 นีออน (Vibrant)' },
+                        { id: 'solid', label: '⚪ สีเรียบคลีน (Solid Clean)' },
+                        { id: 'vibrant', label: '🌌 สดใสไล่เฉด (Luminous)' },
+                        { id: 'dark', label: '🔮 โมเดิร์นหรูหรา (Modern Luxe)' },
                       ].map((cat) => (
                         <button
                           key={cat.id}
@@ -1073,16 +1073,16 @@ function ProfileContent() {
                             style={{ background: theme.gradient }}
                           >
                             <div className="flex items-center justify-between w-full relative z-10">
-                              <span className="text-[11px] font-bold text-white drop-shadow-md truncate">
+                              <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] truncate">
                                 {theme.name}
                               </span>
                               {isSelected && (
-                                <div className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </div>
                               )}
                             </div>
-                            <span className="text-[9px] text-white/80 drop-shadow-xs truncate relative z-10">
+                            <span className="text-[9.5px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate relative z-10">
                               {theme.subtitle}
                             </span>
                           </button>
