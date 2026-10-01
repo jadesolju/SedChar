@@ -312,26 +312,57 @@ function ProfileContent() {
     }
   };
 
+  // Global Smooth Dragging Listeners for True Responsive Dragging
+  useEffect(() => {
+    if (!isDraggingBanner) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!dragStartRef.current || !bannerContainerRef.current) return;
+      const rect = bannerContainerRef.current.getBoundingClientRect();
+      const deltaY = e.clientY - dragStartRef.current.startY;
+      const deltaPercent = (deltaY / rect.height) * 100;
+      const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
+      setBannerPosY(newPos);
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDraggingBanner(false);
+      dragStartRef.current = null;
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (!dragStartRef.current || !bannerContainerRef.current) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = bannerContainerRef.current.getBoundingClientRect();
+      const deltaY = touch.clientY - dragStartRef.current.startY;
+      const deltaPercent = (deltaY / rect.height) * 100;
+      const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
+      setBannerPosY(newPos);
+    };
+
+    const handleGlobalTouchEnd = () => {
+      setIsDraggingBanner(false);
+      dragStartRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: true });
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, [isDraggingBanner]);
+
   const handleBannerMouseDown = (e: React.MouseEvent) => {
     if (bannerMode !== 'custom_image' || !bannerUrl || isBannerLocked) return;
     dragStartRef.current = { startY: e.clientY, initialPosY: bannerPosY };
     setIsDraggingBanner(true);
-  };
-
-  const handleBannerMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingBanner || !dragStartRef.current || !bannerContainerRef.current) return;
-    const rect = bannerContainerRef.current.getBoundingClientRect();
-    const deltaY = e.clientY - dragStartRef.current.startY;
-    const deltaPercent = (deltaY / rect.height) * 100;
-    const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
-    setBannerPosY(newPos);
-  };
-
-  const handleBannerMouseUp = () => {
-    if (isDraggingBanner) {
-      setIsDraggingBanner(false);
-      dragStartRef.current = null;
-    }
   };
 
   const handleBannerTouchStart = (e: React.TouchEvent) => {
@@ -340,24 +371,6 @@ function ProfileContent() {
     if (!touch) return;
     dragStartRef.current = { startY: touch.clientY, initialPosY: bannerPosY };
     setIsDraggingBanner(true);
-  };
-
-  const handleBannerTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingBanner || !dragStartRef.current || !bannerContainerRef.current) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const rect = bannerContainerRef.current.getBoundingClientRect();
-    const deltaY = touch.clientY - dragStartRef.current.startY;
-    const deltaPercent = (deltaY / rect.height) * 100;
-    const newPos = Math.max(0, Math.min(100, Math.round(dragStartRef.current.initialPosY - deltaPercent)));
-    setBannerPosY(newPos);
-  };
-
-  const handleBannerTouchEnd = () => {
-    if (isDraggingBanner) {
-      setIsDraggingBanner(false);
-      dragStartRef.current = null;
-    }
   };
 
   // Interactive Gradient Slider States (HSL)
@@ -428,7 +441,7 @@ function ProfileContent() {
       const currentName = meta.display_name || meta.full_name || (user.email ? user.email.split('@')[0] : '');
       setDisplayName(currentName);
       setBio(meta.bio || '');
-      setAvatarUrl(meta.avatar_url || '');
+      setAvatarUrl(meta.custom_avatar_url || meta.avatar_url || '');
       setSelectedPreset(meta.avatar_preset || null);
 
       // Restore avatar aura
@@ -1010,12 +1023,7 @@ function ProfileContent() {
         <div
           ref={bannerContainerRef}
           onMouseDown={handleBannerMouseDown}
-          onMouseMove={handleBannerMouseMove}
-          onMouseUp={handleBannerMouseUp}
-          onMouseLeave={handleBannerMouseUp}
           onTouchStart={handleBannerTouchStart}
-          onTouchMove={handleBannerTouchMove}
-          onTouchEnd={handleBannerTouchEnd}
           className={`relative rounded-3xl border border-border/80 shadow-2xl overflow-hidden transition-all duration-300 select-none ${
             bannerMode === 'custom_image' && bannerUrl
               ? isDraggingBanner
@@ -1056,47 +1064,53 @@ function ProfileContent() {
           {/* Top Floating Glass Bar */}
           <div className="relative z-10 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-xl text-white text-[11px] font-semibold border border-white/20 shadow-lg">
-                <Eye className="w-3.5 h-3.5 text-purple-300" />
-                <span>ตัวอย่างโปรไฟล์ (Live Preview)</span>
-              </span>
-
               {bannerMode === 'custom_image' && bannerUrl && (
-                <div className="flex items-center gap-1.5">
-                  {isBannerLocked ? (
+                !isBannerLocked ? (
+                  /* Active Adjusting Bar (Shows ONLY while adjusting) */
+                  <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/30 backdrop-blur-xl text-amber-200 text-[10.5px] font-bold border border-amber-400/40 shadow-lg animate-pulse">
+                      <MoveVertical className="w-3.5 h-3.5 text-amber-300" />
+                      <span>ลากขึ้น-ลงเพื่อปรับมุมมอง ({bannerPosY}%)</span>
+                    </span>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setIsBannerLocked(false);
+                        handleQuickSaveBannerPosition();
                       }}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-xl text-emerald-300 hover:text-emerald-200 text-[10.5px] font-bold border border-emerald-500/30 transition-all cursor-pointer shadow-md"
-                      title="ภาพถูกล็อคตำแหน่งอยู่ คลิกเพื่อปลดล็อคและลากปรับตำแหน่ง"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10.5px] font-bold shadow-lg transition-all cursor-pointer"
+                      title="บันทึกตำแหน่งภาพนี้"
                     >
-                      <Lock className="w-3 h-3 text-emerald-400" />
-                      <span>ล็อคภาพแล้ว ({bannerPosY}%)</span>
+                      <Save className="w-3 h-3" />
+                      <span>บันทึกตำแหน่ง</span>
                     </button>
-                  ) : (
-                    <>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/30 backdrop-blur-xl text-amber-200 text-[10px] font-bold border border-amber-400/40 animate-pulse">
-                        <Unlock className="w-3 h-3 text-amber-300" />
-                        <span>ลากปรับตำแหน่ง ({bannerPosY}%)</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickSaveBannerPosition();
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold shadow-md transition-all cursor-pointer"
-                        title="บันทึกและล็อคตำแหน่งภาพนี้ทันที"
-                      >
-                        <Save className="w-3 h-3" />
-                        <span>บันทึก &amp; ล็อค</span>
-                      </button>
-                    </>
-                  )}
-                </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsBannerLocked(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-xl text-white/80 hover:text-white text-[10.5px] font-medium border border-white/20 shadow-md transition-all cursor-pointer"
+                      title="ปิดการปรับตำแหน่ง"
+                    >
+                      <span>ปิด</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Clean Normal State - Sleek Adjust Button */
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsBannerLocked(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-xl text-white/90 hover:text-white text-[10.5px] font-semibold border border-white/15 hover:border-white/30 transition-all cursor-pointer shadow-md group"
+                    title="คลิกเพื่อลากเลื่อนปรับตำแหน่งมุมมองของรูปปก"
+                  >
+                    <MoveVertical className="w-3 h-3 text-purple-300 group-hover:scale-110 transition-transform" />
+                    <span>ปรับตำแหน่งรูปปก</span>
+                  </button>
+                )
               )}
             </div>
 
@@ -1775,6 +1789,19 @@ function ProfileContent() {
                           <button
                             type="button"
                             onClick={() => {
+                              setIsBannerLocked(false);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                            title="เลื่อนปรับตำแหน่งมุมมองของรูปปกโดยตรง"
+                          >
+                            <MoveVertical className="w-3.5 h-3.5 text-amber-400" />
+                            <span>ลากเลื่อนปรับมุมมองรูปปก</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
                               setBannerUrl('');
                               setBannerMode('preset');
                             }}
@@ -1794,75 +1821,6 @@ function ProfileContent() {
                         className="hidden"
                       />
                     </div>
-
-                    {bannerUrl && (
-                      <div className="space-y-4 pt-2 border-t border-border/60">
-                        {/* Vertical Position Slider & Presets */}
-                        <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 shadow-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <MoveVertical className="w-4 h-4 text-purple-500" />
-                              <span className="text-xs font-bold text-foreground">
-                                ตำแหน่งภาพแนวตั้ง (Vertical Position Y)
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted text-foreground font-bold">
-                              {bannerPosY}%
-                            </span>
-                          </div>
-
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={bannerPosY}
-                            onChange={(e) => setBannerPosY(Number(e.target.value))}
-                            className="w-full h-3 rounded-lg appearance-none cursor-pointer outline-hidden accent-purple-600 bg-muted"
-                          />
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            {[
-                              { label: '🔝 บนสุด (0%)', val: 0 },
-                              { label: '🎯 กึ่งกลาง (50%)', val: 50 },
-                              { label: '🔻 ล่างสุด (100%)', val: 100 },
-                            ].map((preset) => (
-                              <button
-                                key={preset.val}
-                                type="button"
-                                onClick={() => setBannerPosY(preset.val)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
-                                  bannerPosY === preset.val
-                                    ? 'bg-purple-600 text-white border-purple-500 shadow-2xs font-bold'
-                                    : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
-                                }`}
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
-
-                            <button
-                              type="button"
-                              onClick={handleQuickSaveBannerPosition}
-                              className="ml-auto px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10.5px] font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
-                              title="บันทึกตำแหน่งแนวตั้งปัจจุบัน"
-                            >
-                              <Save className="w-3 h-3" />
-                              <span>บันทึก &amp; ล็อคตำแหน่ง</span>
-                            </button>
-                          </div>
-                        </div>
-
-
-
-                        {/* Interactive Dragging Tip */}
-                        <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                          <Hand className="w-4 h-4 shrink-0 animate-bounce" />
-                          <span>
-                            <strong>เคล็ดลับ:</strong> คุณสามารถคลิกหรือแตะค้างที่รูปแบนเนอร์ตัวอย่างด้านบน แล้วลากขึ้น-ลง เพื่อเลื่อนปรับตำแหน่งภาพได้ทันที!
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 

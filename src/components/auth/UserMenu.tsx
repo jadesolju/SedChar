@@ -108,7 +108,7 @@ export function UserMenu({
   }
 
   const initial = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-  const avatarUrl = user.user_metadata?.avatar_url;
+  const avatarUrl = user.user_metadata?.custom_avatar_url || user.user_metadata?.avatar_url;
 
   const fallbackRoleInfo = {
     name: 'Free',

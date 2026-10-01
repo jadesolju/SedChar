@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
             user_metadata: {
               ...currentMeta,
               avatar_url: publicUrl,
+              custom_avatar_url: publicUrl,
+              is_custom_avatar: true,
             },
           });
         }

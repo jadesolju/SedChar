@@ -229,7 +229,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(data.displayName !== undefined
           ? { display_name: data.displayName, full_name: data.displayName }
           : {}),
-        ...(finalAvatarUrl !== undefined ? { avatar_url: finalAvatarUrl } : {}),
+        ...(finalAvatarUrl !== undefined
+          ? {
+              avatar_url: finalAvatarUrl,
+              custom_avatar_url: finalAvatarUrl,
+              is_custom_avatar: true,
+            }
+          : {}),
         ...(data.bio !== undefined ? { bio: data.bio } : {}),
         ...(data.avatarBgTheme !== undefined ? { avatar_bg_theme: data.avatarBgTheme } : {}),
         ...(data.customAvatarBg !== undefined ? { custom_avatar_bg: data.customAvatarBg } : {}),
@@ -535,11 +541,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .then((upData) => {
                 if (upData.url) {
                   supabase.auth.updateUser({
-                    data: { avatar_url: upData.url },
+                    data: { avatar_url: upData.url, custom_avatar_url: upData.url, is_custom_avatar: true },
                   });
                 }
               })
               .catch(() => {});
+          }
+
+          // Protect custom avatar from being overwritten by Discord / Google OAuth identity re-sync
+          const userMeta = currentUser.user_metadata || {};
+          if (userMeta.custom_avatar_url && userMeta.avatar_url !== userMeta.custom_avatar_url) {
+            currentUser = {
+              ...currentUser,
+              user_metadata: {
+                ...userMeta,
+                avatar_url: userMeta.custom_avatar_url,
+              },
+            };
+            supabase.auth.updateUser({
+              data: { avatar_url: userMeta.custom_avatar_url, custom_avatar_url: userMeta.custom_avatar_url, is_custom_avatar: true },
+            }).catch(() => {});
           }
           const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
           const authRole: UserRole = ['admin', 'premium', 'supporter', 'free'].includes(rawRole) ? rawRole : 'free';
@@ -571,6 +592,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             currentUser = freshUserData.user;
           }
         } catch {}
+
+        // Protect custom avatar from OAuth re-sync in onAuthStateChange
+        const userMeta = currentUser.user_metadata || {};
+        if (userMeta.custom_avatar_url && userMeta.avatar_url !== userMeta.custom_avatar_url) {
+          currentUser = {
+            ...currentUser,
+            user_metadata: {
+              ...userMeta,
+              avatar_url: userMeta.custom_avatar_url,
+            },
+          };
+          supabase.auth.updateUser({
+            data: { avatar_url: userMeta.custom_avatar_url, custom_avatar_url: userMeta.custom_avatar_url, is_custom_avatar: true },
+          }).catch(() => {});
+        }
 
         setUser(currentUser);
 

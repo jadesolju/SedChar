@@ -69,7 +69,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
       const currentName = meta.display_name || meta.full_name || (user.email ? user.email.split('@')[0] : '');
       setDisplayName(currentName);
       setBio(meta.bio || '');
-      setAvatarUrl(meta.avatar_url || '');
+      setAvatarUrl(meta.custom_avatar_url || meta.avatar_url || '');
       setSelectedPreset(meta.avatar_preset || null);
       setAvatarBgTheme(meta.avatar_bg_theme || 'nebula');
       setBannerTheme(meta.banner_theme || 'cosmic');
