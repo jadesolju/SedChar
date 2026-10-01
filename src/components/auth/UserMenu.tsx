@@ -15,6 +15,8 @@ import {
   Coffee,
   BookOpen,
   Settings,
+  Globe,
+  Palette,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ProfileSettingsModal } from './ProfileSettingsModal';
@@ -51,7 +53,27 @@ export function UserMenu({
     closeProfileModal,
   } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [multiCount, setMultiCount] = useState<number>(0);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync multi-char projects count dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updateMultiCount = () => {
+      try {
+        const raw = localStorage.getItem('sedchar_multi_projects_library_v1');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            setMultiCount(list.length);
+          }
+        }
+      } catch {}
+    };
+    updateMultiCount();
+    window.addEventListener('storage', updateMultiCount);
+    return () => window.removeEventListener('storage', updateMultiCount);
+  }, []);
 
   // Close when clicking outside
   useEffect(() => {
@@ -182,9 +204,9 @@ export function UserMenu({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 p-2 bg-card border border-border rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-72 p-2 bg-card border border-border rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* User Info Header */}
-          <div className="p-2.5 mb-1.5 rounded-xl bg-muted/50 border border-border">
+          <div className="p-2.5 mb-2 rounded-xl bg-muted/50 border border-border">
             <div className="text-[11px] uppercase font-bold tracking-wider mb-0.5 flex items-center justify-between">
               <span className="text-foreground flex items-center gap-1.5">
                 {currentRoleInfo.icon}
@@ -194,7 +216,12 @@ export function UserMenu({
                 {userRole.toUpperCase()}
               </span>
             </div>
-            <div className="text-xs font-bold text-foreground truncate">{user.email}</div>
+            <div className="text-xs font-bold text-foreground truncate">
+              {user.user_metadata?.display_name || user.user_metadata?.full_name || user.email}
+            </div>
+            {user.user_metadata?.display_name && (
+              <div className="text-[10px] text-muted-foreground font-mono truncate">{user.email}</div>
+            )}
             <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Coins className="w-3 h-3 text-primary" />
@@ -214,7 +241,7 @@ export function UserMenu({
                 setIsOpen(false);
                 onOpenUpgradeModal();
               }}
-              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 border border-amber-500/30 hover:border-amber-500/60 transition-all cursor-pointer text-left mb-1.5"
+              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 border border-amber-500/30 hover:border-amber-500/60 transition-all cursor-pointer text-left mb-2"
             >
               <Coffee className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -227,29 +254,87 @@ export function UserMenu({
             </button>
           )}
 
-          {/* Menu Items */}
-          <div className="space-y-1 text-xs">
-            {/* Cloud Library Link */}
+          {/* SECTION 1: Studios & Libraries */}
+          <div className="space-y-0.5">
+            <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span>คลัง &amp; สตูดิโอสร้างสรรค์</span>
+              <span className="text-[9px] font-mono text-muted-foreground/70">STUDIOS</span>
+            </div>
+
+            {/* 1.1 Single Character Library */}
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                handleLibraryClick();
+                openLibraryModal();
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
             >
-              <FolderOpen className="w-4 h-4 text-primary" />
-              <div className="flex-1">
-                <div className="font-semibold">
-                  {customLibraryLabel ? `คลัง${customLibraryLabel}` : 'คลังตัวละคร Cloud Library'}
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <UserIcon className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-xs text-foreground flex items-center justify-between">
+                  <span>คลังตัวละครเดี่ยว (Single-Char)</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                    {savedCharacters.length} ตัว
+                  </span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  มี {customLibraryCount !== undefined ? customLibraryCount : savedCharacters.length} รายการ
+                <div className="text-[10px] text-muted-foreground truncate">
+                  บอทตัวละครเดี่ยว &bull; Prompt Studio
                 </div>
               </div>
             </button>
 
-            {/* Prompt Library Menu Item */}
+            {/* 1.2 Multi-Char & Universes */}
+            {onOpenCustomLibrary ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenCustomLibrary();
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Globe className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-xs text-foreground flex items-center justify-between">
+                    <span>คลัง Multi-Char &amp; จักรวาล</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
+                      {customLibraryCount !== undefined ? customLibraryCount : multiCount} เรื่อง
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    Lorebook &bull; หลายตัวละคร &bull; ฉาก &amp; เส้นทาง
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <Link
+                href="/multi"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Globe className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-xs text-foreground flex items-center justify-between">
+                    <span>คลัง Multi-Char &amp; จักรวาล</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
+                      {multiCount} เรื่อง
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    Multi Studio &bull; โครงเรื่อง &amp; ตัวละครรวม
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            {/* 1.3 Prompt Library */}
             {onOpenPromptLibrary ? (
               <button
                 type="button"
@@ -257,13 +342,17 @@ export function UserMenu({
                   setIsOpen(false);
                   onOpenPromptLibrary();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
               >
-                <BookOpen className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-3.5 h-3.5" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold flex items-center gap-1.5 text-foreground">
-                    <span>คลังคำสั่ง & กฎ (Prompt Library)</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">ใหม่</span>
+                  <div className="font-semibold text-xs text-foreground flex items-center justify-between">
+                    <span>คลังคำสั่ง &amp; กฎ (Prompt Library)</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">
+                      ใหม่
+                    </span>
                   </div>
                   <div className="text-[10px] text-muted-foreground truncate">
                     10 หมวดหมู่ + สร้างคำสั่งส่วนตัว
@@ -274,13 +363,17 @@ export function UserMenu({
               <Link
                 href="/prompts"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
               >
-                <BookOpen className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-3.5 h-3.5" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold flex items-center gap-1.5 text-foreground">
-                    <span>คลังคำสั่ง & กฎ (Prompt Library)</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">ใหม่</span>
+                  <div className="font-semibold text-xs text-foreground flex items-center justify-between">
+                    <span>คลังคำสั่ง &amp; กฎ (Prompt Library)</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/20">
+                      ใหม่
+                    </span>
                   </div>
                   <div className="text-[10px] text-muted-foreground truncate">
                     10 หมวดหมู่ + สร้างคำสั่งส่วนตัว
@@ -288,58 +381,75 @@ export function UserMenu({
                 </div>
               </Link>
             )}
+          </div>
 
-            {/* Profile Settings Link (Navigates to dedicated /profile page) */}
+          {/* Divider */}
+          <div className="h-px bg-border/70 my-2" />
+
+          {/* SECTION 2: Account & Settings */}
+          <div className="space-y-0.5">
+            <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span>บัญชี &amp; การตั้งค่า</span>
+              <span className="text-[9px] font-mono text-muted-foreground/70">ACCOUNT</span>
+            </div>
+
+            {/* 2.1 Profile Hub */}
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
             >
-              <Settings className="w-4 h-4 text-purple-500 flex-shrink-0" />
+              <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Palette className="w-3.5 h-3.5" />
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-foreground">ตั้งค่าโปรไฟล์ (Profile Settings)</div>
+                <div className="font-semibold text-xs text-foreground">ศูนย์กลางโปรไฟล์ &amp; ธีม (Profile Hub)</div>
                 <div className="text-[10px] text-muted-foreground truncate">
-                  เปลี่ยนชื่อ, อัปโหลด Avatar, ข้อมูลส่วนตัว
+                  ปรับแต่ง Avatar, แบนเนอร์, จักรวาล &amp; ห้องแชร์
                 </div>
               </div>
             </Link>
 
-            {/* Secret Control Nexus Link - ONLY FOR ADMIN ROLE */}
+            {/* 2.2 Admin Nexus */}
             {userRole === 'admin' && (
               <Link
                 href="/sys-nexus-mgmt-99"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer text-left font-semibold"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-all cursor-pointer text-left group font-semibold"
               >
-                <ShieldCheck className="w-4 h-4 text-amber-500" />
-                <div className="flex-1">
-                  <div>Control Nexus Console</div>
-                  <div className="text-[10px] text-amber-500/70">จัดการสิทธิ์ & โควต้าผู้ใช้งาน</div>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs">Control Nexus Console</div>
+                  <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70">จัดการสิทธิ์ &amp; โควต้าผู้ใช้งาน</div>
                 </div>
               </Link>
             )}
 
+            {/* 2.3 Password Reset */}
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 openAuthModal('reset');
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left text-xs"
             >
-              <KeyRound className="w-4 h-4 text-muted-foreground" />
+              <KeyRound className="w-4 h-4 text-muted-foreground shrink-0 ml-1.5" />
               <span>รีเซ็ต / เปลี่ยนรหัสผ่าน</span>
             </button>
 
+            {/* 2.4 Sign Out */}
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 signOut();
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer text-left font-semibold"
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer text-left text-xs font-semibold"
             >
-              <LogOut className="w-4 h-4 text-rose-500" />
+              <LogOut className="w-4 h-4 text-rose-500 shrink-0 ml-1.5" />
               <span>ออกจากระบบ</span>
             </button>
           </div>

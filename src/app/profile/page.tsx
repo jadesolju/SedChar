@@ -62,6 +62,10 @@ import {
 import { compileRubiiProjectMarkdown } from '@/components/rubii-multi/RubiiDraftPreviewSection';
 import { UniverseShareModal } from '@/components/universe/UniverseShareModal';
 import type { MultiCharacterProjectDraft } from '@/shared/multiCharTypes';
+import type { SavedCharacterRecord } from '@/context/AuthContext';
+import { characterToFullMarkdown } from '@/shared/thaiTagParser';
+import { exportCharacterJson } from '@/shared/shareUtils';
+import { CHARACTER_FLAGS } from '@/shared/types';
 
 const AVATAR_PRESETS = [
   { id: 'sakura', label: 'ซากุระ', emoji: '🌸', bg: 'bg-pink-500/20 text-pink-500 border-pink-500/30' },
@@ -96,10 +100,18 @@ function ProfileContent() {
     updateUserProfile,
     openAuthModal,
     signOut,
+    savedCharacters,
+    deleteFromLibrary,
+    setActiveLoadedCharacterId,
   } = useAuth();
 
   // Active Main Tab on Profile Page
-  const [activeTab, setActiveTab] = useState<'themes' | 'my_universes' | 'commu_hub' | 'account'>('themes');
+  const [activeTab, setActiveTab] = useState<
+    'themes' | 'single_characters' | 'my_universes' | 'commu_hub' | 'account'
+  >('themes');
+
+  // Single Characters Search State
+  const [singleCharSearch, setSingleCharSearch] = useState('');
 
   // Profile Form States
   const [displayName, setDisplayName] = useState('');
@@ -128,7 +140,7 @@ function ProfileContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
-  // Project Library States for Tab 2 & Tab 3
+  // Project Library States for Tab 3 & Tab 4
   const [savedProjects, setSavedProjects] = useState<SavedMultiProjectRecord[]>([]);
   const [projectSearch, setProjectSearch] = useState('');
   const [shareTargetProject, setShareTargetProject] = useState<MultiCharacterProjectDraft | null>(null);
@@ -375,6 +387,82 @@ function ProfileContent() {
     }
   };
 
+  // Filtered Single Characters for Tab 2
+  const filteredSingleChars = useMemo(() => {
+    if (!singleCharSearch.trim()) return savedCharacters;
+    const q = singleCharSearch.toLowerCase().trim();
+    return savedCharacters.filter((c) => {
+      const name = (c.title || c.nickname || '').toLowerCase();
+      const tagline = (c.tagline || '').toLowerCase();
+      return name.includes(q) || tagline.includes(q);
+    });
+  }, [savedCharacters, singleCharSearch]);
+
+  // Open Single Character in Studio
+  const handleOpenSingleCharInStudio = (charRecord: SavedCharacterRecord) => {
+    try {
+      if (charRecord.character_data) {
+        localStorage.setItem('sedchar_active_draft', JSON.stringify(charRecord.character_data));
+        localStorage.setItem('sedchar_active_character_id', charRecord.id);
+        localStorage.removeItem('sedchar_raw_markdown_draft');
+      }
+      router.push('/');
+    } catch (e) {
+      router.push('/');
+    }
+  };
+
+  // Copy Single Character Prompt
+  const handleCopySingleCharPrompt = (charRecord: SavedCharacterRecord) => {
+    try {
+      const md = characterToFullMarkdown(charRecord.character_data);
+      navigator.clipboard.writeText(md);
+      showToast(`คัดลอก Prompt ของ "${charRecord.title || charRecord.nickname}" แล้ว!`);
+    } catch {
+      showToast('เกิดข้อผิดพลาดในการคัดลอก Prompt');
+    }
+  };
+
+  // Download Single Character as Markdown
+  const handleDownloadSingleCharMd = (charRecord: SavedCharacterRecord) => {
+    try {
+      const md = characterToFullMarkdown(charRecord.character_data);
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(charRecord.title || charRecord.nickname || 'character').replace(/[^a-zA-Z0-9_\u0E00-\u0E7F-]/g, '_')}_prompt.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('ดาวน์โหลดไฟล์ Markdown เรียบร้อย');
+    } catch {
+      showToast('เกิดข้อผิดพลาดในการดาวน์โหลด');
+    }
+  };
+
+  // Download Single Character as JSON
+  const handleDownloadSingleCharJson = (charRecord: SavedCharacterRecord) => {
+    try {
+      exportCharacterJson(charRecord.character_data, charRecord.title || charRecord.nickname);
+      showToast('ดาวน์โหลดไฟล์ JSON เรียบร้อย');
+    } catch {
+      showToast('เกิดข้อผิดพลาดในการดาวน์โหลด');
+    }
+  };
+
+  // Delete Single Character
+  const handleDeleteSingleChar = async (id: string, name: string) => {
+    if (!confirm(`คุณต้องการลบตัวละคร "${name}" ออกจากคลังใช่หรือไม่?`)) return;
+    const ok = await deleteFromLibrary(id);
+    if (ok) {
+      showToast(`ลบตัวละคร "${name}" เรียบร้อย`);
+    } else {
+      showToast('เกิดข้อผิดพลาดในการลบ');
+    }
+  };
+
   // Open Project in Studio
   const handleOpenInStudio = (record: SavedMultiProjectRecord) => {
     try {
@@ -612,59 +700,71 @@ function ProfileContent() {
         </div>
 
         {/* ======================================================== */}
-        {/* Navigation Tabs (Mobile-Friendly Grid)                  */}
-        {/* ======================================================== */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-muted border border-border">
+        {/* Navigation Tabs (Responsive Grid) */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 rounded-2xl bg-muted border border-border">
           <button
             type="button"
             onClick={() => setActiveTab('themes')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'themes'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Palette className="w-4 h-4 text-purple-500" />
-            <span>ปรับแต่งโปรไฟล์ &amp; ธีม</span>
+            <span className="truncate">โปรไฟล์ &amp; ธีม</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('single_characters')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'single_characters'
+                ? 'bg-card text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <UserIcon className="w-4 h-4 text-emerald-500" />
+            <span className="truncate">ตัวละครเดี่ยว ({savedCharacters.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('my_universes')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'my_universes'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <FolderOpen className="w-4 h-4 text-rose-500" />
-            <span>จักรวาลของฉัน ({myCreatedProjects.length})</span>
+            <span className="truncate">จักรวาล ({myCreatedProjects.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('commu_hub')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'commu_hub'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <MessageSquare className="w-4 h-4 text-indigo-500" />
-            <span>ห้องสนทนา &amp; แชร์ ({sharedAndCommuProjects.length})</span>
+            <span className="truncate">ห้องสนทนา ({sharedAndCommuProjects.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('account')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`col-span-2 sm:col-span-1 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'account'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <ShieldCheck className="w-4 h-4 text-amber-500" />
-            <span>ข้อมูลบัญชี &amp; สิทธิ์</span>
+            <span className="truncate">บัญชี &amp; สิทธิ์</span>
           </button>
         </div>
 
@@ -1162,7 +1262,7 @@ function ProfileContent() {
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
-                  <span>{saveSuccess ? 'บันทึกการเปลี่ยนแปลงแล้ว!' : 'บันทึกโปรไฟล์ &amp; ธีม'}</span>
+                  <span>{saveSuccess ? 'บันทึกการเปลี่ยนแปลงแล้ว!' : 'บันทึกโปรไฟล์ & ธีม'}</span>
                 </button>
               </div>
             </form>
@@ -1170,7 +1270,190 @@ function ProfileContent() {
         )}
 
         {/* ======================================================== */}
-        {/* TAB 2: My Universes & Projects (คลังจักรวาลของฉัน)      */}
+        {/* TAB 2: Single Characters Library (คลังตัวละครเดี่ยว)     */}
+        {/* ======================================================== */}
+        {activeTab === 'single_characters' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Header & Controls */}
+            <div className="p-6 rounded-3xl bg-card border border-border shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                    <UserIcon className="w-5 h-5 text-emerald-500" />
+                    <span>คลังตัวละครเดี่ยวของฉัน</span>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                      {savedCharacters.length} ตัว
+                    </span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    บอทตัวละครเดี่ยวสำหรับเล่นแชท &amp; บทสนทนา จัดการ คัดลอก Prompt หรือเปิดใน Single Studio
+                  </p>
+                </div>
+
+                <Link
+                  href="/"
+                  className="px-4 py-2 rounded-xl bg-foreground text-background hover:bg-foreground/90 text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>สร้างตัวละครใหม่ใน Studio</span>
+                </Link>
+              </div>
+
+              {/* Search input */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={singleCharSearch}
+                  onChange={(e) => setSingleCharSearch(e.target.value)}
+                  placeholder="ค้นหาตามชื่อตัวละคร ฉายา หรือคำบรรยาย..."
+                  className="w-full !pl-10 pr-4 py-2.5 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground outline-hidden focus:border-emerald-500/60"
+                />
+              </div>
+            </div>
+
+            {/* Characters Cards List */}
+            {filteredSingleChars.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl bg-card border border-dashed border-border flex flex-col items-center justify-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+                  <UserIcon className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-foreground">
+                    {singleCharSearch ? 'ไม่พบตัวละครที่ตรงกับการค้นหา' : 'ยังไม่มีตัวละครเดี่ยวที่บันทึกไว้'}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 max-w-sm">
+                    เริ่มสร้างสรรค์ตัวละครแรกของคุณด้วยระบบวิเคราะห์อัตลักษณ์และสร้าง Prompt อัจฉริยะ
+                  </div>
+                </div>
+                <Link
+                  href="/"
+                  className="mt-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>เปิด Single Character Studio</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {filteredSingleChars.map((charRec) => {
+                  const name = charRec.title || charRec.nickname || 'ตัวละครไม่มีชื่อ';
+                  const flagKey = (charRec.flag_type || 'none') as keyof typeof CHARACTER_FLAGS;
+                  const flag = CHARACTER_FLAGS[flagKey] || CHARACTER_FLAGS.none;
+                  const avatar = charRec.image_url || (charRec.character_data as any)?.avatarUrl || (charRec.character_data as any)?.imageUrl;
+                  const initialChar = name.charAt(0).toUpperCase();
+
+                  return (
+                    <div
+                      key={charRec.id}
+                      className="p-5 rounded-3xl bg-card border border-border hover:border-emerald-500/40 shadow-md transition-all flex flex-col justify-between gap-4 group"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        {/* Avatar */}
+                        <div className="w-14 h-14 rounded-2xl border border-border bg-muted/60 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                          {avatar ? (
+                            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xl flex items-center justify-center">
+                              {initialChar}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-bold text-sm sm:text-base text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                              {name}
+                            </h3>
+                            {flag && flag.type !== 'none' && (
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded-full border font-bold shrink-0 ${flag.badgeBg}`}
+                              >
+                                {flag.emoji} {flag.label}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {charRec.tagline || charRec.character_data?.coreTraits || (charRec.character_data as any)?.personality_traits?.core_concept || 'ไม่มีคำโปรย'}
+                          </p>
+
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono pt-1">
+                            <span>
+                              {new Date(charRec.updated_at || charRec.created_at).toLocaleDateString('th-TH', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Toolbar */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border/60">
+                        {/* Secondary Export & Delete buttons */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleCopySingleCharPrompt(charRec)}
+                            className="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1 transition-all cursor-pointer"
+                            title="คัดลอก Prompt ทั้งหมด"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-purple-500" />
+                            <span>Copy</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadSingleCharMd(charRec)}
+                            className="px-2 py-1.5 rounded-lg border border-border hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1 transition-all cursor-pointer"
+                            title="ดาวน์โหลด Markdown (.md)"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-blue-500" />
+                            <span>MD</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadSingleCharJson(charRec)}
+                            className="px-2 py-1.5 rounded-lg border border-border hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1 transition-all cursor-pointer"
+                            title="ดาวน์โหลด JSON (.json)"
+                          >
+                            <FileJson className="w-3.5 h-3.5 text-amber-500" />
+                            <span>JSON</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSingleChar(charRec.id, name)}
+                            className="w-8 h-8 rounded-lg hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer"
+                            title="ลบตัวละคร"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Primary Open Studio */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSingleCharInStudio(charRec)}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ml-auto"
+                        >
+                          <span>เปิดใน Studio</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 3: My Universes & Projects (คลังจักรวาลของฉัน)      */}
         {/* ======================================================== */}
         {activeTab === 'my_universes' && (
           <div className="space-y-4 animate-in fade-in duration-200">
