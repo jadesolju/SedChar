@@ -47,7 +47,7 @@ function UniverseShareViewContent() {
   const router = useRouter();
   const shareId = params?.shareId as string;
 
-  const { user, openAuthModal } = useAuth();
+  const { user, userRole, openAuthModal } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [project, setProject] = useState<MultiCharacterProjectDraft | null>(null);
@@ -56,6 +56,7 @@ function UniverseShareViewContent() {
   const [isCloning, setIsCloning] = useState(false);
   const [isProposeModalOpen, setIsProposeModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [hasLocalOwnership, setHasLocalOwnership] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -111,6 +112,45 @@ function UniverseShareViewContent() {
 
     fetchUniverse();
   }, [shareId]);
+
+  // Check local storage ownership (saved library & active drafts)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !shareId) return;
+    try {
+      // 1. Check active draft
+      const rawDraft = localStorage.getItem(RUBII_MULTI_DRAFT_KEY);
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft);
+        if (
+          draft.shareId === shareId ||
+          (project && draft.id && project.id && draft.id === project.id)
+        ) {
+          setHasLocalOwnership(true);
+          return;
+        }
+      }
+
+      // 2. Check saved library records
+      const rawLib = localStorage.getItem(MULTI_CHAR_LIBRARY_KEY);
+      if (rawLib) {
+        const lib = JSON.parse(rawLib);
+        if (Array.isArray(lib)) {
+          const matched = lib.some(
+            (item) =>
+              item.shareId === shareId ||
+              item.id === shareId ||
+              (project && item.id === project.id) ||
+              (project && item.projectData?.id === project.id) ||
+              (project && item.projectData?.shareId === shareId)
+          );
+          if (matched) {
+            setHasLocalOwnership(true);
+            return;
+          }
+        }
+      }
+    } catch {}
+  }, [shareId, project]);
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined') {
@@ -214,19 +254,71 @@ function UniverseShareViewContent() {
   const { worldSetting, lore, mainCharacters, supportingCharacters, routes } = project;
   const projectName = worldSetting?.projectName || project.title || 'จักรวาลและคลังความจำ';
 
-  const isOwner =
-    user &&
-    (user.id === metadata?.userId ||
-      user.email?.split('@')[0] === metadata?.author ||
-      user.user_metadata?.display_name === metadata?.author);
+  const currentDisplayName =
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    (user?.email ? user.email.split('@')[0] : '') ||
+    '';
 
-  const authorName =
-    isOwner
-      ? user.user_metadata?.display_name || user.user_metadata?.full_name || metadata?.author || 'ผู้สร้าง'
-      : metadata?.author || 'ผู้สร้าง';
+  const isOwner = Boolean(
+    user &&
+      (
+        (metadata?.userId &&
+          metadata.userId !== 'guest' &&
+          metadata.userId !== 'anonymous' &&
+          user.id === metadata.userId) ||
+        hasLocalOwnership ||
+        (currentDisplayName &&
+          metadata?.author &&
+          metadata.author.trim().toLowerCase() === currentDisplayName.trim().toLowerCase()) ||
+        (user.email &&
+          metadata?.author &&
+          metadata.author.trim().toLowerCase() === (user.email.split('@')[0] || '').trim().toLowerCase()) ||
+        userRole === 'admin'
+      )
+  );
+
+  const authorName = isOwner
+    ? currentDisplayName || metadata?.author || 'ผู้สร้าง'
+    : metadata?.author || 'ผู้สร้าง';
 
   const canClone = metadata?.allowCloning !== false || isOwner;
   const allowCoCreation = metadata?.allowCoCreation !== false;
+
+  // Auto-sync & heal Cloud R2 metadata when owner views their universe
+  // Ensures author display name is universally up-to-date across all clients
+  useEffect(() => {
+    if (!isOwner || !user || !shareId || !metadata) return;
+
+    const needsAuthorSync = authorName && metadata.author !== authorName;
+    const needsUserSync =
+      user.id &&
+      (metadata.userId !== user.id || metadata.userId === 'guest' || metadata.userId === 'anonymous');
+
+    if (needsAuthorSync || needsUserSync) {
+      fetch('/api/universe/sync-author', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shareId,
+          userId: user.id,
+          author: authorName,
+          projectTitle: projectName,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setMetadata((prev: any) => ({
+              ...prev,
+              author: authorName,
+              userId: user.id,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOwner, user, shareId, metadata?.author, metadata?.userId, authorName, projectName]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -349,12 +441,21 @@ function UniverseShareViewContent() {
               {projectName}
             </h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>สร้างโดย <strong className="text-foreground font-semibold">{authorName}</strong></span>
-              <span>•</span>
-              <span className="text-purple-500 font-semibold inline-flex items-center gap-1">
-                <Lock className="w-3 h-3" />
-                <span>Unlisted</span>
+              <span>
+                สร้างโดย <strong className="text-foreground font-semibold">{authorName}</strong>
               </span>
+              <span>•</span>
+              {isOwner ? (
+                <span className="text-amber-500 font-bold inline-flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span>คุณคือเจ้าของจักรวาลนี้ (Owner)</span>
+                </span>
+              ) : (
+                <span className="text-purple-500 font-semibold inline-flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  <span>Unlisted</span>
+                </span>
+              )}
             </div>
           </div>
 

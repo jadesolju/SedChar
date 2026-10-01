@@ -241,6 +241,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (updateData?.user) {
           setUser(updateData.user);
+
+          // If displayName was updated, dynamically synchronize across local library, drafts, and Cloud R2
+          if (data.displayName && typeof data.displayName === 'string' && data.displayName.trim()) {
+            const newName = data.displayName.trim();
+            if (typeof window !== 'undefined') {
+              try {
+                // 1. Update active draft
+                const draftRaw = localStorage.getItem('sedchar_rubii_multi_draft_v1');
+                if (draftRaw) {
+                  const draft = JSON.parse(draftRaw);
+                  if (draft.worldSetting) {
+                    draft.worldSetting.author = newName;
+                  }
+                  draft.author = newName;
+                  localStorage.setItem('sedchar_rubii_multi_draft_v1', JSON.stringify(draft));
+                }
+
+                // 2. Update local library projects
+                const libRaw = localStorage.getItem('sedchar_multi_projects_library_v1');
+                if (libRaw) {
+                  const lib = JSON.parse(libRaw);
+                  if (Array.isArray(lib)) {
+                    const updatedLib = lib.map((item) => {
+                      if (!item) return item;
+                      const nextItem = { ...item, author: newName };
+                      if (nextItem.projectData) {
+                        nextItem.projectData = {
+                          ...nextItem.projectData,
+                          author: newName,
+                          worldSetting: nextItem.projectData.worldSetting
+                            ? { ...nextItem.projectData.worldSetting, author: newName }
+                            : undefined,
+                        };
+                      }
+                      return nextItem;
+                    });
+                    localStorage.setItem('sedchar_multi_projects_library_v1', JSON.stringify(updatedLib));
+                  }
+                }
+
+                window.dispatchEvent(new Event('storage'));
+              } catch (localSyncErr) {
+                console.warn('Local author sync error:', localSyncErr);
+              }
+
+              // 3. Trigger Cloud R2 Author Sync in background
+              fetch('/api/universe/sync-author', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: updateData.user.id,
+                  author: newName,
+                  updateAllUserProjects: true,
+                }),
+              }).catch(() => {});
+            }
+          }
         }
         return { error: null, data: updateData };
       } catch (err: any) {

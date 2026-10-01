@@ -22,6 +22,7 @@ export const MAX_FREE_MAIN_CHARACTERS = 10;
 export interface SavedMultiProjectRecord {
   id: string;
   title: string;
+  author?: string;
   description: string;
   mainCharCount: number;
   subCharCount: number;
@@ -77,6 +78,7 @@ export function deduplicateProjectRecords(records: SavedMultiProjectRecord[]): S
         ...item,
         id: item.id.startsWith('uni_') ? item.id : existing.id,
         title: item.title && !item.title.includes('(Cloned)') ? item.title : existing.title,
+        author: item.author || existing.author,
         description: item.description || existing.description,
         mainCharCount: Math.max(existing.mainCharCount || 0, item.mainCharCount || 0),
         subCharCount: Math.max(existing.subCharCount || 0, item.subCharCount || 0),

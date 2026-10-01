@@ -252,7 +252,11 @@ export function UniverseDiscussionSection({ shareId, projectName }: UniverseDisc
   };
 
   // User display metadata
-  const userDisplayName: string = (user?.email ? user.email.split('@')[0] : '') || 'สมาชิก';
+  const userDisplayName: string =
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    (user?.email ? user.email.split('@')[0] : '') ||
+    'สมาชิก';
   const userRoleBadge =
     userRole === 'admin'
       ? 'Admin 👑'

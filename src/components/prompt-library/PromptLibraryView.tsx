@@ -90,7 +90,7 @@ export function PromptLibraryView({
   const userDisplayName = useMemo(() => {
     if (!user) return 'ผู้ใช้งานทั่วไป';
     const meta = user.user_metadata;
-    return meta?.full_name || meta?.name || meta?.user_name || (user.email ? user.email.split('@')[0] : 'สมาชิก SedChar');
+    return meta?.display_name || meta?.full_name || meta?.name || meta?.user_name || (user.email ? user.email.split('@')[0] : 'สมาชิก SedChar');
   }, [user]);
 
   // Custom Prompt Form State

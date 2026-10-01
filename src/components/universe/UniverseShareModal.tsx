@@ -184,6 +184,7 @@ export function UniverseShareModal({
           const newRecord = {
             id: data.shareId,
             title: projectTitle,
+            author: authorName,
             description:
               project.worldSetting?.genreTone ||
               project.worldSetting?.mainLocation ||
@@ -193,6 +194,7 @@ export function UniverseShareModal({
             routeCount: project.routes?.length || 0,
             projectData: {
               ...project,
+              author: authorName,
               shareId: data.shareId,
               isShared: true,
             },
