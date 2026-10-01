@@ -82,10 +82,84 @@ const AVATAR_PRESETS = [
   { id: 'berry', label: 'เบอร์รี่', emoji: '🍓', bg: 'bg-red-500/20 text-red-500 border-red-500/30' },
 ];
 
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ProfileErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[Profile Error Boundary caught error]:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-md p-8 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center mx-auto text-2xl">
+              ⚠️
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
+              ระบบเกิดข้อผิดพลาดชั่วคราว
+            </h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              เราตรวจพบข้อผิดพลาดในหน้านี้ ระบบได้ป้องกันและบันทึกข้อมูลของคุณอย่างปลอดภัยแล้ว
+            </p>
+            {this.state.error?.message && (
+              <div className="p-3 rounded-xl bg-muted/60 border border-border text-[11px] font-mono text-rose-500/90 text-left overflow-x-auto max-h-32">
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                ลองใหม่อีกครั้ง
+              </button>
+              <Link
+                href="/multi"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold shadow-xs transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>กลับสู่ Multi Studio</span>
+              </Link>
+              <Link
+                href="/"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold shadow-xs transition-all"
+              >
+                <span>หน้าหลัก</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function ProfilePage() {
   return (
     <AuthProvider>
-      <ProfileContent />
+      <ProfileErrorBoundary>
+        <ProfileContent />
+      </ProfileErrorBoundary>
     </AuthProvider>
   );
 }
