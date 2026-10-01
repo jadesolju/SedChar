@@ -262,38 +262,46 @@ export function parseMultiCharMarkdownOrText(content: string): MultiCharacterPro
 }
 
 export function compileRubiiProjectMarkdown(p: MultiCharacterProjectDraft): string {
-  let md = `# [Multi-Char Project Draft]: ${p.worldSetting.projectName || p.title}\n\n`;
+  if (!p) return '';
+  const worldSetting = p.worldSetting || DEFAULT_WORLD_SETTING;
+  const lore = p.lore || DEFAULT_LORE_DRAFT;
+  const routes = Array.isArray(p.routes) ? p.routes : [];
+  const mainCharacters = Array.isArray(p.mainCharacters) ? p.mainCharacters : [];
+  const supportingCharacters = Array.isArray(p.supportingCharacters) ? p.supportingCharacters : [];
+  const timelineEvents = Array.isArray(lore.timelineEvents) ? lore.timelineEvents : [];
+
+  let md = `# [Multi-Char Project Draft]: ${worldSetting.projectName || p.title || 'Untitled'}\n\n`;
 
   // 1. World Setting
   md += `## 1. World Setting & กฎของโลก\n`;
-  if (p.worldSetting.genreTone) md += `- **แนวเรื่อง & โทนหลัก:** ${p.worldSetting.genreTone}\n`;
-  if (p.worldSetting.eraTimePeriod) md += `- **ยุคสมัย / เวลา:** ${p.worldSetting.eraTimePeriod}\n`;
-  if (p.worldSetting.mainLocation) md += `- **สถานที่หลัก:** ${p.worldSetting.mainLocation}\n`;
-  if (p.worldSetting.worldRulesOrMagicSystem) md += `- **กฎของโลก / ระบบพลัง:** ${p.worldSetting.worldRulesOrMagicSystem}\n`;
-  if (p.worldSetting.factionsOrOrganizations) md += `- **ฝ่าย / องค์กรสำคัญ:** ${p.worldSetting.factionsOrOrganizations}\n`;
-  if (p.worldSetting.atmosphereTheme) md += `- **บรรยากาศโดยรวม:** ${p.worldSetting.atmosphereTheme}\n`;
+  if (worldSetting.genreTone) md += `- **แนวเรื่อง & โทนหลัก:** ${worldSetting.genreTone}\n`;
+  if (worldSetting.eraTimePeriod) md += `- **ยุคสมัย / เวลา:** ${worldSetting.eraTimePeriod}\n`;
+  if (worldSetting.mainLocation) md += `- **สถานที่หลัก:** ${worldSetting.mainLocation}\n`;
+  if (worldSetting.worldRulesOrMagicSystem) md += `- **กฎของโลก / ระบบพลัง:** ${worldSetting.worldRulesOrMagicSystem}\n`;
+  if (worldSetting.factionsOrOrganizations) md += `- **ฝ่าย / องค์กรสำคัญ:** ${worldSetting.factionsOrOrganizations}\n`;
+  if (worldSetting.atmosphereTheme) md += `- **บรรยากาศโดยรวม:** ${worldSetting.atmosphereTheme}\n`;
   md += `\n`;
 
   // 2. Lore & Timeline
   md += `## 2. Lore & ประวัติศาสตร์ของเรื่อง\n`;
-  if (p.lore.worldBackstory) md += `- **ภูมิหลังของโลก:** ${p.lore.worldBackstory}\n`;
-  if (p.lore.coreConflict) md += `- **ความขัดแย้งหลัก:** ${p.lore.coreConflict}\n`;
-  if (p.lore.timelineEvents.length > 0) {
+  if (lore.worldBackstory) md += `- **ภูมิหลังของโลก:** ${lore.worldBackstory}\n`;
+  if (lore.coreConflict) md += `- **ความขัดแย้งหลัก:** ${lore.coreConflict}\n`;
+  if (timelineEvents.length > 0) {
     md += `### ลำดับไทม์ไลน์เหตุการณ์:\n`;
-    p.lore.timelineEvents.forEach((ev, idx) => {
-      md += `${idx + 1}. [${ev.timeLabel || 'ไม่ระบุช่วงเวลา'}] ${ev.eventTitle} ${ev.isSecret ? '(ความลับ)' : ''}\n   ${ev.description}\n`;
+    timelineEvents.forEach((ev, idx) => {
+      md += `${idx + 1}. [${ev.timeLabel || 'ไม่ระบุช่วงเวลา'}] ${ev.eventTitle || 'เหตุการณ์'} ${ev.isSecret ? '(ความลับ)' : ''}\n   ${ev.description || ''}\n`;
     });
     md += `\n`;
   }
-  if (p.lore.commonKnowledge) md += `- **ความรู้สาธารณะ:** ${p.lore.commonKnowledge}\n`;
-  if (p.lore.taboosOrMyths) md += `- **ข้อห้ามเด็ดขาด:** ${p.lore.taboosOrMyths}\n`;
+  if (lore.commonKnowledge) md += `- **ความรู้สาธารณะ:** ${lore.commonKnowledge}\n`;
+  if (lore.taboosOrMyths) md += `- **ข้อห้ามเด็ดขาด:** ${lore.taboosOrMyths}\n`;
   md += `\n`;
 
   // 3. Routes
-  if (p.routes.length > 0) {
-    md += `## 3. Route & เส้นทางเนื้อเรื่อง (${p.routes.length} เส้นทาง)\n\n`;
-    p.routes.forEach((r, idx) => {
-      md += `### Route ${idx + 1}: ${r.routeName}\n`;
+  if (routes.length > 0) {
+    md += `## 3. Route & เส้นทางเนื้อเรื่อง (${routes.length} เส้นทาง)\n\n`;
+    routes.forEach((r, idx) => {
+      md += `### Route ${idx + 1}: ${r.routeName || 'เส้นทาง'}\n`;
       if (r.summary) md += `- **ภาพรวม:** ${r.summary}\n`;
       if (r.entryCondition) md += `- **เงื่อนไขเข้า:** ${r.entryCondition}\n`;
       if (r.exitOrBranchCondition) md += `- **เงื่อนไขแตกแขนง:** ${r.exitOrBranchCondition}\n`;
@@ -303,27 +311,29 @@ export function compileRubiiProjectMarkdown(p: MultiCharacterProjectDraft): stri
   }
 
   // 4. Main Characters
-  md += `## 4. ตัวละครหลัก (Main Cast - ${p.mainCharacters.length} ตัว)\n\n`;
-  p.mainCharacters.forEach((c, idx) => {
-    md += `### [ตัวละครหลัก ${idx + 1}]: ${c.name} ${c.aliasOrTitle ? `(${c.aliasOrTitle})` : ''}\n`;
-    md += `- **เพศ / อายุ:** ${c.gender || '-'} | ${c.age || '-'} ${c.mbti ? `| MBTI: ${c.mbti}` : ''}\n`;
-    if (c.storyRole) md += `- **บทบาทในเรื่อง:** ${c.storyRole}\n`;
-    if (c.corePersonality) md += `- **แก่นบุคลิกภาพ:** ${c.corePersonality}\n`;
-    if (c.primaryGoalOrDesire) md += `- **เป้าหมายหลัก:** ${c.primaryGoalOrDesire}\n`;
-    if (c.relationshipWithUser) md += `- **ความสัมพันธ์กับ {{user}}:** ${c.relationshipWithUser}\n`;
-    if (c.relationsWithOtherCast) md += `- **ความสัมพันธ์กับตัวละครอื่น:** ${c.relationsWithOtherCast}\n`;
-    if (c.exclusiveSecretOrKnowledge) md += `- **ข้อมูลลับเฉพาะตัว:** ${c.exclusiveSecretOrKnowledge}\n`;
-    if (c.absoluteRules) md += `- **กฎเหล็กที่จะไม่ทำเด็ดขาด:** ${c.absoluteRules}\n`;
-    if (c.appearanceBrief) md += `- **รูปลักษณ์ภายนอก:** ${c.appearanceBrief}\n`;
-    if (c.speakingStyle) md += `- **สไตล์การพูด:** ${c.speakingStyle}\n`;
-    md += `\n`;
-  });
+  if (mainCharacters.length > 0) {
+    md += `## 4. ตัวละครหลัก (Main Cast - ${mainCharacters.length} ตัว)\n\n`;
+    mainCharacters.forEach((c, idx) => {
+      md += `### [ตัวละครหลัก ${idx + 1}]: ${c.name || 'ตัวละคร'} ${c.aliasOrTitle ? `(${c.aliasOrTitle})` : ''}\n`;
+      md += `- **เพศ / อายุ:** ${c.gender || '-'} | ${c.age || '-'} ${c.mbti ? `| MBTI: ${c.mbti}` : ''}\n`;
+      if (c.storyRole) md += `- **บทบาทในเรื่อง:** ${c.storyRole}\n`;
+      if (c.corePersonality) md += `- **แก่นบุคลิกภาพ:** ${c.corePersonality}\n`;
+      if (c.primaryGoalOrDesire) md += `- **เป้าหมายหลัก:** ${c.primaryGoalOrDesire}\n`;
+      if (c.relationshipWithUser) md += `- **ความสัมพันธ์กับ {{user}}:** ${c.relationshipWithUser}\n`;
+      if (c.relationsWithOtherCast) md += `- **ความสัมพันธ์กับตัวละครอื่น:** ${c.relationsWithOtherCast}\n`;
+      if (c.exclusiveSecretOrKnowledge) md += `- **ข้อมูลลับเฉพาะตัว:** ${c.exclusiveSecretOrKnowledge}\n`;
+      if (c.absoluteRules) md += `- **กฎเหล็กที่จะไม่ทำเด็ดขาด:** ${c.absoluteRules}\n`;
+      if (c.appearanceBrief) md += `- **รูปลักษณ์ภายนอก:** ${c.appearanceBrief}\n`;
+      if (c.speakingStyle) md += `- **สไตล์การพูด:** ${c.speakingStyle}\n`;
+      md += `\n`;
+    });
+  }
 
   // 5. Supporting Characters (Unlimited)
-  if (p.supportingCharacters.length > 0) {
-    md += `## 5. ตัวละครเสริม (Supporting Characters - ${p.supportingCharacters.length} ตัว)\n\n`;
-    p.supportingCharacters.forEach((s, idx) => {
-      md += `[ตัวละครเสริม ${idx + 1}]: ${s.name} | เพศ: ${s.gender || '-'} | บทบาท: ${s.mainRole || '-'} | นิสัย: ${s.personality || '-'} | ปรากฏเมื่อ: ${s.appearWhen || '-'}\n`;
+  if (supportingCharacters.length > 0) {
+    md += `## 5. ตัวละครเสริม (Supporting Characters - ${supportingCharacters.length} ตัว)\n\n`;
+    supportingCharacters.forEach((s, idx) => {
+      md += `[ตัวละครเสริม ${idx + 1}]: ${s.name || 'ตัวละครเสริม'} | เพศ: ${s.gender || '-'} | บทบาท: ${s.mainRole || '-'} | นิสัย: ${s.personality || '-'} | ปรากฏเมื่อ: ${s.appearWhen || '-'}\n`;
     });
     md += `\n`;
   }

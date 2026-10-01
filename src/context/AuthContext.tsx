@@ -531,6 +531,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           const rawRole = (currentUser.user_metadata?.role || currentUser.app_metadata?.role || 'free') as UserRole;
           const authRole: UserRole = ['admin', 'premium', 'supporter', 'free'].includes(rawRole) ? rawRole : 'free';
+          setUser(currentUser);
           setUserRoleState(authRole);
           syncQuota(currentUser, authRole);
         } else {
