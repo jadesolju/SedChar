@@ -393,25 +393,22 @@ export function UserMenu({
               <span className="text-[9px] font-mono text-muted-foreground/70">ACCOUNT</span>
             </div>
 
-            {/* 2.1 Profile Settings Modal */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                openProfileModal();
-              }}
+            {/* 2.1 Profile Hub */}
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-foreground hover:bg-muted transition-all cursor-pointer text-left group"
             >
               <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <Palette className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-xs text-foreground">ตั้งค่าโปรไฟล์ &amp; ธีม (Profile Settings)</div>
+                <div className="font-semibold text-xs text-foreground">ศูนย์กลางโปรไฟล์ &amp; ธีม (Profile Hub)</div>
                 <div className="text-[10px] text-muted-foreground truncate">
-                  ปรับแต่งชื่อ, Avatar, แบนเนอร์ &amp; สีออร่า
+                  ปรับแต่ง Avatar, แบนเนอร์, จักรวาล &amp; ห้องแชร์
                 </div>
               </div>
-            </button>
+            </Link>
 
             {/* 2.2 Admin Nexus */}
             {userRole === 'admin' && (
@@ -458,12 +455,6 @@ export function UserMenu({
           </div>
         </div>
       )}
-
-      {/* In-page Profile Settings Modal */}
-      <ProfileSettingsModal
-        isOpen={isProfileModalOpen}
-        onClose={closeProfileModal}
-      />
     </div>
   );
 }
